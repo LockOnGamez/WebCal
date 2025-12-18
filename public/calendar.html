@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>🏭 생산/재고 달력</title>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <style>
+        body { padding: 30px; font-family: 'Pretendard', sans-serif; max-width: 1000px; margin: 0 auto; background-color: #f5f5f5; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        #calendar { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; }
+        .btn-blue { background: #2196F3; color: white; }
+        .btn-green { background: #4CAF50; color: white; }
+        .btn-red { background: #F44336; color: white; }
+        .btn-gray { background: #999; color: white; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; }
+        .modal-content { background: white; width: 550px; padding: 25px; margin: 5% auto; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        .form-group select, .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; }
+        
+        .item-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .item-table th { background: #eee; font-size: 0.8em; padding: 5px; }
+        .item-table td { border-bottom: 1px solid #eee; padding: 5px; }
+        .item-table select, .item-table input { width: 100%; border: 1px solid #ccc; padding: 5px; }
+        .section-title { font-size: 1.1em; font-weight: bold; margin-top: 20px; margin-bottom: 5px; border-bottom: 2px solid #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏭 생산 및 재고 달력</h1>
+        <div>
+            <span id="user-display" style="margin-right: 10px; font-weight: bold;"></span>
+            <button class="btn-gray" onclick="location.href='/admin.html'">⚙️ 관리자</button>
+            <button class="btn-gray" onclick="location.href='/inventory.html'">📦 재고현황</button>
+        </div>
+    </div>
+
+    <div id="calendar"></div>
+
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title">📝 작업 등록</h3>
+            <input type="hidden" id="edit-event-id"> <div class="form-group">
+                <label>날짜</label>
+                <input type="text" id="modal-date" readonly style="background: #eee;">
+            </div>
+            
+            <div class="form-group">
+                <label>작업 구분</label>
+                <select id="modal-type" onchange="toggleProductionMode()">
+                    <option value="입고">🟢 입고 (구매/반품 등)</option>
+                    <option value="출고">🔴 출고 (판매/폐기 등)</option>
+                    <option value="생산">🔵 생산 (제조)</option>
+                </select>
+            </div>
+
+            <div class="section-title">
+                <span id="label-product">📦 대상 품목</span>
+                <button class="btn-green" onclick="addRow('product-tbody')" style="font-size:0.8em;">+ 추가</button>
+            </div>
+            <table class="item-table">
+                <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
+                <tbody id="product-tbody"></tbody>
+            </table>
+
+            <div id="material-section" style="display:none;">
+                <div class="section-title">
+                    <span>🔨 사용된 원자재 (차감)</span>
+                    <button class="btn-red" onclick="addRow('material-tbody')" style="font-size:0.8em;">+ 추가</button>
+                </div>
+                <table class="item-table">
+                    <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
+                    <tbody id="material-tbody"></tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; justify-content: space-between;">
+                <button id="btn-delete" class="btn-red" onclick="deleteEvent()" style="display:none;">🗑 삭제 (재고복구)</button>
+                <div>
+                    <button class="btn-gray" onclick="closeModal()">취소</button>
+                    <button class="btn-blue" onclick="saveEvent()">💾 저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/calendar';
+        const API_OPT = '/api/options';
+        const currentUser = localStorage.getItem('username');
+        let dropdownOptions = { items: [], sizes: [], lengths: [] };
+        let calendarInstance;
+
+        if (!currentUser) { alert("로그인이 필요합니다."); location.href = '/'; }
+        document.getElementById('user-display').innerText = currentUser + "님";
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadDropdownOptions();
+            initCalendar();
+        });
+
+        async function loadDropdownOptions() {
+            const res = await fetch(API_OPT);
+            const data = await res.json();
+            dropdownOptions.items = data.filter(o => o.type === 'itemName').map(o => o.value);
+            dropdownOptions.sizes = data.filter(o => o.type === 'size').map(o => o.value);
+            dropdownOptions.lengths = data.filter(o => o.type === 'length').map(o => o.value);
+        }
+
+        function initCalendar() {
+            var calendarEl = document.getElementById('calendar');
+            calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ko',
+                selectable: true,
+                height: 'auto',
+                events: async function(info, successCallback, failureCallback) {
+                    try {
+                        const res = await fetch(API_URL);
+                        const events = await res.json();
+                        successCallback(events);
+                    } catch (err) { failureCallback(err); }
+                },
+                select: function(info) {
+                    openModal(info.startStr, null); // 신규 등록
+                },
+                eventClick: function(info) {
+                    openModal(info.event.startStr, info.event); // 수정 모드
+                }
+            });
+            calendarInstance.render();
+        }
+
+        // --- 모달 열기 (신규/수정 공용) ---
+        function openModal(dateStr, event) {
+            // 초기화
+            document.getElementById('modal-date').value = dateStr.split('T')[0];
+            document.getElementById('product-tbody').innerHTML = '';
+            document.getElementById('material-tbody').innerHTML = '';
+            
+            if (event) {
+                // [수정 모드]
+                document.getElementById('modal-title').innerText = "📝 작업 수정";
+                document.getElementById('edit-event-id').value = event.id; // ID 저장
+                document.getElementById('btn-delete').style.display = 'inline-block';
+                
+                const props = event.extendedProps;
+                document.getElementById('modal-type').value = props.type;
+                
+                // 기존 아이템들 채워넣기
+                if(props.items) {
+                    props.items.forEach(item => {
+                        const tbodyId = item.role === 'material' ? 'material-tbody' : 'product-tbody';
+                        addRow(tbodyId, item);
+                    });
+                }
+            } else {
+                // [신규 모드]
+                document.getElementById('modal-title').innerText = "📝 새 작업 등록";
+                document.getElementById('edit-event-id').value = ''; // ID 비움
+                document.getElementById('btn-delete').style.display = 'none';
+                document.getElementById('modal-type').value = '입고';
+                addRow('product-tbody'); // 빈 줄 하나 추가
+            }
+            
+            toggleProductionMode();
+            document.getElementById('eventModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('eventModal').style.display = 'none';
+        }
+
+        function toggleProductionMode() {
+            const type = document.getElementById('modal-type').value;
+            const matSection = document.getElementById('material-section');
+            const labelProduct = document.getElementById('label-product');
+
+            if (type === '생산') {
+                matSection.style.display = 'block';
+                labelProduct.innerText = "📦 생산된 제품 (입고)";
+            } else {
+                matSection.style.display = 'none';
+                labelProduct.innerText = type === '입고' ? "📦 입고할 품목" : "📦 출고할 품목";
+            }
+        }
+
+        // --- 행 추가 (데이터가 있으면 채워서, 없으면 빈 값으로) ---
+        function addRow(tbodyId, data = null) {
+            const tbody = document.getElementById(tbodyId);
+            const tr = document.createElement('tr');
+            
+            const createOpts = (list, selectedVal) => {
+                let html = '<option value="">선택</option>';
+                list.forEach(v => {
+                    const selected = (v === selectedVal) ? 'selected' : '';
+                    html += `<option value="${v}" ${selected}>${v}</option>`;
+                });
+                return html;
+            };
+
+            tr.innerHTML = `
+                <td><select class="input-name">${createOpts(dropdownOptions.items, data?.name)}</select></td>
+                <td><select class="input-size">${createOpts(dropdownOptions.sizes, data?.size)}</select></td>
+                <td><select class="input-length">${createOpts(dropdownOptions.lengths, data?.length)}</select></td>
+                <td><input type="number" class="input-qty" value="${data?.quantity || 1}" style="width:50px;"></td>
+                <td><button onclick="this.closest('tr').remove()" style="background: #eee; border:none;">x</button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        // --- 저장 (신규:POST, 수정:PUT) ---
+        async function saveEvent() {
+            const id = document.getElementById('edit-event-id').value;
+            const type = document.getElementById('modal-type').value;
+            const date = document.getElementById('modal-date').value;
+
+            const getItems = (tbodyId) => {
+                const rows = document.querySelectorAll(`#${tbodyId} tr`);
+                const arr = [];
+                rows.forEach(tr => {
+                    const name = tr.querySelector('.input-name').value;
+                    const size = tr.querySelector('.input-size').value;
+                    const length = tr.querySelector('.input-length').value;
+                    const qty = tr.querySelector('.input-qty').value;
+                    if(name && qty) arr.push({ name, size, length, quantity: qty });
+                });
+                return arr;
+            };
+
+            const products = getItems('product-tbody');
+            const materials = type === '생산' ? getItems('material-tbody') : [];
+
+            if(products.length === 0) return alert("최소 하나의 품목이 필요합니다.");
+
+            const payload = {
+                start: date, type, username: currentUser,
+                products, materials
+            };
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_URL}/${id}` : API_URL;
+
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if(res.ok) {
+                alert("저장되었습니다.");
+                closeModal();
+                calendarInstance.refetchEvents();
+            } else {
+                const d = await res.json();
+                alert("오류: " + d.message);
+            }
+        }
+
+        // --- 삭제 (재고 복구) ---
+        async function deleteEvent() {
+            const id = document.getElementById('edit-event-id').value;
+            if(!id) return;
+            
+            if(!confirm("정말 삭제하시겠습니까?\n(관련된 재고 수량이 취소됩니다)")) return;
+
+            const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            if(res.ok) {
+                alert("삭제 및 재고 복구 완료");
+                closeModal();
+                calendarInstance.refetchEvents();
+            } else {
+                alert("삭제 실패");
+            }
+        }
+    </script>
+</body>
+</html>

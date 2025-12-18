@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>시스템 로그인</title>
+    <style>
+        body { padding: 50px; font-family: sans-serif; text-align: center; }
+        input { padding: 10px; margin: 5px; width: 200px; }
+        button { padding: 10px 20px; cursor: pointer; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🔒 시스템 접근</h1>
+
+    <div id="login-box">
+        <h3>로그인</h3>
+        <input type="text" id="login-id" placeholder="아이디"><br>
+        <input type="password" id="login-pw" placeholder="비밀번호"><br><br>
+        <button onclick="login()">로그인</button>
+        <p>계정이 없으신가요? <button onclick="toggleView()">회원가입 신청</button></p>
+    </div>
+
+    <div id="register-box" class="hidden">
+        <h3>회원가입 신청</h3>
+        <input type="text" id="reg-id" placeholder="아이디"><br>
+        <input type="password" id="reg-pw" placeholder="비밀번호"><br>
+        <input type="text" id="reg-nick" placeholder="닉네임"><br><br>
+        <button onclick="register()">신청하기</button>
+        <p>이미 계정이 있으신가요? <button onclick="toggleView()">로그인 하러가기</button></p>
+    </div>
+
+    <script>
+        function toggleView() {
+            document.getElementById('login-box').classList.toggle('hidden');
+            document.getElementById('register-box').classList.toggle('hidden');
+        }
+
+        // 1. 회원가입 신청
+        async function register() {
+            const username = document.getElementById('reg-id').value;
+            const password = document.getElementById('reg-pw').value;
+            const nickname = document.getElementById('reg-nick').value;
+
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, nickname })
+            });
+            const data = await res.json();
+            alert(data.message);
+            if (res.ok) toggleView(); // 성공 시 로그인 화면으로
+        }
+
+        // 2. 로그인
+        async function login() {
+    const username = document.getElementById('login-id').value;
+    const password = document.getElementById('login-pw').value;
+
+    const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+        // [추가된 부분] 로그인한 사람 아이디를 브라우저에 저장
+        localStorage.setItem('username', data.user.username); // ★ 이 줄 추가!
+        
+        alert("로그인 성공! " + data.user.nickname + "님 환영합니다.");
+        
+        // 관리자면 관리자페이지, 아니면 재고관리 페이지로 이동
+        if (data.user.role === 'admin') {
+            // 관리자도 재고관리는 봐야 하니 일단 선택권을 주거나 재고페이지로 보냅니다.
+            // 여기서는 테스트를 위해 바로 재고 페이지로 보내볼게요.
+            if(confirm("관리자 페이지로 갈까요? (취소 누르면 재고관리로 이동)")) {
+                location.href = '/admin.html';
+            } else {
+                location.href = '/inventory.html';
+            }
+        } else {
+            location.href = '/inventory.html'; // 일반 유저는 바로 재고관리로
+        }
+    } else {
+        alert(data.message);
+    }
+}
+    </script>
+</body>
+</html>

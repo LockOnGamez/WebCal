@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 페이지</title>
+    <style>
+        body { padding: 30px; font-family: sans-serif; max-width: 1000px; margin: 0 auto; }
+        .section { margin-bottom: 40px; border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+        h2 { margin-top: 0; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .input-group { margin-bottom: 10px; display: flex; gap: 10px; }
+        input { padding: 8px; }
+        button { padding: 8px 15px; cursor: pointer; }
+        .tag-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .tag { background: #eee; padding: 5px 10px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
+        .tag button { background: #ff4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; padding: 0; line-height: 20px; font-size: 12px; }
+        
+        /* 회원 승인 테이블 스타일 */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ 관리자 대시보드</h1>
+    <a href="/inventory.html">📦 재고관리로 이동</a> | 
+    <a href="/calendar.html">📅 달력으로 이동</a>
+
+    <div class="section">
+        <h2>⚙️ 기초 데이터 관리 (드롭다운)</h2>
+        <div style="display: flex; gap: 20px;">
+            <div style="flex: 1;">
+                <h3>품목명 (Item Name)</h3>
+                <div class="input-group">
+                    <input type="text" id="new-item" placeholder="예: 파이프">
+                    <button onclick="addOption('itemName', 'new-item')">추가</button>
+                </div>
+                <div id="list-itemName" class="tag-container"></div>
+            </div>
+
+            <div style="flex: 1;">
+                <h3>사이즈 (Size)</h3>
+                <div class="input-group">
+                    <input type="text" id="new-size" placeholder="예: 50mm">
+                    <button onclick="addOption('size', 'new-size')">추가</button>
+                </div>
+                <div id="list-size" class="tag-container"></div>
+            </div>
+
+            <div style="flex: 1;">
+                <h3>길이 (Length)</h3>
+                <div class="input-group">
+                    <input type="text" id="new-length" placeholder="예: 10m">
+                    <button onclick="addOption('length', 'new-length')">추가</button>
+                </div>
+                <div id="list-length" class="tag-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>👥 회원 가입 승인</h2>
+        <button onclick="loadPendingUsers()">목록 새로고침</button>
+        <table>
+            <thead>
+                <tr><th>아이디</th><th>닉네임</th><th>신청일</th><th>관리</th></tr>
+            </thead>
+            <tbody id="user-list"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_OPT = '/api/options';
+        const API_ADMIN = '/api/admin';
+
+        window.onload = function() {
+            loadOptions();
+            loadPendingUsers();
+        };
+
+        // --- 옵션 관리 로직 ---
+        async function loadOptions() {
+            const res = await fetch(API_OPT);
+            const options = await res.json();
+            
+            // 초기화
+            document.getElementById('list-itemName').innerHTML = '';
+            document.getElementById('list-size').innerHTML = '';
+            document.getElementById('list-length').innerHTML = '';
+
+            options.forEach(opt => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.innerHTML = `
+                    ${opt.value}
+                    <button onclick="deleteOption('${opt._id}')">x</button>
+                `;
+                document.getElementById(`list-${opt.type}`).appendChild(tag);
+            });
+        }
+
+        async function addOption(type, inputId) {
+            const input = document.getElementById(inputId);
+            const value = input.value.trim();
+            if(!value) return;
+
+            const res = await fetch(API_OPT, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ type, value })
+            });
+
+            if(res.ok) {
+                input.value = '';
+                loadOptions();
+            } else {
+                const data = await res.json();
+                alert(data.message);
+            }
+        }
+
+        async function deleteOption(id) {
+            if(!confirm('삭제하시겠습니까?')) return;
+            await fetch(`${API_OPT}/${id}`, { method: 'DELETE' });
+            loadOptions();
+        }
+
+        // --- 회원 관리 로직 (기존 유지) ---
+        async function loadPendingUsers() {
+            const res = await fetch(`${API_ADMIN}/pending`);
+            const users = await res.json();
+            const list = document.getElementById('user-list');
+            list.innerHTML = '';
+
+            if (users.length === 0) {
+                list.innerHTML = '<tr><td colspan="4">대기 중인 회원이 없습니다.</td></tr>';
+                return;
+            }
+
+            users.forEach(user => {
+                list.innerHTML += `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.nickname}</td>
+                        <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+                        <td>
+                            <button onclick="approveUser('${user.username}')" style="background:green; color:white;">승인</button>
+                            <button onclick="banUser('${user.username}')" style="background:red; color:white;">거절</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+        
+        async function approveUser(username) {
+            await fetch(`${API_ADMIN}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetUsername: username })
+            });
+            alert('승인되었습니다.');
+            loadPendingUsers();
+        }
+
+        async function banUser(username) {
+            if(!confirm('삭제하시겠습니까?')) return;
+            await fetch(`${API_ADMIN}/ban`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetUsername: username })
+            });
+            alert('삭제되었습니다.');
+            loadPendingUsers();
+        }
+    </script>
+</body>
+</html>

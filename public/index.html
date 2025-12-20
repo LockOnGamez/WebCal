@@ -106,23 +106,31 @@
         }
 
         async function login() {
-            const username = document.getElementById('login-id').value;
-            const password = document.getElementById('login-pw').value;
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                localStorage.setItem('username', data.user.username);
-                alert("로그인 성공! " + data.user.nickname + "님 환영합니다.");
-                if (data.user.role === 'admin') {
-                    if(confirm("관리자 페이지로 갈까요?")) { location.href = '/admin.html'; }
-                    else { location.href = '/inventory.html'; }
-                } else { location.href = '/inventory.html'; }
-            } else { alert(data.message); }
+    const username = document.getElementById('login-id').value;
+    const password = document.getElementById('login-pw').value;
+    const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    
+    if (res.ok) {
+        // [수정] 아이디와 닉네임을 각각 저장합니다.
+        localStorage.setItem('username', data.user.username);
+        localStorage.setItem('nickname', data.user.nickname); 
+        
+        alert("로그인 성공! " + data.user.nickname + "님 환영합니다.");
+        
+        if (data.user.role === 'admin') {
+            location.href = '/admin.html';
+        } else {
+            location.href = '/inventory.html';
         }
+    } else {
+        alert(data.message);
+    }
+}
     </script>
 </body>
 </html>

@@ -87,11 +87,12 @@
         const API_URL = '/api/inventory';
         const API_OPT = '/api/options';
         const currentUser = localStorage.getItem('username');
+        const currentNick = localStorage.getItem('nickname');
 
         window.addEventListener('DOMContentLoaded', () => {
             if (!currentUser) { location.href = '/'; return; }
             const userInfoEl = document.getElementById('user-info');
-            if (userInfoEl) { userInfoEl.innerText = `👤 접속자: ${currentUser}님`; }
+            if (userInfoEl) { userInfoEl.innerText = `👤 접속자: ${currentNick||currentUser}님`; }
             initPage();
         });
 
@@ -216,7 +217,7 @@ try{
     await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, size, length, quantity, category, username: currentUser })
+                body: JSON.stringify({ name, size, length, quantity, category, username: currentNick })
             });
             await loadItems();
 }finally{
@@ -230,7 +231,7 @@ try{
             await fetch(`${API_URL}/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ quantity: newQty, username: currentUser })
+                body: JSON.stringify({ quantity: newQty, username: currentNick })
             });
             loadItems();
         }
@@ -247,7 +248,11 @@ function showLoading(show) {
     loader.style.display = show ? 'flex' : 'none';
 }
 
-        function logout() { localStorage.removeItem('username'); location.href = '/'; }
+        function logout() { 
+            localStorage.removeItem('username'); 
+            localStorage.removeItem('nickname'); 
+            location.href = '/'; 
+        }
     </script>
 </body>
 </html>

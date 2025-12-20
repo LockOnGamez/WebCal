@@ -2,86 +2,172 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>🏭 생산/재고 달력</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏭 생산 및 재고 달력</title>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <style>
-        body { padding: 30px; font-family: 'Pretendard', sans-serif; max-width: 1000px; margin: 0 auto; background-color: #f5f5f5; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        #calendar { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        button { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; }
-        .btn-blue { background: #2196F3; color: white; }
+        /* 기본 레이아웃 */
+        body { padding: 10px; font-family: 'Pretendard', sans-serif; background-color: #f5f5f5; margin: 0; }
+        .header { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .header h1 { font-size: 1.5rem; margin: 0; }
+        .nav-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+        
+        #calendar { background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        /* 모달 창 (모바일 대응) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; overflow-y: auto; }
+        .modal-content { 
+            background: white; 
+            width: 95%; 
+            max-width: 550px; 
+            padding: 20px; 
+            margin: 20px auto; 
+            border-radius: 12px; 
+            box-sizing: border-box;
+        }
+
+        /* 입력 폼 가독성 강화 */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+        .form-group select, .form-group input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            font-size: 16px; /* 모바일 아이폰 줌 방지 */
+            box-sizing: border-box;
+        }
+
+        /* 테이블 모바일 가로 스크롤 허용 */
+        .table-container { width: 100%; overflow-x: auto; margin-top: 10px; border: 1px solid #eee; border-radius: 6px; }
+        .item-table { width: 100%; border-collapse: collapse; min-width: 450px; }
+        .item-table th { background: #f8f9fa; padding: 10px; font-size: 13px; }
+        .item-table td { padding: 8px; border-bottom: 1px solid #eee; }
+
+        /* 버튼 스타일 */
+        button { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-blue { background: #2196F3; color: white; width: 100%; margin-top: 10px; }
         .btn-green { background: #4CAF50; color: white; }
         .btn-red { background: #F44336; color: white; }
-        .btn-gray { background: #999; color: white; }
+        .btn-gray { background: #eee; color: #333; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; }
-        .modal-content { background: white; width: 550px; padding: 25px; margin: 5% auto; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
-        .form-group select, .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; }
+        /* 모바일용 플로팅 추가 버튼 (우측 하단) */
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #2196F3;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 999;
+            text-decoration: none;
+            border: none;
+        }
+
+        /* FullCalendar 모바일 높이 조절 */
+        @media (max-width: 600px) {
+            .fc-toolbar-title { font-size: 1.2rem !important; }
+            .fc-button { padding: 4px 8px !important; font-size: 12px !important; }
+        }
+
+        /* --- 달력 요일 및 날짜 색상 커스텀 --- */
+        /* 일요일(0) 날짜 및 요일 빨간색 */
+        .fc-day-sun a {
+            color: #F44336 !important; 
+        }
+        .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion {
+            color: #F44336 !important; 
+        }
+
+        /* 토요일(6) 날짜 및 요일 파란색 */
+        .fc-day-sat a {
+            color: #2196F3 !important; 
+        }
+        .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion {
+            color: #2196F3 !important; 
+        }
         
-        .item-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-        .item-table th { background: #eee; font-size: 0.8em; padding: 5px; }
-        .item-table td { border-bottom: 1px solid #eee; padding: 5px; }
-        .item-table select, .item-table input { width: 100%; border: 1px solid #ccc; padding: 5px; }
-        .section-title { font-size: 1.1em; font-weight: bold; margin-top: 20px; margin-bottom: 5px; border-bottom: 2px solid #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; }
+        /* 오늘 날짜 숫자 강조 */
+        .fc-daygrid-day-number {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🏭 생산 및 재고 달력</h1>
-        <div>
-            <span id="user-display" style="margin-right: 10px; font-weight: bold;"></span>
+        <div class="nav-btns">
+            <span id="user-display" style="font-weight: bold; padding: 5px;"></span>
             <button class="btn-gray" onclick="location.href='/admin.html'">⚙️ 관리자</button>
             <button class="btn-gray" onclick="location.href='/inventory.html'">📦 재고현황</button>
         </div>
     </div>
 
+    <div style="margin-bottom: 10px; display: flex; gap: 10px; font-size: 0.8rem; flex-wrap: wrap;">
+        <span style="display: flex; align-items: center; gap: 3px;"><span style="width: 10px; height: 10px; background: #4CAF50; border-radius: 2px;"></span> 입고</span>
+        <span style="display: flex; align-items: center; gap: 3px;"><span style="width: 10px; height: 10px; background: #F44336; border-radius: 2px;"></span> 출고</span>
+        <span style="display: flex; align-items: center; gap: 3px;"><span style="width: 10px; height: 10px; background: #2196F3; border-radius: 2px;"></span> 생산</span>
+    </div>
+
     <div id="calendar"></div>
+
+    <button class="floating-btn" onclick="openQuickAdd()">+</button>
 
     <div id="eventModal" class="modal">
         <div class="modal-content">
             <h3 id="modal-title">📝 작업 등록</h3>
             <input type="hidden" id="edit-event-id">
+            
             <div class="form-group">
                 <label>날짜</label>
-                <input type="text" id="modal-date" readonly style="background: #eee;">
+                <input type="date" id="modal-date">
             </div>
             
             <div class="form-group">
                 <label>작업 구분</label>
                 <select id="modal-type" onchange="toggleProductionMode()">
-                    <option value="입고">🟢 입고 (구매/반품 등)</option>
-                    <option value="출고">🔴 출고 (판매/폐기 등)</option>
-                    <option value="생산">🔵 생산 (제조)</option>
+                    <option value="입고">🟢 입고</option>
+                    <option value="출고">🔴 출고</option>
+                    <option value="생산">🔵 생산</option>
                 </select>
             </div>
 
-            <div class="section-title">
-                <span id="label-product">📦 대상 품목</span>
-                <button class="btn-green" onclick="addRow('product-tbody')" style="font-size:0.8em;">+ 추가</button>
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                <label id="label-product" style="font-weight:bold;">📦 대상 품목</label>
+                <button class="btn-green" onclick="addRow('product-tbody')" style="padding:5px 10px;">+ 추가</button>
             </div>
-            <table class="item-table">
-                <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
-                <tbody id="product-tbody"></tbody>
-            </table>
-
-            <div id="material-section" style="display:none;">
-                <div class="section-title">
-                    <span>🔨 사용된 원자재 (차감)</span>
-                    <button class="btn-red" onclick="addRow('material-tbody')" style="font-size:0.8em;">+ 추가</button>
-                </div>
+            <div class="table-container">
                 <table class="item-table">
                     <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
-                    <tbody id="material-tbody"></tbody>
+                    <tbody id="product-tbody"></tbody>
                 </table>
             </div>
 
-            <div style="margin-top: 20px; display: flex; justify-content: space-between;">
-                <button id="btn-delete" class="btn-red" onclick="deleteEvent()" style="display:none;">🗑 삭제 (재고복구)</button>
-                <div>
-                    <button class="btn-gray" onclick="closeModal()">취소</button>
-                    <button class="btn-blue" onclick="saveEvent()">💾 저장</button>
+            <div id="material-section" style="display:none; margin-top:20px;">
+                <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <label style="font-weight:bold; color: #F44336;">🔨 소모 원자재</label>
+                    <button class="btn-red" onclick="addRow('material-tbody')" style="padding:5px 10px;">+ 추가</button>
+                </div>
+                <div class="table-container">
+                    <table class="item-table">
+                        <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
+                        <tbody id="material-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-top: 25px; display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-blue" onclick="saveEvent()">💾 저장하기</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-gray" onclick="closeModal()" style="flex:1;">취소</button>
+                    <button id="btn-delete" class="btn-red" onclick="deleteEvent()" style="flex:1; display:none;">🗑 삭제</button>
                 </div>
             </div>
         </div>
@@ -94,10 +180,7 @@
         let dropdownOptions = { items: [], sizes: [], lengths: [] };
         let calendarInstance;
 
-        if (!currentUser) { 
-            alert("로그인이 필요합니다."); 
-            location.href = '/login'; 
-        }
+        if (!currentUser) { location.href = '/'; }
         document.getElementById('user-display').innerText = currentUser + "님";
 
         document.addEventListener('DOMContentLoaded', async function() {
@@ -108,158 +191,136 @@
         async function loadDropdownOptions() {
             try {
                 const res = await fetch(API_OPT);
-                if (!res.ok) throw new Error("옵션 로딩 실패");
                 const data = await res.json();
-                dropdownOptions.items = data.filter(d => d.type === 'itemName' || d.type === 'item' || d.type === '품목').map(d => d.value);
-                dropdownOptions.sizes = data.filter(d => d.type === 'size' || d.type === '사이즈').map(d => d.value);
-                dropdownOptions.lengths = data.filter(d => d.type === 'length' || d.type === '길이').map(d => d.value);
-            } catch (err) {
-                console.error("데이터 로딩 실패:", err);
-            }
+                dropdownOptions.items = data.filter(d => d.type === 'itemName' || d.type === 'item').map(d => d.value);
+                dropdownOptions.sizes = data.filter(d => d.type === 'size').map(d => d.value);
+                dropdownOptions.lengths = data.filter(d => d.type === 'length').map(d => d.value);
+            } catch (err) { console.error(err); }
         }
 
         function initCalendar() {
-    var calendarEl = document.getElementById('calendar');
+    const calendarEl = document.getElementById('calendar');
     
     calendarInstance = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
+        // 1. 모바일/PC 상관없이 기본을 '월간 달력'으로 설정
+        initialView: 'dayGridMonth', 
+        
+        // 2. 헤더 툴바 설정 (모바일에서도 보기 버튼 유지)
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,listMonth' // 월간 달력과 리스트 형태 보기 제공
+        },
+        
         locale: 'ko',
         selectable: true,
-        height: 'auto',
-        // 서버에서 일정을 가져와서 색상을 입히는 핵심 로직
+        height: 'auto', // 내용에 맞게 높이 자동 조절
+        
+        // 일정을 가져와서 색상을 입히는 로직
         events: async function(info, successCallback, failureCallback) {
             try {
                 const res = await fetch(API_URL);
                 if (!res.ok) throw new Error("데이터 로딩 실패");
                 const rawEvents = await res.json();
                 
-                // 서버 데이터를 FullCalendar 형식으로 변환
                 const events = rawEvents.map(event => {
-                    // 1. 작업 구분(type)에 따른 색상 설정
-                    let eventColor = '#999999'; // 기본값 (회색)
-                    if (event.type === '입고') {
-                        eventColor = '#4CAF50'; // 초록색
-                    } else if (event.type === '출고') {
-                        eventColor = '#F44336'; // 빨간색
-                    } else if (event.type === '생산') {
-                        eventColor = '#2196F3'; // 파란색
-                    }
+                    let eventColor = '#999999';
+                    if (event.type === '입고') eventColor = '#4CAF50';
+                    else if (event.type === '출고') eventColor = '#F44336';
+                    else if (event.type === '생산') eventColor = '#2196F3';
 
                     return {
-                        id: event._id,              // 삭제 시 필요한 고유 ID
-                        title: event.title,        // 달력에 표시될 제목
-                        start: event.start,        // 시작 날짜
-                        backgroundColor: eventColor, // 일정 배경색
-                        borderColor: eventColor,     // 일정 테두리색
-                        textColor: '#ffffff',       // 글자색 (흰색)
-                        // 상세 팝업에 넘겨줄 추가 데이터
+                        id: event._id,
+                        title: event.title,
+                        start: event.start,
+                        backgroundColor: eventColor,
+                        borderColor: eventColor,
+                        textColor: '#ffffff',
                         extendedProps: {
                             type: event.type,
-                            items: event.items,
-                            createdBy: event.createdBy
+                            items: event.items
                         }
                     };
                 });
-                
                 successCallback(events);
             } catch (err) {
                 console.error("일정 불러오기 에러:", err);
                 failureCallback(err);
             }
         },
-        // 날짜 빈 칸 클릭 시 호출 (새 일정 등록)
+        
+        // 날짜 클릭 시 새 일정 등록
         select: function(info) {
             openModal(info.startStr, null);
         },
-        // 등록된 일정 클릭 시 호출 (상세보기/수정/삭제)
+        
+        // 등록된 일정 클릭 시 상세보기/수정
         eventClick: function(info) {
             openModal(info.event.startStr, info.event);
+        },
+
+        // 3. [수정] 화면 크기가 변해도 뷰를 강제로 바꾸지 않도록 설정
+        windowResize: function(view) {
+            // 강제 뷰 전환 로직 삭제
         }
     });
 
     calendarInstance.render();
 }
 
-        // calendar.html 내의 openModal 함수를 아래 내용으로 교체하세요.
-function openModal(dateStr, event) {
-    // 기초 초기화
-    document.getElementById('modal-date').value = dateStr.split('T')[0];
-    document.getElementById('product-tbody').innerHTML = '';
-    document.getElementById('material-tbody').innerHTML = '';
-    
-    if (event) {
-        // [핵심 수정] FullCalendar의 event.id 값을 hidden input에 저장
-        // FullCalendar v6는 기본적으로 DB의 _id를 event.id로 가져옵니다.
-        document.getElementById('edit-event-id').value = event.id; 
-        
-        document.getElementById('modal-title').innerText = "📝 작업 수정";
-        document.getElementById('btn-delete').style.display = 'inline-block';
-        
-        const props = event.extendedProps; // 상세 데이터가 담긴 곳
-        document.getElementById('modal-type').value = props.type;
-        
-        // 서버 스키마 구조인 'items' 배열을 순회하며 테이블에 배정
-        if (props.items && Array.isArray(props.items)) {
-            props.items.forEach(item => {
-                if (item.role === 'material') {
-                    addRow('material-tbody', item);
-                } else {
-                    addRow('product-tbody', item);
-                }
-            });
+        function openQuickAdd() {
+            const today = new Date().toISOString().split('T')[0];
+            openModal(today, null);
         }
-    } else {
-        // 신규 등록 모드
-        document.getElementById('edit-event-id').value = '';
-        document.getElementById('modal-title').innerText = "📝 새 작업 등록";
-        document.getElementById('btn-delete').style.display = 'none';
-        document.getElementById('modal-type').value = '입고';
-        addRow('product-tbody'); 
-    }
-    
-    toggleProductionMode();
-    document.getElementById('eventModal').style.display = 'block';
-}
 
-        function closeModal() {
-            document.getElementById('eventModal').style.display = 'none';
+        function openModal(dateStr, event) {
+            document.getElementById('modal-date').value = dateStr.split('T')[0];
+            document.getElementById('product-tbody').innerHTML = '';
+            document.getElementById('material-tbody').innerHTML = '';
+            
+            if (event) {
+                document.getElementById('edit-event-id').value = event.id;
+                document.getElementById('modal-title').innerText = "📝 작업 수정";
+                document.getElementById('btn-delete').style.display = 'inline-block';
+                const props = event.extendedProps;
+                document.getElementById('modal-type').value = props.type;
+                if (props.items) {
+                    props.items.forEach(item => {
+                        const target = item.role === 'material' ? 'material-tbody' : 'product-tbody';
+                        addRow(target, item);
+                    });
+                }
+            } else {
+                document.getElementById('edit-event-id').value = '';
+                document.getElementById('modal-title').innerText = "📝 새 작업 등록";
+                document.getElementById('btn-delete').style.display = 'none';
+                addRow('product-tbody'); 
+            }
+            toggleProductionMode();
+            document.getElementById('eventModal').style.display = 'block';
         }
+
+        function closeModal() { document.getElementById('eventModal').style.display = 'none'; }
 
         function toggleProductionMode() {
             const type = document.getElementById('modal-type').value;
-            const matSection = document.getElementById('material-section');
-            const labelProduct = document.getElementById('label-product');
-
-            if (type === '생산') {
-                matSection.style.display = 'block';
-                labelProduct.innerText = "📦 생산된 제품 (입고)";
-            } else {
-                matSection.style.display = 'none';
-                labelProduct.innerText = type === '입고' ? "📦 입고할 품목" : "📦 출고할 품목";
-            }
+            document.getElementById('material-section').style.display = (type === '생산') ? 'block' : 'none';
         }
 
         function addRow(tbodyId, data = null) {
             const tbody = document.getElementById(tbodyId);
             const tr = document.createElement('tr');
-            
             const createOpts = (list, selectedVal) => {
                 let html = '<option value="">선택</option>';
-                if(list && list.length > 0) {
-                    list.forEach(v => {
-                        const selected = (String(v) === String(selectedVal)) ? 'selected' : '';
-                        html += `<option value="${v}" ${selected}>${v}</option>`;
-                    });
-                }
+                list.forEach(v => html += `<option value="${v}" ${String(v)===String(selectedVal)?'selected':''}>${v}</option>`);
                 return html;
             };
-
             tr.innerHTML = `
                 <td><select class="input-name">${createOpts(dropdownOptions.items, data?.name)}</select></td>
                 <td><select class="input-size">${createOpts(dropdownOptions.sizes, data?.size)}</select></td>
                 <td><select class="input-length">${createOpts(dropdownOptions.lengths, data?.length)}</select></td>
                 <td><input type="number" class="input-qty" value="${data?.quantity || 1}" style="width:50px;"></td>
-                <td><button onclick="this.closest('tr').remove()" style="background: #eee; border:none;">x</button></td>
+                <td><button onclick="this.closest('tr').remove()">❌</button></td>
             `;
             tbody.appendChild(tr);
         }
@@ -268,73 +329,31 @@ function openModal(dateStr, event) {
             const id = document.getElementById('edit-event-id').value;
             const type = document.getElementById('modal-type').value;
             const date = document.getElementById('modal-date').value;
-
-            const getItems = (tbodyId) => {
-                const rows = document.querySelectorAll(`#${tbodyId} tr`);
-                const arr = [];
-                rows.forEach(tr => {
-                    const name = tr.querySelector('.input-name').value;
-                    const size = tr.querySelector('.input-size').value;
-                    const length = tr.querySelector('.input-length').value;
-                    const qty = tr.querySelector('.input-qty').value;
-                    if(name && qty) {
-                        arr.push({ name, size, length, quantity: Number(qty) });
-                    }
-                });
-                return arr;
-            };
+            const getItems = (id) => Array.from(document.querySelectorAll(`#${id} tr`)).map(tr => ({
+                name: tr.querySelector('.input-name').value,
+                size: tr.querySelector('.input-size').value,
+                length: tr.querySelector('.input-length').value,
+                quantity: Number(tr.querySelector('.input-qty').value)
+            })).filter(i => i.name);
 
             const products = getItems('product-tbody');
             const materials = type === '생산' ? getItems('material-tbody') : [];
+            if(!products.length) return alert("품목을 선택하세요.");
 
-            if(products.length === 0) return alert("최소 하나의 품목이 필요합니다.");
-
-            const payload = {
-                start: date, type, username: currentUser,
-                products, materials
-            };
-
-            const method = id ? 'PUT' : 'POST';
             const url = id ? `${API_URL}/${id}` : API_URL;
-
-            try {
-                const res = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if(res.ok) {
-                    alert("저장되었습니다.");
-                    closeModal();
-                    calendarInstance.refetchEvents();
-                } else {
-                    const d = await res.json();
-                    alert("오류: " + (d.message || "저장 중 에러 발생"));
-                }
-            } catch(e) {
-                alert("서버 통신 오류");
-            }
+            const res = await fetch(url, {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ start: date, type, username: currentUser, products, materials })
+            });
+            if(res.ok) { closeModal(); calendarInstance.refetchEvents(); }
         }
 
         async function deleteEvent() {
+            if(!confirm("삭제하시겠습니까?")) return;
             const id = document.getElementById('edit-event-id').value;
-            if(!id) return alert("삭제할 일정 ID가 없습니다.");
-            if(!confirm("정말 삭제하시겠습니까?\n(관련된 재고 수량이 취소됩니다)")) return;
-
-            try {
-                const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-                if(res.ok) {
-                    alert("삭제 및 재고 복구 완료");
-                    closeModal();
-                    calendarInstance.refetchEvents();
-                } else {
-                    const d = await res.json();
-                    alert("삭제 실패: " + d.message);
-                }
-            } catch(e) {
-                alert("서버와 통신 중 에러가 발생했습니다.");
-            }
+            const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            if(res.ok) { closeModal(); calendarInstance.refetchEvents(); }
         }
     </script>
 </body>

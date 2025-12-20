@@ -8,23 +8,30 @@ const CACHE_KEY = "cache:inventory";
 // 1. 재고 목록 조회 (Redis 우선)
 router.get("/", async (req, res) => {
   try {
-    // (1) Redis 확인
-    const cachedData = await redisClient.get(CACHE_KEY);
+    // 1) Redis 확인
+    let cachedData = await redisClient.get("cache:inventory");
+
     if (cachedData) {
-      // 캐시에 있으면 그거 바로 리턴 (DB 안감 -> 엄청 빠름)
-      console.log("⚡ Redis에서 조회");
-      return res.json(JSON.parse(cachedData));
+      // 캐시 데이터가 유효한 JSON인지 확인 후 반환
+      try {
+        const parsed = JSON.parse(cachedData);
+        console.log("⚡ Redis 캐시 조회 성공");
+        return res.json(parsed);
+      } catch (parseErr) {
+        console.error("❌ 캐시 데이터 파싱 에러, DB로 전환");
+      }
     }
 
-    // (2) 없으면 DB 조회
-    console.log("🐢 DB에서 조회");
-    const items = await Item.find().sort({ createdAt: -1 });
+    // 2) 캐시가 없거나 오류 시 DB 조회
+    console.log("🐢 DB 직접 조회 중...");
+    const items = await Item.find().sort({ updatedAt: -1 });
 
-    // (3) 조회한거 Redis에 저장 (다음 사람을 위해)
-    await redisClient.set(CACHE_KEY, JSON.stringify(items));
+    // 3) 조회한 데이터를 다시 캐싱 (복구 작업)
+    await redisClient.set("cache:inventory", JSON.stringify(items));
 
     res.json(items);
   } catch (err) {
+    console.error("재고 조회 에러:", err);
     res.status(500).json({ error: err.message });
   }
 });

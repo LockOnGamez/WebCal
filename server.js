@@ -110,26 +110,29 @@ const Item = require("./models/Item");
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, async () => {
-  console.log(`🚀 서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
-
+  console.log(`🚀 서버 실행 중: http://localhost:${PORT}`);
   try {
     if (!redisClient.isOpen) await redisClient.connect();
 
-    // 1) Redis 완전 초기화
-    await redisClient.flushDb();
-    console.log("🧹 Redis 데이터 초기화 완료");
+    // [중요 수정] flushDb()는 세션을 포함한 모든 데이터를 지웁니다.
+    // 운영 중에는 절대 사용하지 마세요. 대신 특정 캐시만 삭제합니다.
+    await redisClient.del("cache:inventory");
+    await redisClient.del("cache:options");
+    console.log("🧹 기존 재고/옵션 캐시만 초기화 완료");
 
-    // 2) [추가] 관리자 설정 옵션 캐시 예열 (이게 있어야 일반 유저에게 보입니다)
-    const Option = require("./models/Option"); // Option 모델 불러오기
+    // DB 데이터 예열 (Warm-up)
+    const Item = require("./models/Item");
+    const items = await Item.find().sort({ updatedAt: -1 });
+    await redisClient.set("cache:inventory", JSON.stringify(items));
+
+    const Option = require("./models/Option");
     const options = await Option.find();
     await redisClient.set("cache:options", JSON.stringify(options));
-    console.log(`⚙️ 옵션 예열 완료: ${options.length}개의 설정 로딩됨`);
 
-    // 3) 기존 재고 캐시 예열
-    const items = await Item.find().sort({ createdAt: -1 });
-    await redisClient.set("cache:inventory", JSON.stringify(items));
-    console.log(`🔥 재고 예열 완료: ${items.length}개 로딩됨`);
+    console.log(
+      `🔥 데이터 예열 완료: 재고 ${items.length}개, 옵션 ${options.length}개`
+    );
   } catch (e) {
-    console.error("서버 초기 설정 중 오류 발생:", e);
+    console.error("초기화 중 오류:", e);
   }
 });

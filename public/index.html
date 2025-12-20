@@ -2,32 +2,87 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>시스템 로그인</title>
     <style>
-        body { padding: 50px; font-family: sans-serif; text-align: center; }
-        input { padding: 10px; margin: 5px; width: 200px; }
-        button { padding: 10px 20px; cursor: pointer; }
+        body { 
+            padding: 20px; 
+            font-family: 'Pretendard', sans-serif; 
+            text-align: center; 
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+            width: 90%;
+            box-sizing: border-box;
+        }
+        h1 { font-size: 1.5rem; color: #333; margin-bottom: 30px; }
+        h3 { margin-top: 0; color: #555; }
+        input { 
+            padding: 15px; 
+            margin: 8px 0; 
+            width: 100%; 
+            box-sizing: border-box; 
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px; /* 아이폰 줌 방지 */
+        }
+        button { 
+            padding: 15px; 
+            width: 100%;
+            cursor: pointer; 
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .toggle-btn {
+            background: none;
+            color: #2196F3;
+            padding: 5px;
+            font-size: 14px;
+            text-decoration: underline;
+            width: auto;
+            margin-top: 0;
+        }
         .hidden { display: none; }
     </style>
 </head>
 <body>
     <h1>🔒 시스템 접근</h1>
 
-    <div id="login-box">
+    <div id="login-box" class="container">
         <h3>로그인</h3>
-        <input type="text" id="login-id" placeholder="아이디"><br>
-        <input type="password" id="login-pw" placeholder="비밀번호"><br><br>
+        <input type="text" id="login-id" placeholder="아이디">
+        <input type="password" id="login-pw" placeholder="비밀번호">
         <button onclick="login()">로그인</button>
-        <p>계정이 없으신가요? <button onclick="toggleView()">회원가입 신청</button></p>
+        <p style="font-size: 14px; color: #666; margin-top: 20px;">
+            계정이 없으신가요? <button class="toggle-btn" onclick="toggleView()">회원가입 신청</button>
+        </p>
     </div>
 
-    <div id="register-box" class="hidden">
+    <div id="register-box" class="container hidden">
         <h3>회원가입 신청</h3>
-        <input type="text" id="reg-id" placeholder="아이디"><br>
-        <input type="password" id="reg-pw" placeholder="비밀번호"><br>
-        <input type="text" id="reg-nick" placeholder="닉네임"><br><br>
+        <input type="text" id="reg-id" placeholder="아이디">
+        <input type="password" id="reg-pw" placeholder="비밀번호">
+        <input type="text" id="reg-nick" placeholder="닉네임">
         <button onclick="register()">신청하기</button>
-        <p>이미 계정이 있으신가요? <button onclick="toggleView()">로그인 하러가기</button></p>
+        <p style="font-size: 14px; color: #666; margin-top: 20px;">
+            이미 계정이 있으신가요? <button class="toggle-btn" onclick="toggleView()">로그인 하러가기</button>
+        </p>
     </div>
 
     <script>
@@ -36,12 +91,10 @@
             document.getElementById('register-box').classList.toggle('hidden');
         }
 
-        // 1. 회원가입 신청
         async function register() {
             const username = document.getElementById('reg-id').value;
             const password = document.getElementById('reg-pw').value;
             const nickname = document.getElementById('reg-nick').value;
-
             const res = await fetch('/api/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -49,43 +102,27 @@
             });
             const data = await res.json();
             alert(data.message);
-            if (res.ok) toggleView(); // 성공 시 로그인 화면으로
+            if (res.ok) toggleView();
         }
 
-        // 2. 로그인
         async function login() {
-    const username = document.getElementById('login-id').value;
-    const password = document.getElementById('login-pw').value;
-
-    const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-    const data = await res.json();
-
-    if (res.ok) {
-        // [추가된 부분] 로그인한 사람 아이디를 브라우저에 저장
-        localStorage.setItem('username', data.user.username); // ★ 이 줄 추가!
-        
-        alert("로그인 성공! " + data.user.nickname + "님 환영합니다.");
-        
-        // 관리자면 관리자페이지, 아니면 재고관리 페이지로 이동
-        if (data.user.role === 'admin') {
-            // 관리자도 재고관리는 봐야 하니 일단 선택권을 주거나 재고페이지로 보냅니다.
-            // 여기서는 테스트를 위해 바로 재고 페이지로 보내볼게요.
-            if(confirm("관리자 페이지로 갈까요? (취소 누르면 재고관리로 이동)")) {
-                location.href = '/admin.html';
-            } else {
-                location.href = '/inventory.html';
-            }
-        } else {
-            location.href = '/inventory.html'; // 일반 유저는 바로 재고관리로
+            const username = document.getElementById('login-id').value;
+            const password = document.getElementById('login-pw').value;
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('username', data.user.username);
+                alert("로그인 성공! " + data.user.nickname + "님 환영합니다.");
+                if (data.user.role === 'admin') {
+                    if(confirm("관리자 페이지로 갈까요?")) { location.href = '/admin.html'; }
+                    else { location.href = '/inventory.html'; }
+                } else { location.href = '/inventory.html'; }
+            } else { alert(data.message); }
         }
-    } else {
-        alert(data.message);
-    }
-}
     </script>
 </body>
 </html>

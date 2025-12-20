@@ -3,84 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>📦 재고 관리 (드롭다운형)</title>
+    <title>📦 재고 관리 시스템</title>
     <style>
-        /* 기존 스타일 유지 */
         body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: #f8f9fa; margin: 0; color: #333; }
-        h1 { font-size: 1.4rem; margin: 0; }
-        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .nav-btns { display: flex; gap: 8px; }
-        .btn-nav { padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; text-decoration: none; }
-        .btn-blue { background: #2196F3; color: white; }
-        .btn-gray { background: #ffffff; border: 1px solid #ddd; }
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .input-box { background: white; padding: 18px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e9ecef; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .input-box h3 { margin: 0 0 15px 0; font-size: 1rem; color: #495057; display: flex; align-items: center; gap: 5px; }
         .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (min-width: 768px) { .input-grid { grid-template-columns: repeat(5, 1fr); } }
         
-        /* 핵심 수정: input 대신 select 사용 */
-        .input-grid select, .input-grid input { 
-            width: 100%; 
-            padding: 12px; 
-            border: 1px solid #dee2e6; 
-            border-radius: 8px; 
-            font-size: 15px; 
-            box-sizing: border-box; 
-            background-color: #fff;
-        }
-        .full-width { grid-column: span 2; }
-        .btn-submit { background: #343a40; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        /* 테이블 스타일 강화 */
+        .pc-table { width: 100%; border-collapse: collapse; display: none; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        @media (min-width: 768px) { .pc-table { display: table; } }
+        .pc-table th { background: #333; color: white; padding: 12px; font-size: 14px; }
+        .pc-table td { padding: 12px; text-align: center; vertical-align: middle; }
 
-        /* 리스트 및 카드 스타일 (이전과 동일) */
-        .pc-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; display: none; }
-        .pc-table th { background: #f1f3f5; padding: 15px; font-size: 14px; border-bottom: 2px solid #dee2e6; }
-        .pc-table td { padding: 15px; text-align: center; border-bottom: 1px solid #eee; }
-        .mobile-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #e9ecef; display: block; }
-        .qty-control { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; padding: 8px 15px; border-radius: 10px; }
-        .qty-btn { width: 40px; height: 40px; border: none; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer; }
-        .btn-dec { background: #ff9f43; color: white; }
-        .btn-inc { background: #28c76f; color: white; }
-        .btn-del-card { background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 8px; }
+        /* 가시성 강화를 위한 배지 스타일 */
+        .category-badge { color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.85em; font-weight: bold; }
+        
+        .mobile-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        @media (min-width: 768px) { .mobile-card { display: none; } }
 
-        @media (min-width: 768px) {
-            .pc-table { display: table; }
-            .mobile-card { display: none; }
-            .input-grid { grid-template-columns: repeat(5, 1fr); }
-            .full-width { grid-column: auto; }
-            .btn-submit { margin-top: 0; }
-        }
+        /* 수량 조절 버튼 및 텍스트 가시성 */
+        .qty-wrapper { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .qty-text { font-size: 1.2rem; font-weight: 800; color: #000; min-width: 35px; }
+        .qty-btn { width: 32px; height: 32px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 18px; }
+        .btn-dec { background: #ff9800; color: white; }
+        .btn-inc { background: #4CAF50; color: white; }
+        .btn-del-card { background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="header-box">
         <h1>📦 재고 관리</h1>
-        <div class="nav-btns">
-            <button class="btn-nav btn-blue" onclick="location.href='/calendar.html'">📅 달력</button>
-            <button class="btn-nav btn-gray" onclick="logout()">로그아웃</button>
+        <div>
+            <button onclick="location.href='/calendar.html'" style="padding:8px 15px; background:#2196F3; color:white; border:none; border-radius:5px; cursor:pointer;">📅 달력</button>
+            <button onclick="logout()" style="padding:8px 15px; background:white; border:1px solid #ccc; border-radius:5px; cursor:pointer;">로그아웃</button>
         </div>
     </div>
 
     <div class="input-box">
-        <h3>➕ 새 물품 등록 (설정값 선택)</h3>
-        <div class="input-grid">
-            <select id="new-name" class="full-width"><option value="">품목 선택</option></select>
-            <select id="new-size"><option value="">사이즈 선택</option></select>
-            <select id="new-length"><option value="">길이 선택</option></select>
-            <input type="number" id="new-qty" value="0" placeholder="초기수량">
-            <select id="new-category">
-                <option value="기타">카테고리</option>
-                <option value="원자재">원자재</option>
-                <option value="완제품">완제품</option>
-            </select>
-            <button class="btn-submit full-width" onclick="addItem()">물품 등록하기</button>
-        </div>
+    <h3 style="margin-top:0; margin-bottom:20px; font-size:18px; color:#333; display:flex; align-items:center; gap:8px;">
+        <span style="color:#2196F3;">●</span> 새 물품 등록
+    </h3>
+    <div class="input-grid">
+        <select id="new-name" required>
+            <option value="" disabled selected hidden>📦 품목 선택</option>
+        </select>
+        <select id="new-size" required>
+            <option value="" disabled selected hidden>📐 사이즈 선택</option>
+        </select>
+        <select id="new-length" required>
+            <option value="" disabled selected hidden>📏 길이 선택</option>
+        </select>
+        <input type="number" id="new-qty" value="0" placeholder="수량">
+        <select id="new-category">
+            <option value="완제품">🟢 완제품</option>
+            <option value="원자재">🔵 원자재</option>
+            <option value="기타">⚪ 기타</option>
+        </select>
+        <button class="btn-submit" onclick="addItem()">등록하기</button>
     </div>
+</div>
 
-    <div id="user-info" style="margin-bottom: 10px; font-size: 14px; font-weight: bold; color: #666;"></div>
+    <div id="user-info" style="margin-bottom: 15px; font-weight: bold; color: #666;"></div>
 
     <div class="inventory-container">
         <table class="pc-table">
             <thead>
-                <tr><th>카테고리</th><th>품목명</th><th>사이즈</th><th>길이</th><th>수량</th><th>관리</th></tr>
+                <tr>
+                    <th>카테고리</th><th>품목명</th><th>사이즈</th><th>길이</th><th>수량</th><th>관리</th>
+                </tr>
             </thead>
             <tbody id="pc-list"></tbody>
         </table>
@@ -89,106 +81,135 @@
 
     <script>
         const API_URL = '/api/inventory';
-        const API_OPT = '/api/options'; // 옵션 데이터를 가져올 경로
+        const API_OPT = '/api/options';
         const currentUser = localStorage.getItem('username');
 
-        if (!currentUser) { location.href = '/'; }
-        document.getElementById('user-info').innerText = `👤 접속자: ${currentUser}님`;
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!currentUser) { location.href = '/'; return; }
+            const userInfoEl = document.getElementById('user-info');
+            if (userInfoEl) { userInfoEl.innerText = `👤 접속자: ${currentUser}님`; }
+            initPage();
+        });
 
-        // 페이지 로드 시 옵션과 리스트를 함께 불러옴
-        window.onload = async function() {
+        async function initPage() {
             await loadOptions();
             await loadItems();
-        };
-
-        // 1. 관리자 설정에서 등록한 옵션들(품목, 사이즈, 길이)을 불러와 드롭다운에 삽입
-        async function loadOptions() {
-            try {
-                const res = await fetch(API_OPT);
-                const options = await res.json();
-                
-                const nameSelect = document.getElementById('new-name');
-                const sizeSelect = document.getElementById('new-size');
-                const lenSelect = document.getElementById('new-length');
-
-                options.forEach(opt => {
-                    const el = document.createElement('option');
-                    el.value = opt.value;
-                    el.innerText = opt.value;
-
-                    if (opt.type === 'itemName' || opt.type === 'item') nameSelect.appendChild(el);
-                    else if (opt.type === 'size') sizeSelect.appendChild(el.cloneNode(true));
-                    else if (opt.type === 'length') lenSelect.appendChild(el.cloneNode(true));
-                });
-            } catch (err) { console.error("옵션 로드 실패:", err); }
         }
 
-        items.forEach(item => {
-    // 카테고리별 배경색 결정
-    let bgColor = '';
-    if (item.category === '원자재') {
-        bgColor = '#e3f2fd'; // 연한 하늘색
-    } else if (item.category === '완제품') {
-        bgColor = '#e8f5e9'; // 연한 초록색
-    }
+        async function loadOptions() {
+    try {
+        const res = await fetch(API_OPT);
+        const options = await res.json();
+        
+        const nameSel = document.getElementById('new-name');
+        const sizeSel = document.getElementById('new-size');
+        const lenSel = document.getElementById('new-length');
 
-    // 1. PC용 테이블 행 생성 (배경색 적용)
-    const tr = document.createElement('tr');
-    tr.style.backgroundColor = bgColor; // 배경색 입히기
-    tr.innerHTML = `
-        <td style="font-weight:bold;">${item.category}</td>
-        <td style="font-weight:bold;">${item.name}</td>
-        <td>${item.size}</td>
-        <td>${item.length}</td>
-        <td>
-            <button class="qty-btn btn-dec" style="width:25px; height:25px; font-size:14px;" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
-            <b style="margin:0 10px">${item.quantity}</b>
-            <button class="qty-btn btn-inc" style="width:25px; height:25px; font-size:14px;" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
-        </td>
-        <td><button onclick="deleteItem('${item._id}')" class="btn-del-card">삭제</button></td>
-    `;
-    pcList.appendChild(tr);
+        // [중요] 초기화할 때 제목은 남겨두고 데이터만 붙여넣습니다.
+        // innerHTML = '...' 이 부분을 아래와 같이 첫 줄만 남기도록 수정하세요.
+        nameSel.innerHTML = '<option value="" disabled selected hidden>📦 품목 선택</option>';
+        sizeSel.innerHTML = '<option value="" disabled selected hidden>📏 사이즈 선택</option>';
+        lenSel.innerHTML = '<option value="" disabled selected hidden>📐 길이 선택</option>';
 
-    // 2. 모바일용 카드 생성 (배경색 적용)
-    const card = document.createElement('div');
-    card.className = 'mobile-card';
-    card.style.backgroundColor = bgColor; // 배경색 입히기
-    card.innerHTML = `
-        <div style="display:flex; justify-content:space-between;">
-            <b style="font-size:1.1rem;">${item.name}</b>
-            <span style="font-size:12px; font-weight:bold;">${item.category}</span>
-        </div>
-        <div style="margin:8px 0; color:#444; font-size:14px;">규격: ${item.size} / ${item.length}</div>
-        <div class="qty-control">
-            <button class="qty-btn btn-dec" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
-            <span style="font-size:1.2rem; font-weight:bold;">${item.quantity}</span>
-            <button class="qty-btn btn-inc" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
-            <button onclick="deleteItem('${item._id}')" class="btn-del-card" style="margin-left:10px">삭제</button>
-        </div>
-    `;
-    mobileList.appendChild(card);
-});
+        options.forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt.value; 
+            o.innerText = opt.value;
+            if (opt.type === 'itemName') nameSel.appendChild(o);
+            else if (opt.type === 'size') sizeSel.appendChild(o.cloneNode(true));
+            else if (opt.type === 'length') lenSel.appendChild(o.cloneNode(true));
+        });
+    } catch (e) { console.error(e); }
+}
+
+        // --- 수정된 loadItems 함수 ---
+        async function loadItems() {
+            try {
+                const res = await fetch(API_URL);
+                const items = await res.json();
+                
+                const pcList = document.getElementById('pc-list');
+                const mobileList = document.getElementById('mobile-list');
+                pcList.innerHTML = '';
+                mobileList.innerHTML = '';
+
+                items.forEach(item => {
+                    // 가시성을 높인 배경색 설정
+                    let bgColor = '#ffffff'; 
+                    let badgeColor = '#999'; 
+
+                    if (item.category === '원자재') {
+                        bgColor = '#D1E9FF'; // 명확한 하늘색
+                        badgeColor = '#007bff';
+                    } else if (item.category === '완제품') {
+                        bgColor = '#D4F1D8'; // 명확한 연초록
+                        badgeColor = '#28a745';
+                    }
+
+                    // 1. PC용 테이블 렌더링
+                    const tr = document.createElement('tr');
+                    tr.style.backgroundColor = bgColor;
+                    tr.style.borderBottom = '2px solid rgba(0,0,0,0.05)';
+                    
+                    tr.innerHTML = `
+                        <td><span class="category-badge" style="background:${badgeColor}">${item.category}</span></td>
+                        <td style="font-weight:bold; font-size:1.1em;">${item.name}</td>
+                        <td style="font-weight:500;">${item.size || '-'}</td>
+                        <td style="font-weight:500;">${item.length || '-'}</td>
+                        <td>
+                            <div class="qty-wrapper">
+                                <button class="qty-btn btn-dec" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
+                                <span class="qty-text">${item.quantity}</span>
+                                <button class="qty-btn btn-inc" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
+                            </div>
+                        </td>
+                        <td><button onclick="deleteItem('${item._id}')" class="btn-del-card">삭제</button></td>
+                    `;
+                    pcList.appendChild(tr);
+
+                    // 2. 모바일용 카드 렌더링
+                    const card = document.createElement('div');
+                    card.className = 'mobile-card';
+                    card.style.backgroundColor = bgColor;
+                    card.style.borderLeft = `6px solid ${badgeColor}`;
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <b style="font-size:1.1rem;">${item.name}</b>
+                            <span class="category-badge" style="background:${badgeColor}">${item.category}</span>
+                        </div>
+                        <div style="font-size:14px; color:#333; margin-bottom:10px; font-weight:500;">규격: ${item.size} / ${item.length}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="qty-wrapper">
+                                <button class="qty-btn btn-dec" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
+                                <b class="qty-text">${item.quantity}</b>
+                                <button class="qty-btn btn-inc" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
+                            </div>
+                            <button onclick="deleteItem('${item._id}')" class="btn-del-card">삭제</button>
+                        </div>
+                    `;
+                    mobileList.appendChild(card);
+                });
+            } catch (err) { 
+                console.error(err);
+                alert("재고 로드 실패"); 
+            }
+        }
 
         async function addItem() {
             const name = document.getElementById('new-name').value;
-            const size = document.getElementById('new-size').value || "-";
-            const length = document.getElementById('new-length').value || "-";
-            const quantity = Number(document.getElementById('new-qty').value);
+            const size = document.getElementById('new-size').value;
+            const length = document.getElementById('new-length').value;
+            const quantity = document.getElementById('new-qty').value;
             const category = document.getElementById('new-category').value;
 
-            if(!name) return alert("품목을 선택해 주세요.");
+            if(!name) return alert("품목을 선택해주세요.");
 
-            const res = await fetch(API_URL, {
+            await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, size, length, quantity, category, username: currentUser })
             });
-
-            if(res.ok) {
-                // 입력 필드 초기화
-                document.getElementById('new-qty').value = 0;
-                loadItems();
-            }
+            loadItems();
         }
 
         async function updateStock(id, newQty) {
@@ -202,7 +223,7 @@
         }
 
         async function deleteItem(id) {
-            if(!confirm("재고 목록에서 삭제하시겠습니까?")) return;
+            if(!confirm("삭제하시겠습니까?")) return;
             await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
             loadItems();
         }

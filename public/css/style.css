@@ -128,3 +128,18 @@
 .btn-submit:active {
     transform: translateY(-1px);
 }
+
+/* 로딩 스피너 디자인 */
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #e0e0e0;
+    border-top: 5px solid #2196F3; /* 포인트 컬러 */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

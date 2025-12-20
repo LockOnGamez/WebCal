@@ -123,52 +123,51 @@
             } catch (err) { console.error("옵션 로드 실패:", err); }
         }
 
-        async function loadItems() {
-            try {
-                const res = await fetch(API_URL);
-                const items = await res.json();
-                const pcList = document.getElementById('pc-list');
-                const mobileList = document.getElementById('mobile-list');
-                pcList.innerHTML = '';
-                mobileList.innerHTML = '';
+        items.forEach(item => {
+    // 카테고리별 배경색 결정
+    let bgColor = '';
+    if (item.category === '원자재') {
+        bgColor = '#e3f2fd'; // 연한 하늘색
+    } else if (item.category === '완제품') {
+        bgColor = '#e8f5e9'; // 연한 초록색
+    }
 
-                items.forEach(item => {
-                    // PC 테이블용
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${item.category}</td>
-                        <td style="font-weight:bold;">${item.name}</td>
-                        <td>${item.size}</td>
-                        <td>${item.length}</td>
-                        <td>
-                            <button class="qty-btn btn-dec" style="width:25px; height:25px; font-size:14px;" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
-                            <b style="margin:0 10px">${item.quantity}</b>
-                            <button class="qty-btn btn-inc" style="width:25px; height:25px; font-size:14px;" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
-                        </td>
-                        <td><button onclick="deleteItem('${item._id}')" class="btn-del-card">삭제</button></td>
-                    `;
-                    pcList.appendChild(tr);
+    // 1. PC용 테이블 행 생성 (배경색 적용)
+    const tr = document.createElement('tr');
+    tr.style.backgroundColor = bgColor; // 배경색 입히기
+    tr.innerHTML = `
+        <td style="font-weight:bold;">${item.category}</td>
+        <td style="font-weight:bold;">${item.name}</td>
+        <td>${item.size}</td>
+        <td>${item.length}</td>
+        <td>
+            <button class="qty-btn btn-dec" style="width:25px; height:25px; font-size:14px;" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
+            <b style="margin:0 10px">${item.quantity}</b>
+            <button class="qty-btn btn-inc" style="width:25px; height:25px; font-size:14px;" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
+        </td>
+        <td><button onclick="deleteItem('${item._id}')" class="btn-del-card">삭제</button></td>
+    `;
+    pcList.appendChild(tr);
 
-                    // 모바일 카드용
-                    const card = document.createElement('div');
-                    card.className = 'mobile-card';
-                    card.innerHTML = `
-                        <div style="display:flex; justify-content:space-between;">
-                            <b style="font-size:1.1rem;">${item.name}</b>
-                            <span style="font-size:12px; color:#666;">${item.category}</span>
-                        </div>
-                        <div style="margin:8px 0; color:#666; font-size:14px;">규격: ${item.size} / ${item.length}</div>
-                        <div class="qty-control">
-                            <button class="qty-btn btn-dec" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
-                            <span style="font-size:1.2rem; font-weight:bold;">${item.quantity}</span>
-                            <button class="qty-btn btn-inc" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
-                            <button onclick="deleteItem('${item._id}')" class="btn-del-card">삭제</button>
-                        </div>
-                    `;
-                    mobileList.appendChild(card);
-                });
-            } catch (err) { console.error(err); }
-        }
+    // 2. 모바일용 카드 생성 (배경색 적용)
+    const card = document.createElement('div');
+    card.className = 'mobile-card';
+    card.style.backgroundColor = bgColor; // 배경색 입히기
+    card.innerHTML = `
+        <div style="display:flex; justify-content:space-between;">
+            <b style="font-size:1.1rem;">${item.name}</b>
+            <span style="font-size:12px; font-weight:bold;">${item.category}</span>
+        </div>
+        <div style="margin:8px 0; color:#444; font-size:14px;">규격: ${item.size} / ${item.length}</div>
+        <div class="qty-control">
+            <button class="qty-btn btn-dec" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
+            <span style="font-size:1.2rem; font-weight:bold;">${item.quantity}</span>
+            <button class="qty-btn btn-inc" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
+            <button onclick="deleteItem('${item._id}')" class="btn-del-card" style="margin-left:10px">삭제</button>
+        </div>
+    `;
+    mobileList.appendChild(card);
+});
 
         async function addItem() {
             const name = document.getElementById('new-name').value;

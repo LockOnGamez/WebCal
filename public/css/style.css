@@ -1,0 +1,23 @@
+.floating-btn {
+  position: fixed; /* 화면에 고정 */
+  bottom: 20px;    /* 바닥에서 20px 띄움 */
+  right: 20px;     /* 오른쪽에서 20px 띄움 */
+  width: 60px;
+  height: 60px;
+  border-radius: 50%; /* 둥글게 */
+  background-color: #007bff; /* 파란색 (원하는 색으로 변경) */
+  color: white;
+  font-size: 30px;
+  border: none;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* 그림자 */
+  z-index: 1000; /* 다른 요소보다 위에 오도록 */
+  cursor: pointer;
+  display: flex;       /* 글자 중앙 정렬 */
+  justify-content: center;
+  align-items: center;
+}
+
+.floating-btn:active {
+  background-color: #0056b3; /* 눌렀을 때 색상 */
+  transform: scale(0.95);    /* 살짝 작아지는 효과 */
+}

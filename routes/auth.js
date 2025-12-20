@@ -54,17 +54,28 @@ router.post("/login", async (req, res) => {
         .json({ message: "아직 승인되지 않은 계정입니다." });
     }
 
-    // 3. [수정됨] 세션 저장 코드 삭제 (Redis 껐으므로)
-    // req.session.user = ...  <-- 이 줄이 있으면 서버 터짐! 삭제하세요.
+    // ★ 3. [복구 및 수정] 세션 저장 (Redis에 저장됩니다)
+    req.session.user = {
+      id: user._id,
+      username: user.username,
+      nickname: user.nickname,
+      role: user.role, // "admin" 혹은 "user"
+    };
 
-    // 4. 응답 보내기
-    res.status(200).json({
-      message: "로그인 성공",
-      user: {
-        username: user.username,
-        nickname: user.nickname,
-        role: user.role,
-      },
+    // ★ 세션을 명시적으로 저장 후 응답을 보냅니다.
+    req.session.save((err) => {
+      if (err) {
+        console.error("세션 저장 실패:", err);
+        return res.status(500).json({ message: "세션 저장 오류" });
+      }
+
+      console.log(`✅ ${user.username} 로그인 및 세션 저장 완료`);
+
+      // 4. 응답 보내기
+      res.status(200).json({
+        message: "로그인 성공",
+        user: req.session.user,
+      });
     });
   } catch (err) {
     console.error("로그인 에러:", err);

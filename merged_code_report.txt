@@ -1,0 +1,2148 @@
+=== Project Merge Report: 2025. 12. 27. 오후 6:28:09 ===
+=== Total Files Found: 19 ===
+
+
+
+// ==========================================
+// [1/19] FILE: .env
+// ==========================================
+
+# .env 파일 내용
+
+# 서버 포트 (기본 3000)
+PORT=3000
+
+# 1. MongoDB 연결 주소 (따옴표 없이 입력)
+# 예시: mongodb+srv://<아이디>:<비밀번호>@cluster0.abcde.mongodb.net/inventoryDB
+MONGO_URI=mongodb+srv://admin:Angelious1@cluster0.38gttwb.mongodb.net/?appName=Cluster0
+
+# 2. Redis 연결 주소
+# 예시: redis://default:<비밀번호>@redis-12345.c1.asia-northeast1-1.gce.cloud.redislabs.com:12345
+REDIS_HOST=redis-15868.c270.us-east-1-3.ec2.cloud.redislabs.com
+REDIS_PORT=15868
+REDIS_PASSWORD=UMXqfzWuxz0LTtg8pczf4994WFm2okGt
+
+# 3. 세션 암호화 키 (아무 글자나 길게 입력하면 됩니다)
+SESSION_SECRET=Angelious1
+
+// --- END OF FILE: .env ---
+
+
+// ==========================================
+// [2/19] FILE: config\redis.js
+// ==========================================
+
+const { createClient } = require("redis");
+const dotenv = require("dotenv");
+
+dotenv.config();
+
+// .env에 있는 정보들을 조합해서 접속 주소(URL)를 만듭니다.
+// 형식: redis://default:비밀번호@주소:포트
+const redisUrl = `redis://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+
+// Redis 클라이언트 생성
+const client = createClient({
+  url: redisUrl,
+});
+
+client.on("error", (err) => console.error("❌ Redis Client Error", err));
+client.on("connect", () => console.log("✅ Redis 연결 성공!"));
+
+// 연결 시작 함수
+const connectRedis = async () => {
+  if (!client.isOpen) {
+    await client.connect();
+  }
+};
+
+// 연결 실행
+connectRedis();
+
+module.exports = client;
+
+
+// --- END OF FILE: config\redis.js ---
+
+
+// ==========================================
+// [3/19] FILE: merge.js
+// ==========================================
+
+const fs = require("fs");
+const path = require("path");
+
+// --- 설정 ---
+const TARGET_DIR = "./"; // 현재 폴더 전체를 대상으로 함
+const OUTPUT_FILE = "merged_code_report.txt";
+const EXTENSIONS = [".js", ".json", ".html", ".css", ".env"]; // 포함할 확장자 (.cs 제거, .env/.css 추가)
+
+// 제외할 폴더 및 파일 목록
+const EXCLUDE_NAMES = [
+  "node_modules",
+  "Library",
+  ".git",
+  "package-lock.json", // 병합 시 너무 길어지므로 제외 권장
+  OUTPUT_FILE, // 자기 자신(결과 파일) 제외
+];
+
+function readFiles(dir, allFiles = []) {
+  if (!fs.existsSync(dir)) return allFiles;
+
+  const files = fs.readdirSync(dir);
+  files.forEach((file) => {
+    const filePath = path.join(dir, file);
+    const stats = fs.statSync(filePath);
+
+    // 1. 제외 목록에 포함된 이름이면 건너뜀
+    if (EXCLUDE_NAMES.includes(file)) return;
+
+    if (stats.isDirectory()) {
+      // 2. 재귀적으로 하위 폴더 탐색
+      readFiles(filePath, allFiles);
+    } else {
+      // 3. 확장자 체크 후 리스트에 추가
+      if (EXTENSIONS.includes(path.extname(file)) || file === ".env") {
+        allFiles.push(filePath);
+      }
+    }
+  });
+  return allFiles;
+}
+
+function mergeFiles() {
+  try {
+    console.log("🔍 파일을 검색 중입니다...");
+    const files = readFiles(TARGET_DIR);
+
+    let combinedContent = `=== Project Merge Report: ${new Date().toLocaleString()} ===\n`;
+    combinedContent += `=== Total Files Found: ${files.length} ===\n\n`;
+
+    files.forEach((file, index) => {
+      const content = fs.readFileSync(file, "utf8");
+      combinedContent += `\n\n// ==========================================\n`;
+      combinedContent += `// [${index + 1}/${files.length}] FILE: ${file}\n`;
+      combinedContent += `// ==========================================\n\n`;
+      combinedContent += content;
+      combinedContent += `\n\n// --- END OF FILE: ${file} ---\n`;
+      console.log(`✅ 병합 중: ${file}`);
+    });
+
+    fs.writeFileSync(OUTPUT_FILE, combinedContent);
+    console.log(
+      `\n✨ 성공! 총 ${files.length}개의 파일이 ${OUTPUT_FILE}에 병합되었습니다.`
+    );
+  } catch (err) {
+    console.error("❌ 오류 발생:", err);
+  }
+}
+
+mergeFiles();
+
+
+// --- END OF FILE: merge.js ---
+
+
+// ==========================================
+// [4/19] FILE: models\Event.js
+// ==========================================
+
+const mongoose = require("mongoose");
+
+// 하위 문서(배열 내부 아이템) 스키마
+const subItemSchema = new mongoose.Schema({
+  name: String,
+  size: String,
+  length: String,
+  quantity: Number,
+  role: String, // 'product'(산출물/입출고대상) 또는 'material'(소모된 원자재)
+});
+
+const eventSchema = new mongoose.Schema({
+  title: { type: String },
+  start: { type: Date, required: true },
+  allDay: { type: Boolean, default: true },
+  type: { type: String, enum: ["입고", "출고", "생산"], required: true },
+
+  // [변경] 기존 단일 필드들 대신 배열 사용
+  items: [subItemSchema],
+
+  createdBy: { type: String },
+  createdAt: { type: Date, default: Date.now },
+});
+
+module.exports = mongoose.model("Event", eventSchema);
+
+
+// --- END OF FILE: models\Event.js ---
+
+
+// ==========================================
+// [5/19] FILE: models\Item.js
+// ==========================================
+
+const mongoose = require("mongoose");
+
+const itemSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  size: { type: String }, // [추가] 예: XL, 100mm
+  length: { type: String }, // [추가] 예: 10m
+  quantity: { type: Number, default: 0 },
+  category: { type: String, default: "기타" },
+  lastUpdatedBy: { type: String },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+module.exports = mongoose.model("Item", itemSchema);
+
+
+// --- END OF FILE: models\Item.js ---
+
+
+// ==========================================
+// [6/19] FILE: models\Option.js
+// ==========================================
+
+const mongoose = require("mongoose");
+
+const optionSchema = new mongoose.Schema({
+  type: { type: String, required: true }, // 'itemName', 'size', 'length' 중 하나
+  value: { type: String, required: true }, // 실제 값 (예: '파이프', '100mm')
+});
+
+module.exports = mongoose.model("Option", optionSchema);
+
+
+// --- END OF FILE: models\Option.js ---
+
+
+// ==========================================
+// [7/19] FILE: models\User.js
+// ==========================================
+
+const mongoose = require("mongoose");
+
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  nickname: { type: String },
+
+  // 관리자/유저 구분 (기본값: user)
+  role: { type: String, enum: ["user", "admin"], default: "user" },
+
+  // 승인 여부 (기본값: false -> 로그인 불가)
+  isApproved: { type: Boolean, default: false },
+
+  createdAt: { type: Date, default: Date.now },
+});
+
+module.exports = mongoose.model("User", userSchema);
+
+
+// --- END OF FILE: models\User.js ---
+
+
+// ==========================================
+// [8/19] FILE: package.json
+// ==========================================
+
+{
+  "name": "webcal",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "connect-redis": "^9.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-session": "^1.18.2",
+    "mongoose": "^9.0.2",
+    "redis": "^5.10.0",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
+
+
+// --- END OF FILE: package.json ---
+
+
+// ==========================================
+// [9/19] FILE: public\admin.html
+// ==========================================
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 페이지</title>
+    <style>
+        body { padding: 15px; font-family: sans-serif; max-width: 1000px; margin: 0 auto; background-color: #f9f9f9; }
+        h1 { font-size: 1.6rem; color: #333; }
+        .nav-links { margin-bottom: 20px; font-size: 14px; }
+        .section { background: white; margin-bottom: 25px; border: 1px solid #ddd; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; border-bottom: 2px solid #333; padding-bottom: 10px; font-size: 1.2rem; }
+        h3 { font-size: 1rem; margin-bottom: 10px; color: #555; }
+        
+        /* 기초 데이터 관리 그리드 */
+        .option-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 768px) { .option-grid { grid-template-columns: repeat(3, 1fr); } }
+
+        .input-group { display: flex; gap: 5px; margin-bottom: 15px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; }
+        button { padding: 10px 15px; cursor: pointer; border-radius: 6px; border: none; background: #333; color: white; font-weight: bold; }
+        
+        .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .tag { background: #eee; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .tag button { background: #ff4444; color: white; width: 18px; height: 18px; padding: 0; line-height: 18px; font-size: 10px; border-radius: 50%; }
+
+        /* 테이블 스크롤 */
+        .table-wrapper { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; font-size: 14px; }
+        th { background: #f2f2f2; }
+        .btn-approve { background: #4CAF50; color: white; padding: 8px 12px; }
+        .btn-ban { background: #F44336; color: white; padding: 8px 12px; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ 관리자 대시보드</h1>
+    <div class="nav-links">
+        <a href="/inventory.html">📦 재고관리</a> | 
+        <a href="/calendar.html">📅 달력보기</a>
+    </div>
+
+    <div class="section">
+        <h2>⚙️ 기초 데이터 관리</h2>
+        <div class="option-grid">
+            <div>
+                <h3>품목명 (Item Name)</h3>
+                <div class="input-group">
+                    <input type="text" id="new-item" placeholder="추가">
+                    <button onclick="addOption('itemName', 'new-item')">추가</button>
+                </div>
+                <div id="list-itemName" class="tag-container"></div>
+            </div>
+
+            <div>
+                <h3>사이즈 (Size)</h3>
+                <div class="input-group">
+                    <input type="text" id="new-size" placeholder="추가">
+                    <button onclick="addOption('size', 'new-size')">추가</button>
+                </div>
+                <div id="list-size" class="tag-container"></div>
+            </div>
+
+            <div>
+                <h3>길이 (Length)</h3>
+                <div class="input-group">
+                    <input type="text" id="new-length" placeholder="추가">
+                    <button onclick="addOption('length', 'new-length')">추가</button>
+                </div>
+                <div id="list-length" class="tag-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>👥 회원 가입 승인</h2>
+        <button onclick="loadPendingUsers()" style="background:#2196F3; margin-bottom:15px;">목록 새로고침</button>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>아이디</th><th>닉네임</th><th>신청일</th><th>관리</th></tr>
+                </thead>
+                <tbody id="user-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_OPT = '/api/options';
+        const API_ADMIN = '/api/admin';
+
+        window.onload = function() { loadOptions(); loadPendingUsers(); };
+
+        async function loadOptions() {
+            const res = await fetch(API_OPT);
+            const options = await res.json();
+            document.getElementById('list-itemName').innerHTML = '';
+            document.getElementById('list-size').innerHTML = '';
+            document.getElementById('list-length').innerHTML = '';
+
+            options.forEach(opt => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.innerHTML = `${opt.value} <button onclick="deleteOption('${opt._id}')">x</button>`;
+                document.getElementById(`list-${opt.type}`).appendChild(tag);
+            });
+        }
+
+        async function addOption(type, inputId) {
+            const input = document.getElementById(inputId);
+            const value = input.value.trim();
+            if(!value) return;
+            const res = await fetch(API_OPT, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ type, value })
+            });
+            if(res.ok) { input.value = ''; loadOptions(); }
+        }
+
+        async function deleteOption(id) {
+            if(!confirm('삭제하시겠습니까?')) return;
+            await fetch(`${API_OPT}/${id}`, { method: 'DELETE' });
+            loadOptions();
+        }
+
+        async function loadPendingUsers() {
+            const res = await fetch(`${API_ADMIN}/pending`);
+            const users = await res.json();
+            const list = document.getElementById('user-list');
+            list.innerHTML = '';
+            if (users.length === 0) {
+                list.innerHTML = '<tr><td colspan="4">대기 중인 회원이 없습니다.</td></tr>';
+                return;
+            }
+            users.forEach(user => {
+                list.innerHTML += `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.nickname}</td>
+                        <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn-approve" onclick="approveUser('${user.username}')">승인</button>
+                            <button class="btn-ban" onclick="banUser('${user.username}')">거절</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+        
+        async function approveUser(username) {
+            await fetch(`${API_ADMIN}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetUsername: username })
+            });
+            alert('승인되었습니다.');
+            loadPendingUsers();
+        }
+
+        async function banUser(username) {
+            if(!confirm('삭제하시겠습니까?')) return;
+            await fetch(`${API_ADMIN}/ban`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetUsername: username })
+            });
+            alert('삭제되었습니다.');
+            loadPendingUsers();
+        }
+    </script>
+</body>
+</html>
+
+// --- END OF FILE: public\admin.html ---
+
+
+// ==========================================
+// [10/19] FILE: public\calendar.html
+// ==========================================
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏭 생산 및 재고 달력</title>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <style>
+        /* 기본 레이아웃 및 폰트 */
+        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: #f0f2f5; margin: 0; color: #333; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .header h1 { font-size: 1.6rem; margin: 0; }
+        .nav-btns { display: flex; gap: 8px; align-items: center; }
+        
+        #calendar { background: white; padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: none; }
+
+        /* 모달창 디자인 개선 (Round & Large) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; backdrop-filter: blur(4px); }
+        .modal-content { 
+            background: white; 
+            width: 95%; 
+            max-width: 600px; 
+            padding: 30px; 
+            margin: 40px auto; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+        }
+
+        /* 입력 폼 스타일 (재고 페이지와 통일) */
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 700; color: #444; font-size: 15px; }
+        .form-group select, .form-group input { 
+            width: 100%; 
+            height: 50px;
+            padding: 0 15px; 
+            border: 2px solid #eef0f2; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            box-sizing: border-box;
+            background-color: #fdfdfd;
+            transition: all 0.2s;
+        }
+        .form-group select:focus, .form-group input:focus { border-color: #2196F3; outline: none; background: white; }
+
+        /* 테이블 및 버튼 스타일 */
+        .table-container { width: 100%; overflow-x: auto; margin-top: 10px; border-radius: 12px; border: 1px solid #eee; }
+        .item-table { width: 100%; border-collapse: collapse; min-width: 450px; }
+        .item-table th { background: #f8f9fa; padding: 12px; font-size: 14px; color: #666; }
+        .item-table td { padding: 10px; border-bottom: 1px solid #f1f1f1; text-align: center; }
+
+        button { padding: 12px 20px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .btn-blue { background: #2196F3; color: white; width: 100%; font-size: 16px; box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3); }
+        .btn-green { background: #4CAF50; color: white; }
+        .btn-red { background: #F44336; color: white; }
+        .btn-gray { background: #eee; color: #333; }
+        button:hover { transform: translateY(-2px); opacity: 0.9; }
+
+        /* 플로팅 버튼 */
+        .floating-btn {
+            position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px;
+            background: linear-gradient(135deg, #2196F3, #1976D2); color: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 30px; box-shadow: 0 8px 20px rgba(33, 150, 243, 0.4); z-index: 999; border: none;
+        }
+
+        /* --- 달력 색상 커스텀 --- */
+        .fc-day-sun a, .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion { color: #F44336 !important; } /* 일요일 */
+        .fc-day-sat a, .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion { color: #2196F3 !important; } /* 토요일 */
+        .fc-daygrid-day-number { font-weight: 800; font-size: 1.1em; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📅 생산 및 재고 달력</h1>
+        <div class="nav-btns">
+            <span id="user-display" style="font-weight: 800; color: #2196F3; background: white; padding: 8px 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);"></span>
+            <button class="btn-gray" onclick="location.href='/inventory.html'">📦 재고현황</button>
+            <button class="btn-gray" onclick="logout()">로그아웃</button>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 15px; display: flex; gap: 15px; font-size: 14px; font-weight: bold;">
+        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #4CAF50; border-radius: 3px;"></span> 입고</span>
+        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #F44336; border-radius: 3px;"></span> 출고</span>
+        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #2196F3; border-radius: 3px;"></span> 생산</span>
+    </div>
+
+    <div id="calendar"></div>
+
+    <button class="floating-btn" onclick="openQuickAdd()">+</button>
+
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title">📝 작업 등록</h3>
+            <input type="hidden" id="edit-event-id">
+            
+            <div class="form-group">
+                <label>날짜</label>
+                <input type="date" id="modal-date">
+            </div>
+            
+            <div class="form-group">
+                <label>작업 구분</label>
+                <select id="modal-type" onchange="toggleProductionMode()">
+                    <option value="입고">🟢 입고</option>
+                    <option value="출고">🔴 출고</option>
+                    <option value="생산">🔵 생산</option>
+                </select>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                <label style="font-weight:bold;">📦 대상 품목</label>
+                <button class="btn-green" onclick="addRow('product-tbody')" style="padding:6px 12px; font-size:12px;">+ 품목추가</button>
+            </div>
+            <div class="table-container">
+                <table class="item-table">
+                    <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
+                    <tbody id="product-tbody"></tbody>
+                </table>
+            </div>
+
+            <div id="material-section" style="display:none; margin-top:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label style="font-weight:bold; color: #F44336;">🔨 소모 원자재</label>
+                    <button class="btn-red" onclick="addRow('material-tbody')" style="padding:6px 12px; font-size:12px;">+ 자재추가</button>
+                </div>
+                <div class="table-container">
+                    <table class="item-table">
+                        <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
+                        <tbody id="material-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-blue" onclick="saveEvent()">💾 저장하기</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-gray" onclick="closeModal()" style="flex:1;">취소</button>
+                    <button id="btn-delete" class="btn-red" onclick="deleteEvent()" style="flex:1; display:none;">🗑 삭제</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/calendar';
+        const API_OPT = '/api/options';
+        const currentUser = localStorage.getItem('username');
+        const currentNick = localStorage.getItem('nickname'); // 닉네임 가져오기
+
+        // 공휴일 리스트 (YYYY-MM-DD 또는 MM-DD)
+        const holidays = ["01-01", "03-01", "05-05", "06-06", "08-15", "10-03", "10-09", "12-25", "2025-01-27", "2025-01-28", "2025-01-29", "2025-01-30"];
+
+        let dropdownOptions = { items: [], sizes: [], lengths: [] };
+        let calendarInstance;
+
+        if (!currentUser) { location.href = '/'; }
+        // 닉네임이 있으면 닉네임 표시
+        document.getElementById('user-display').innerText = `👤 ${currentNick || currentUser}님`;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadDropdownOptions();
+            initCalendar();
+        });
+
+        async function loadDropdownOptions() {
+            try {
+                const res = await fetch(API_OPT);
+                const data = await res.json();
+                dropdownOptions.items = data.filter(d => d.type === 'itemName' || d.type === 'item').map(d => d.value);
+                dropdownOptions.sizes = data.filter(d => d.type === 'size').map(d => d.value);
+                dropdownOptions.lengths = data.filter(d => d.type === 'length').map(d => d.value);
+            } catch (err) { console.error(err); }
+        }
+
+        function initCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ko',
+                selectable: true,
+                height: 'auto',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,listMonth'
+                },
+                
+                // 공휴일 및 일요일 빨간색 처리 로직 추가
+                dayCellDidMount: function(info) {
+                    const dateStr = info.date.toISOString().split('T')[0];
+                    const monthDay = dateStr.substring(5);
+                    if (holidays.includes(monthDay) || holidays.includes(dateStr) || info.date.getDay() === 0) {
+                        const numberEl = info.el.querySelector('.fc-daygrid-day-number');
+                        if (numberEl) numberEl.style.color = '#F44336';
+                    }
+                },
+
+                events: async function(info, successCallback, failureCallback) {
+                    try {
+                        const res = await fetch(API_URL);
+                        const rawEvents = await res.json();
+                        const events = rawEvents.map(event => {
+                            let color = '#4CAF50';
+                            if (event.type === '출고') color = '#F44336';
+                            else if (event.type === '생산') color = '#2196F3';
+                            return {
+                                id: event._id,
+                                title: event.title,
+                                start: event.start,
+                                backgroundColor: color,
+                                borderColor: color,
+                                textColor: '#ffffff',
+                                extendedProps: { type: event.type, items: event.items }
+                            };
+                        });
+                        successCallback(events);
+                    } catch (err) { failureCallback(err); }
+                },
+                select: (info) => openModal(info.startStr, null),
+                eventClick: (info) => openModal(info.event.startStr, info.event)
+            });
+            calendarInstance.render();
+        }
+
+        async function saveEvent() {
+    const id = document.getElementById('edit-event-id').value;
+    const type = document.getElementById('modal-type').value;
+    const date = document.getElementById('modal-date').value;
+    
+    // [수정] 수량을 읽어올 때 parseFloat와 toFixed 적용
+    const getItems = (tbodyId) => Array.from(document.querySelectorAll(`#${tbodyId} tr`)).map(tr => {
+        const name = tr.querySelector('.input-name').value;
+        const size = tr.querySelector('.input-size').value;
+        const length = tr.querySelector('.input-length').value;
+        const qtyRaw = tr.querySelector('.input-qty').value;
+        
+        return {
+            name: name.trim(),
+            size: size || "-",
+            length: length || "-",
+            quantity: parseFloat(parseFloat(qtyRaw).toFixed(1)) // 소수점 한자리 고정
+        };
+    }).filter(i => i.name);
+
+    const products = getItems('product-tbody');
+    const materials = type === '생산' ? getItems('material-tbody') : [];
+    
+    if(!products.length) return alert("품목을 선택하세요.");
+
+    // 로딩 표시 시작 (필요 시)
+    const url = id ? `${API_URL}/${id}` : API_URL;
+    const method = id ? 'PUT' : 'POST'; // [확인] 백엔드에 PUT 라우터가 구현되어 있어야 함
+
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                start: date, 
+                type, 
+                username: currentNick || currentUser, 
+                products, 
+                materials 
+            })
+        });
+
+        if(res.ok) { 
+            alert(id ? "수정되었습니다." : "저장되었습니다.");
+            closeModal(); 
+            calendarInstance.refetchEvents(); 
+        } else {
+            const errData = await res.json();
+            alert("오류 발생: " + errData.message);
+        }
+    } catch (err) {
+        console.error("저장 실패:", err);
+    }
+}
+
+        function logout() {
+            localStorage.removeItem('username');
+            localStorage.removeItem('nickname');
+            location.href = '/';
+        }
+
+        // --- 기타 기존 openModal, addRow 등 로직은 동일하게 유지 ---
+        function openQuickAdd() { const today = new Date().toISOString().split('T')[0]; openModal(today, null); }
+        function openModal(dateStr, event) {
+            document.getElementById('modal-date').value = dateStr.split('T')[0];
+            document.getElementById('product-tbody').innerHTML = '';
+            document.getElementById('material-tbody').innerHTML = '';
+            if (event) {
+                document.getElementById('edit-event-id').value = event.id;
+                document.getElementById('modal-title').innerText = "📝 작업 수정";
+                document.getElementById('btn-delete').style.display = 'inline-block';
+                const props = event.extendedProps;
+                document.getElementById('modal-type').value = props.type;
+                if (props.items) {
+                    props.items.forEach(item => {
+                        const target = item.role === 'material' ? 'material-tbody' : 'product-tbody';
+                        addRow(target, item);
+                    });
+                }
+            } else {
+                document.getElementById('edit-event-id').value = '';
+                document.getElementById('modal-title').innerText = "📝 새 작업 등록";
+                document.getElementById('btn-delete').style.display = 'none';
+                addRow('product-tbody'); 
+            }
+            toggleProductionMode();
+            document.getElementById('eventModal').style.display = 'block';
+        }
+        function closeModal() { document.getElementById('eventModal').style.display = 'none'; }
+        function toggleProductionMode() {
+            const type = document.getElementById('modal-type').value;
+            document.getElementById('material-section').style.display = (type === '생산') ? 'block' : 'none';
+        }
+        function addRow(tbodyId, data = null) {
+            const tbody = document.getElementById(tbodyId);
+            const tr = document.createElement('tr');
+            const createOpts = (list, selectedVal) => {
+                let html = '<option value="">선택</option>';
+                list.forEach(v => html += `<option value="${v}" ${String(v)===String(selectedVal)?'selected':''}>${v}</option>`);
+                return html;
+            };
+            tr.innerHTML = `
+        <td><select class="input-name">${createOpts(dropdownOptions.items, data?.name)}</select></td>
+        <td><select class="input-size">${createOpts(dropdownOptions.sizes, data?.size)}</select></td>
+        <td><select class="input-length">${createOpts(dropdownOptions.lengths, data?.length)}</select></td>
+        <td><input type="number" class="input-qty" step="0.1" value="${data?.quantity || 1}" style="width:60px; height:35px; border-radius:8px; border:1px solid #ddd; text-align:center;"></td>
+        <td><button onclick="this.closest('tr').remove()" style="background:none; font-size:18px;">❌</button></td>
+    `;
+    tbody.appendChild(tr);
+        }
+        async function deleteEvent() {
+            if(!confirm("삭제하시겠습니까?")) return;
+            const id = document.getElementById('edit-event-id').value;
+            const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            if(res.ok) { closeModal(); calendarInstance.refetchEvents(); }
+        }
+    </script>
+</body>
+</html>
+
+// --- END OF FILE: public\calendar.html ---
+
+
+// ==========================================
+// [11/19] FILE: public\css\style.css
+// ==========================================
+
+/* 1. 플로팅 버튼: 크기를 키우고 더 부드러운 그림자 적용 */
+.floating-btn {
+    position: fixed;
+    bottom: 30px; /* 위치를 조금 더 위로 */
+    right: 30px;
+    width: 70px;  /* 60 -> 70 확장 */
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff, #0056b3); /* 그라데이션 추가 */
+    color: white;
+    font-size: 35px;
+    border: none;
+    box-shadow: 0 8px 16px rgba(0,123,255,0.3); /* 파란색 계열 그림자 */
+    z-index: 1000;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 애니메이션 효과 */
+}
+
+.floating-btn:hover {
+    transform: scale(1.1) rotate(90deg); /* 호버 시 커지면서 회전 */
+}
+
+.floating-btn:active {
+    transform: scale(0.9);
+}
+
+/* 2. 카테고리 배지: 더 둥글게 하고 입체감 추가 */
+.category-badge {
+    color: white;
+    padding: 6px 14px; /* 패딩 확장 */
+    border-radius: 50px; /* 완전 타원형으로 */
+    font-size: 0.9em;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: inline-block;
+}
+
+/* 3. 수량 조절 및 텍스트: 시인성 극대화 */
+.qty-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px; /* 간격 확장 */
+    background: #f1f3f5; /* 배경 추가로 영역 구분 */
+    padding: 5px 12px;
+    border-radius: 12px;
+}
+
+.qty-text {
+    min-width: 45px;
+    font-size: 1.3em; /* 더 크게 */
+    font-weight: 900; /* 아주 두껍게 */
+    color: #000;      /* 더 진하게 */
+    text-align: center;
+}
+
+/* 4. 입력 그리드 및 드롭다운/입력창 UI 개선 */
+.input-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px; /* 간격 확장 */
+    align-items: center;
+}
+
+@media (min-width: 768px) {
+    .input-grid { grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr 1fr; }
+}
+
+/* 드롭다운/입력창: 크게, 둥글게, 화사하게 */
+.input-grid select, 
+.input-grid input {
+    width: 100%;
+    height: 56px; /* 48 -> 56 대폭 확장 */
+    padding: 0 20px;
+    border: 2px solid #edf2f7; /* 선을 더 명확하게 */
+    border-radius: 16px;       /* 훨씬 둥글게 */
+    font-size: 16px;           /* 폰트 크기 업 */
+    font-weight: 500;
+    color: #2d3748;
+    background-color: #fdfdfd;
+    transition: all 0.2s ease-in-out;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* 커스텀 화살표 아이콘 (위치 조정) */
+.input-grid select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 20px center;
+}
+
+/* 포커스 시 효과 강화 */
+.input-grid select:focus, 
+.input-grid input:focus {
+    outline: none;
+    border-color: #2196F3;
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.15);
+    transform: translateY(-2px); /* 살짝 떠오르는 느낌 */
+}
+
+/* 5. 등록 버튼: 더 크고 강력한 느낌 */
+.btn-submit {
+    height: 56px; /* 입력창과 동일하게 맞춤 */
+    background: linear-gradient(135deg, #444, #111); /* 그라데이션 */
+    color: white;
+    border: none;
+    border-radius: 16px; /* 둥글게 */
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+    background: #000;
+    transform: translateY(-3px); /* 호버 시 붕 뜨는 느낌 */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.btn-submit:active {
+    transform: translateY(-1px);
+}
+
+/* 로딩 스피너 디자인 */
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #e0e0e0;
+    border-top: 5px solid #2196F3; /* 포인트 컬러 */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+// --- END OF FILE: public\css\style.css ---
+
+
+// ==========================================
+// [12/19] FILE: public\index.html
+// ==========================================
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>시스템 로그인</title>
+    <style>
+        body { 
+            padding: 20px; 
+            font-family: 'Pretendard', sans-serif; 
+            text-align: center; 
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+            width: 90%;
+            box-sizing: border-box;
+        }
+        h1 { font-size: 1.5rem; color: #333; margin-bottom: 30px; }
+        h3 { margin-top: 0; color: #555; }
+        input { 
+            padding: 15px; 
+            margin: 8px 0; 
+            width: 100%; 
+            box-sizing: border-box; 
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px; /* 아이폰 줌 방지 */
+        }
+        button { 
+            padding: 15px; 
+            width: 100%;
+            cursor: pointer; 
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .toggle-btn {
+            background: none;
+            color: #2196F3;
+            padding: 5px;
+            font-size: 14px;
+            text-decoration: underline;
+            width: auto;
+            margin-top: 0;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🔒 시스템 접근</h1>
+
+    <div id="login-box" class="container">
+        <h3>로그인</h3>
+        <input type="text" id="login-id" placeholder="아이디">
+        <input type="password" id="login-pw" placeholder="비밀번호">
+        <button onclick="login()">로그인</button>
+        <p style="font-size: 14px; color: #666; margin-top: 20px;">
+            계정이 없으신가요? <button class="toggle-btn" onclick="toggleView()">회원가입 신청</button>
+        </p>
+    </div>
+
+    <div id="register-box" class="container hidden">
+        <h3>회원가입 신청</h3>
+        <input type="text" id="reg-id" placeholder="아이디">
+        <input type="password" id="reg-pw" placeholder="비밀번호">
+        <input type="text" id="reg-nick" placeholder="닉네임">
+        <button onclick="register()">신청하기</button>
+        <p style="font-size: 14px; color: #666; margin-top: 20px;">
+            이미 계정이 있으신가요? <button class="toggle-btn" onclick="toggleView()">로그인 하러가기</button>
+        </p>
+    </div>
+
+    <script>
+        function toggleView() {
+            document.getElementById('login-box').classList.toggle('hidden');
+            document.getElementById('register-box').classList.toggle('hidden');
+        }
+
+        async function register() {
+            const username = document.getElementById('reg-id').value;
+            const password = document.getElementById('reg-pw').value;
+            const nickname = document.getElementById('reg-nick').value;
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, nickname })
+            });
+            const data = await res.json();
+            alert(data.message);
+            if (res.ok) toggleView();
+        }
+
+        async function login() {
+    const username = document.getElementById('login-id').value;
+    const password = document.getElementById('login-pw').value;
+    const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    
+    if (res.ok) {
+        // [수정] 아이디와 닉네임을 각각 저장합니다.
+        localStorage.setItem('username', data.user.username);
+        localStorage.setItem('nickname', data.user.nickname); 
+        
+        alert("로그인 성공! " + data.user.nickname + "님 환영합니다.");
+        
+        if (data.user.role === 'admin') {
+            location.href = '/admin.html';
+        } else {
+            location.href = '/inventory.html';
+        }
+    } else {
+        alert(data.message);
+    }
+}
+    </script>
+</body>
+</html>
+
+// --- END OF FILE: public\index.html ---
+
+
+// ==========================================
+// [13/19] FILE: public\inventory.html
+// ==========================================
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>📦 재고 관리 시스템</title>
+    <style>
+        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: #f8f9fa; margin: 0; color: #333; }
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .input-box { background: white; padding: 18px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e9ecef; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (min-width: 768px) { .input-grid { grid-template-columns: repeat(5, 1fr); } }
+        
+        /* 테이블 스타일 강화 */
+        .pc-table { width: 100%; border-collapse: collapse; display: none; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        @media (min-width: 768px) { .pc-table { display: table; } }
+        .pc-table th { background: #333; color: white; padding: 12px; font-size: 14px; }
+        .pc-table td { padding: 12px; text-align: center; vertical-align: middle; }
+
+        /* 가시성 강화를 위한 배지 스타일 */
+        .category-badge { color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.85em; font-weight: bold; }
+        
+        .mobile-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        @media (min-width: 768px) { .mobile-card { display: none; } }
+
+        /* 수량 조절 버튼 및 텍스트 가시성 */
+        .qty-wrapper { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .qty-text { font-size: 1.2rem; font-weight: 800; color: #000; min-width: 35px; }
+        .qty-btn { width: 32px; height: 32px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 18px; }
+        .btn-dec { background: #ff9800; color: white; }
+        .btn-inc { background: #4CAF50; color: white; }
+        .btn-del-card { background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="loading-layer" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
+    <div class="spinner"></div>
+    <p style="margin-top: 15px; font-weight: bold; color: #333;">데이터를 불러오는 중...</p>
+</div>
+    <div class="header-box">
+        <h1>📦 재고 관리</h1>
+        <div>
+            <button onclick="location.href='/calendar.html'" style="padding:8px 15px; background:#2196F3; color:white; border:none; border-radius:5px; cursor:pointer;">📅 달력</button>
+            <button onclick="logout()" style="padding:8px 15px; background:white; border:1px solid #ccc; border-radius:5px; cursor:pointer;">로그아웃</button>
+        </div>
+    </div>
+
+    <div class="input-box">
+    <h3 style="margin-top:0; margin-bottom:20px; font-size:18px; color:#333; display:flex; align-items:center; gap:8px;">
+        <span style="color:#2196F3;">●</span> 새 물품 등록
+    </h3>
+    <div class="input-grid">
+        <select id="new-name" required>
+            <option value="" disabled selected hidden>📦 품목 선택</option>
+        </select>
+        <select id="new-size" required>
+            <option value="" disabled selected hidden>📐 사이즈 선택</option>
+        </select>
+        <select id="new-length" required>
+            <option value="" disabled selected hidden>📏 길이 선택</option>
+        </select>
+        <input type="number" id="new-qty" value="0" placeholder="수량">
+        <select id="new-category">
+            <option value="완제품">🟢 완제품</option>
+            <option value="원자재">🔵 원자재</option>
+            <option value="기타">⚪ 기타</option>
+        </select>
+        <button class="btn-submit" onclick="addItem()">등록하기</button>
+    </div>
+</div>
+
+    <div id="user-info" style="margin-bottom: 15px; font-weight: bold; color: #666;"></div>
+
+    <div class="inventory-container">
+        <table class="pc-table">
+            <thead>
+                <tr>
+                    <th>카테고리</th><th>품목명</th><th>사이즈</th><th>길이</th><th>수량</th><th>관리</th>
+                </tr>
+            </thead>
+            <tbody id="pc-list"></tbody>
+        </table>
+        <div id="mobile-list"></div>
+    </div>
+
+    <script>
+        const API_URL = '/api/inventory';
+        const API_OPT = '/api/options';
+        const currentUser = localStorage.getItem('username');
+        const currentNick = localStorage.getItem('nickname');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!currentUser) { location.href = '/'; return; }
+            const userInfoEl = document.getElementById('user-info');
+            if (userInfoEl) { userInfoEl.innerText = `👤 접속자: ${currentNick||currentUser}님`; }
+            initPage();
+        });
+
+        async function initPage() {
+            await loadOptions();
+            await loadItems();
+        }
+
+        async function loadOptions() {
+    try {
+        const res = await fetch(API_OPT);
+        const options = await res.json();
+        
+        const nameSel = document.getElementById('new-name');
+        const sizeSel = document.getElementById('new-size');
+        const lenSel = document.getElementById('new-length');
+
+        // [중요] 초기화할 때 제목은 남겨두고 데이터만 붙여넣습니다.
+        // innerHTML = '...' 이 부분을 아래와 같이 첫 줄만 남기도록 수정하세요.
+        nameSel.innerHTML = '<option value="" disabled selected hidden>📦 품목 선택</option>';
+        sizeSel.innerHTML = '<option value="" disabled selected hidden>📏 사이즈 선택</option>';
+        lenSel.innerHTML = '<option value="" disabled selected hidden>📐 길이 선택</option>';
+
+        options.forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt.value; 
+            o.innerText = opt.value;
+            if (opt.type === 'itemName') nameSel.appendChild(o);
+            else if (opt.type === 'size') sizeSel.appendChild(o.cloneNode(true));
+            else if (opt.type === 'length') lenSel.appendChild(o.cloneNode(true));
+        });
+    } catch (e) { console.error(e); }
+}
+
+        // --- 수정된 loadItems 함수 ---
+        async function loadItems() {
+            showLoading(true);
+            try {
+                const res = await fetch(API_URL);
+                const items = await res.json();
+                
+                const pcList = document.getElementById('pc-list');
+                const mobileList = document.getElementById('mobile-list');
+                pcList.innerHTML = '';
+                mobileList.innerHTML = '';
+
+                items.forEach(item => {
+                    // 가시성을 높인 배경색 설정
+                    let bgColor = '#ffffff'; 
+                    let badgeColor = '#999'; 
+
+                    if (item.category === '원자재') {
+                        bgColor = '#D1E9FF'; // 명확한 하늘색
+                        badgeColor = '#007bff';
+                    } else if (item.category === '완제품') {
+                        bgColor = '#D4F1D8'; // 명확한 연초록
+                        badgeColor = '#28a745';
+                    }
+
+                    // 1. PC용 테이블 렌더링
+                    const tr = document.createElement('tr');
+                    tr.style.backgroundColor = bgColor;
+                    tr.style.borderBottom = '2px solid rgba(0,0,0,0.05)';
+                    
+                    tr.innerHTML = `
+                        <td><span class="category-badge" style="background:${badgeColor}">${item.category}</span></td>
+                        <td style="font-weight:bold; font-size:1.1em;">${item.name}</td>
+                        <td style="font-weight:500;">${item.size || '-'}</td>
+                        <td style="font-weight:500;">${item.length || '-'}</td>
+                        <td>
+                            <div class="qty-wrapper">
+                                <button class="qty-btn btn-dec" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
+                                <span class="qty-text">${item.quantity}</span>
+                                <button class="qty-btn btn-inc" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
+                            </div>
+                        </td>
+                        <td><button onclick="deleteItem('${item._id}')" class="btn-del-card">삭제</button></td>
+                    `;
+                    pcList.appendChild(tr);
+
+                    // 2. 모바일용 카드 렌더링
+                    const card = document.createElement('div');
+                    card.className = 'mobile-card';
+                    card.style.backgroundColor = bgColor;
+                    card.style.borderLeft = `6px solid ${badgeColor}`;
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <b style="font-size:1.1rem;">${item.name}</b>
+                            <span class="category-badge" style="background:${badgeColor}">${item.category}</span>
+                        </div>
+                        <div style="font-size:14px; color:#333; margin-bottom:10px; font-weight:500;">규격: ${item.size} / ${item.length}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="qty-wrapper">
+                                <button class="qty-btn btn-dec" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
+                                <b class="qty-text">${item.quantity}</b>
+                                <button class="qty-btn btn-inc" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
+                            </div>
+                            <button onclick="deleteItem('${item._id}')" class="btn-del-card">삭제</button>
+                        </div>
+                    `;
+                    mobileList.appendChild(card);
+                });
+            } catch (err) { 
+                console.error(err);
+                alert("재고 로드 실패"); 
+            }finally{
+                setTimeout(()=>showLoading(false),300);
+            }
+        }
+
+        async function addItem() {
+            const name = document.getElementById('new-name').value;
+            const size = document.getElementById('new-size').value;
+            const length = document.getElementById('new-length').value;
+            const quantity = document.getElementById('new-qty').value;
+            const category = document.getElementById('new-category').value;
+
+            if(!name) return alert("품목을 선택해주세요.");
+
+            showLoading(true);
+try{
+    await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, size, length, quantity, category, username: currentNick })
+            });
+            await loadItems();
+}finally{
+    showLoading(false);
+}
+            
+        }
+
+        async function updateStock(id, newQty) {
+            if(newQty < 0) return;
+            await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantity: newQty, username: currentNick })
+            });
+            loadItems();
+        }
+
+        async function deleteItem(id) {
+            if(!confirm("삭제하시겠습니까?")) return;
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            loadItems();
+        }
+
+        // 로딩 표시 제어 함수
+function showLoading(show) {
+    const loader = document.getElementById('loading-layer');
+    loader.style.display = show ? 'flex' : 'none';
+}
+
+        function logout() { 
+            localStorage.removeItem('username'); 
+            localStorage.removeItem('nickname'); 
+            location.href = '/'; 
+        }
+    </script>
+</body>
+</html>
+
+// --- END OF FILE: public\inventory.html ---
+
+
+// ==========================================
+// [14/19] FILE: public\js\script.js
+// ==========================================
+
+// 모바일 버튼 클릭 이벤트
+const mobileBtn = document.getElementById("mobileAddBtn");
+
+if (mobileBtn) {
+  mobileBtn.addEventListener("click", function () {
+    // 1. 오늘 날짜 구하기 (YYYY-MM-DD)
+    const today = new Date().toISOString().split("T")[0];
+
+    // 2. 날짜 입력칸(id="date")에 오늘 날짜 채워주기
+    // (본인 HTML의 날짜 입력칸 ID가 'date'인지 확인 필요)
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+      dateInput.value = today;
+    }
+
+    // 3. 모달창 띄우기 함수 실행
+    // ★중요★: 본인 코드에서 모달창 띄우는 함수 이름이 openModal이 아니면 수정하세요!
+    if (typeof openModal === "function") {
+      openModal();
+    } else {
+      console.error("모달 띄우는 함수 이름을 확인해주세요!");
+      alert("일정 추가 창을 띄우는 함수를 찾을 수 없습니다.");
+    }
+  });
+}
+
+
+// --- END OF FILE: public\js\script.js ---
+
+
+// ==========================================
+// [15/19] FILE: routes\auth.js
+// ==========================================
+
+const express = require("express");
+const router = express.Router();
+const User = require("../models/User");
+
+// 1. 회원가입 신청
+router.post("/register", async (req, res) => {
+  console.log("1. 요청 받음! 데이터:", req.body); // 여기는 뜰 것임
+
+  try {
+    const { username, password, nickname } = req.body;
+
+    console.log("2. 중복 검사 시작...");
+    // 여기서 멈출 확률이 높음 (DB 조회)
+    const existingUser = await User.findOne({ username });
+    console.log("3. 중복 검사 통과 (결과):", existingUser);
+
+    if (existingUser) {
+      console.log("❌ 중복된 유저임");
+      return res.status(400).json({ message: "이미 존재하는 아이디입니다." });
+    }
+
+    console.log("4. 유저 객체 생성 중...");
+    const newUser = new User({ username, password, nickname });
+
+    console.log("5. DB 저장 시도...");
+    // 또는 여기서 멈출 수 있음 (DB 쓰기)
+    await newUser.save();
+    console.log("6. DB 저장 완료!");
+
+    res.status(201).json({ message: "가입 신청 완료!" });
+  } catch (err) {
+    console.error("🔥 에러 발생:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. 로그인
+router.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+
+    // 1. 계정 확인
+    if (!user || user.password !== password) {
+      return res
+        .status(400)
+        .json({ message: "아이디 또는 비밀번호가 틀렸습니다." });
+    }
+
+    // 2. 승인 여부 확인
+    if (user.isApproved === false) {
+      return res
+        .status(403)
+        .json({ message: "아직 승인되지 않은 계정입니다." });
+    }
+
+    // ★ 3. [복구 및 수정] 세션 저장 (Redis에 저장됩니다)
+    req.session.user = {
+      id: user._id,
+      username: user.username,
+      nickname: user.nickname,
+      role: user.role, // "admin" 혹은 "user"
+    };
+
+    // ★ 세션을 명시적으로 저장 후 응답을 보냅니다.
+    req.session.save((err) => {
+      if (err) {
+        console.error("세션 저장 실패:", err);
+        return res.status(500).json({ message: "세션 저장 오류" });
+      }
+
+      console.log(`✅ ${user.username} 로그인 및 세션 저장 완료`);
+
+      // 4. 응답 보내기
+      res.status(200).json({
+        message: "로그인 성공",
+        user: req.session.user,
+      });
+    });
+  } catch (err) {
+    console.error("로그인 에러:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. (관리자용) 대기 목록 조회
+router.get("/admin/pending", async (req, res) => {
+  try {
+    const users = await User.find({ isApproved: false });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. (관리자용) 승인 처리
+router.post("/admin/approve", async (req, res) => {
+  try {
+    const { username } = req.body;
+    await User.findOneAndUpdate({ username }, { isApproved: true });
+    res.json({ message: `${username} 승인 완료` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. (관리자용) 가입 거절 (유저 삭제)
+router.post("/admin/reject", async (req, res) => {
+  try {
+    const { username } = req.body;
+    // 유저 찾아서 삭제
+    await User.findOneAndDelete({ username });
+    res.json({ message: `${username} 님의 가입을 거절(삭제)했습니다.` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
+
+
+// --- END OF FILE: routes\auth.js ---
+
+
+// ==========================================
+// [16/19] FILE: routes\caleandar.js
+// ==========================================
+
+const express = require("express");
+const router = express.Router();
+const Event = require("../models/Event");
+const Item = require("../models/Item");
+const redisClient = require("../config/redis");
+
+// 1. 일정 조회 (달력 로딩용)
+router.get("/", async (req, res) => {
+  try {
+    const events = await Event.find();
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. 일정 추가 (재고 연동 및 소수점 처리 포함)
+router.post("/", async (req, res) => {
+  const { type, products, materials, start, username } = req.body;
+
+  try {
+    if (!products || products.length === 0 || !products[0].name) {
+      return res
+        .status(400)
+        .json({ message: "유효한 품목 데이터가 없습니다." });
+    }
+
+    const mainItem = products[0].name;
+    const extraCount =
+      products.length > 1 ? ` 외 ${products.length - 1}건` : "";
+    const generatedTitle = `[${type}] ${mainItem}${extraCount}`;
+
+    const combinedItems = [];
+    // 제품 처리
+    products.forEach((p) => {
+      combinedItems.push({
+        name: p.name.trim(),
+        size: p.size ? p.size.toString().trim() : "-",
+        length: p.length ? p.length.toString().trim() : "-",
+        quantity: parseFloat(Number(p.quantity).toFixed(1)), // 소수점 한자리 고정
+        role: "product",
+      });
+    });
+
+    // 원자재 처리
+    if (type === "생산" && materials) {
+      materials.forEach((m) => {
+        combinedItems.push({
+          name: m.name.trim(),
+          size: m.size ? m.size.toString().trim() : "-",
+          length: m.length ? m.length.toString().trim() : "-",
+          quantity: parseFloat(Number(m.quantity).toFixed(1)),
+          role: "material",
+        });
+      });
+    }
+
+    const newEvent = new Event({
+      title: generatedTitle,
+      start,
+      type,
+      items: combinedItems,
+      createdBy: username,
+    });
+    await newEvent.save();
+
+    // 재고 연동 로직
+    for (const item of combinedItems) {
+      if (item.quantity === 0) continue;
+
+      let amount = 0;
+      if (item.role === "product") {
+        amount =
+          type === "입고" || type === "생산" ? item.quantity : -item.quantity;
+      } else {
+        amount = -item.quantity;
+      }
+
+      // [수정] 부동 소수점 오차 방지를 위해 기존 수량을 가져와서 계산 후 저장
+      const targetItem = await Item.findOne({
+        name: item.name,
+        size: item.size,
+        length: item.length,
+      });
+      if (targetItem) {
+        targetItem.quantity = parseFloat(
+          (targetItem.quantity + amount).toFixed(1)
+        );
+        targetItem.lastUpdatedBy = username;
+        targetItem.updatedAt = Date.now();
+        await targetItem.save();
+      } else {
+        await Item.create({
+          name: item.name,
+          size: item.size,
+          length: item.length,
+          quantity: parseFloat(item.quantity.toFixed(1)),
+          lastUpdatedBy: username,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+
+    await redisClient.del("cache:inventory");
+    res.status(201).json(newEvent);
+  } catch (err) {
+    console.error("저장 에러:", err);
+    res.status(500).json({ message: "서버 저장 오류: " + err.message });
+  }
+});
+
+// 3. 일정 수정 (PUT) - 기존 재고 복구 후 새 데이터 반영
+router.put("/:id", async (req, res) => {
+  try {
+    const oldEvent = await Event.findById(req.params.id);
+    if (!oldEvent)
+      return res.status(404).json({ message: "일정을 찾을 수 없습니다." });
+
+    // [A] 기존 재고 원상복구 (역계산)
+    for (const item of oldEvent.items) {
+      let restoreAmount = 0;
+      if (item.role === "product") {
+        restoreAmount =
+          oldEvent.type === "입고" || oldEvent.type === "생산"
+            ? -item.quantity
+            : item.quantity;
+      } else {
+        restoreAmount = item.quantity; // 소모됐던 원자재 다시 채워줌
+      }
+
+      const target = await Item.findOne({
+        name: item.name,
+        size: item.size,
+        length: item.length,
+      });
+      if (target) {
+        target.quantity = parseFloat(
+          (target.quantity + restoreAmount).toFixed(1)
+        );
+        await target.save();
+      }
+    }
+
+    // [B] 새로운 데이터 정규화
+    const { type, products, materials, start, username } = req.body;
+    const combinedItems = [];
+    products.forEach((p) =>
+      combinedItems.push({
+        ...p,
+        role: "product",
+        quantity: parseFloat(Number(p.quantity).toFixed(1)),
+      })
+    );
+    if (type === "생산" && materials) {
+      materials.forEach((m) =>
+        combinedItems.push({
+          ...m,
+          role: "material",
+          quantity: parseFloat(Number(m.quantity).toFixed(1)),
+        })
+      );
+    }
+
+    const generatedTitle = `[${type}] ${combinedItems[0].name}${
+      combinedItems.length > 1 ? " 외 " + (combinedItems.length - 1) + "건" : ""
+    }`;
+
+    // [C] 일정 문서 업데이트
+    const updatedEvent = await Event.findByIdAndUpdate(
+      req.params.id,
+      {
+        title: generatedTitle,
+        start,
+        type,
+        items: combinedItems,
+        createdBy: username,
+        updatedAt: Date.now(),
+      },
+      { new: true }
+    );
+
+    // [D] 새로운 재고 수량 반영
+    for (const item of combinedItems) {
+      let amount =
+        item.role === "product"
+          ? type === "입고" || type === "생산"
+            ? item.quantity
+            : -item.quantity
+          : -item.quantity;
+
+      const target = await Item.findOne({
+        name: item.name,
+        size: item.size,
+        length: item.length,
+      });
+      if (target) {
+        target.quantity = parseFloat((target.quantity + amount).toFixed(1));
+        target.lastUpdatedBy = username;
+        await target.save();
+      } else {
+        await Item.create({
+          ...item,
+          quantity: parseFloat(amount.toFixed(1)),
+          lastUpdatedBy: username,
+        });
+      }
+    }
+
+    await redisClient.del("cache:inventory");
+    res.json(updatedEvent);
+  } catch (err) {
+    console.error("수정 에러:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 4. 일정 삭제 (재고 복구 포함)
+router.delete("/:id", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event)
+      return res.status(404).json({ message: "일정을 찾을 수 없습니다." });
+
+    for (const item of event.items) {
+      let restoreAmount =
+        item.role === "product"
+          ? event.type === "입고" || event.type === "생산"
+            ? -item.quantity
+            : item.quantity
+          : item.quantity;
+
+      const target = await Item.findOne({
+        name: item.name,
+        size: item.size,
+        length: item.length,
+      });
+      if (target) {
+        target.quantity = parseFloat(
+          (target.quantity + restoreAmount).toFixed(1)
+        );
+        await target.save();
+      }
+    }
+
+    await Event.findByIdAndDelete(req.params.id);
+    await redisClient.del("cache:inventory");
+
+    res.json({ message: "삭제 및 재고 복구 완료" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+module.exports = router;
+
+
+// --- END OF FILE: routes\caleandar.js ---
+
+
+// ==========================================
+// [17/19] FILE: routes\inventory.js
+// ==========================================
+
+const express = require("express");
+const router = express.Router();
+const Item = require("../models/Item");
+const redisClient = require("../config/redis"); // Redis 불러오기
+
+const CACHE_KEY = "cache:inventory";
+
+// 1. 재고 목록 조회 (Redis 우선)
+router.get("/", async (req, res) => {
+  try {
+    // 1) Redis 확인
+    let cachedData = await redisClient.get("cache:inventory");
+
+    if (cachedData) {
+      // 캐시 데이터가 유효한 JSON인지 확인 후 반환
+      try {
+        const parsed = JSON.parse(cachedData);
+        console.log("⚡ Redis 캐시 조회 성공");
+        return res.json(parsed);
+      } catch (parseErr) {
+        console.error("❌ 캐시 데이터 파싱 에러, DB로 전환");
+      }
+    }
+
+    // 2) 캐시가 없거나 오류 시 DB 조회
+    console.log("🐢 DB 직접 조회 중...");
+    const items = await Item.find().sort({ updatedAt: -1 });
+
+    // 3) 조회한 데이터를 다시 캐싱 (복구 작업)
+    await redisClient.set("cache:inventory", JSON.stringify(items));
+
+    res.json(items);
+  } catch (err) {
+    console.error("재고 조회 에러:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. 재고 추가 (쓰기 발생 -> 캐시 삭제)
+router.post("/", async (req, res) => {
+  try {
+    const { name, size, length, quantity, category, username } = req.body;
+
+    // 정규화: 달력 로직과 동일하게 공백 제거 및 기본값 설정
+    const newItem = new Item({
+      name: name.trim(),
+      size: size ? size.toString().trim() : "-",
+      length: length ? length.toString().trim() : "-",
+      quantity,
+      category,
+      lastUpdatedBy: username,
+    });
+
+    await newItem.save();
+    await redisClient.del(CACHE_KEY);
+    res.status(201).json({ message: "등록됨", item: newItem });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. 수정 (쓰기 발생 -> 캐시 삭제)
+router.put("/:id", async (req, res) => {
+  try {
+    const { quantity, username } = req.body;
+    const updatedItem = await Item.findByIdAndUpdate(
+      req.params.id,
+      { quantity, lastUpdatedBy: username, updatedAt: Date.now() },
+      { new: true }
+    );
+
+    // ★ 캐시 삭제
+    await redisClient.del(CACHE_KEY);
+
+    res.json({ message: "수정됨", item: updatedItem });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. 삭제 (쓰기 발생 -> 캐시 삭제)
+router.delete("/:id", async (req, res) => {
+  try {
+    await Item.findByIdAndDelete(req.params.id);
+
+    // ★ 캐시 삭제
+    await redisClient.del(CACHE_KEY);
+
+    res.json({ message: "삭제됨" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
+
+
+// --- END OF FILE: routes\inventory.js ---
+
+
+// ==========================================
+// [18/19] FILE: routes\options.js
+// ==========================================
+
+const express = require("express");
+const router = express.Router();
+const Option = require("../models/Option");
+const redisClient = require("../config/redis"); // ★ Redis 추가
+
+const OPTIONS_CACHE_KEY = "cache:options"; // 옵션 전용 캐시 키
+
+// 1. 모든 옵션 조회 (일반 유저/관리자 공용)
+router.get("/", async (req, res) => {
+  try {
+    // Redis 확인
+    let cachedOptions = await redisClient.get(OPTIONS_CACHE_KEY);
+
+    if (cachedOptions) {
+      console.log("⚡ Redis에서 옵션 리스트 반환");
+      return res.json(JSON.parse(cachedOptions));
+    }
+
+    // 캐시에 없으면 DB에서 가져오기
+    console.log("🐢 캐시 없음: DB에서 옵션 직접 조회");
+    const options = await Option.find();
+
+    // 다음을 위해 캐시에 저장
+    await redisClient.set(OPTIONS_CACHE_KEY, JSON.stringify(options));
+
+    res.json(options);
+  } catch (err) {
+    console.error("옵션 조회 에러:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. 옵션 추가 (관리자용 - 세션 체크는 server.js에서 수행)
+router.post("/", async (req, res) => {
+  try {
+    const { type, value } = req.body;
+    const exists = await Option.findOne({ type, value });
+    if (exists) return res.status(400).json({ message: "이미 존재함" });
+
+    const newOption = new Option({ type, value });
+    await newOption.save();
+
+    // ★ 관리자가 추가하면 즉시 캐시 삭제 (다음 조회 때 갱신되도록)
+    await redisClient.del(OPTIONS_CACHE_KEY);
+    console.log("♻️ 옵션 업데이트: 캐시 삭제됨");
+
+    res.status(201).json(newOption);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. 옵션 삭제 (관리자용)
+router.delete("/:id", async (req, res) => {
+  try {
+    await Option.findByIdAndDelete(req.params.id);
+
+    // ★ 중요: 옵션이 삭제되었으므로 기존 캐시 삭제
+    await redisClient.del(OPTIONS_CACHE_KEY);
+    console.log("♻️ 옵션 삭제로 인한 캐시 초기화");
+
+    res.json({ message: "삭제되었습니다." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
+
+
+// --- END OF FILE: routes\options.js ---
+
+
+// ==========================================
+// [19/19] FILE: server.js
+// ==========================================
+
+const express = require("express");
+const http = require("http");
+const dotenv = require("dotenv");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const authRoutes = require("./routes/auth");
+const inventoryRoutes = require("./routes/inventory");
+const calendarRoutes = require("./routes/caleandar");
+const optionRoutes = require("./routes/options");
+
+const session = require("express-session");
+const { RedisStore } = require("connect-redis");
+const redisClient = require("./config/redis");
+
+dotenv.config();
+
+// 1. 앱 초기화
+const app = express();
+const server = http.createServer(app);
+
+app.set("trust proxy", 1);
+
+// 2. 미들웨어 설정
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
+
+// 3. 몽고DB 연결
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB 연결 성공!"))
+  .catch((err) => console.error("❌ MongoDB 연결 실패:", err));
+
+// 4. 세션 설정 (라우터 연결보다 먼저 와야 함)
+app.use(
+  session({
+    store: new RedisStore({
+      client: redisClient,
+      prefix: "session:",
+    }),
+    secret: "my-super-secret-key-reset",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24,
+      sameSite: "lax",
+    },
+  })
+);
+
+// --- 권한 체크 미들웨어 분리 ---
+
+// [A] 로그인 여부만 체크 (일반 유저/관리자 모두 통과)
+const checkLogin = (req, res, next) => {
+  if (!req.session || !req.session.user) {
+    console.log(">> 탈락: 로그인 안됨");
+    return res.send(
+      '<script>alert("로그인하세요"); location.href="/login";</script>'
+    );
+  }
+  next();
+};
+
+// [B] 관리자 권한까지 체크 (관리자만 통과)
+const checkAdmin = (req, res, next) => {
+  // 먼저 로그인이 되어있는지 확인
+  if (!req.session || !req.session.user) {
+    return res.send(
+      '<script>alert("로그인하세요"); location.href="/login";</script>'
+    );
+  }
+  // 관리자인지 확인
+  if (req.session.user.role !== "admin") {
+    console.log(`>> 탈락: 관리자 아님 (현재 역할: ${req.session.user.role})`);
+    return res
+      .status(403)
+      .send(
+        '<script>alert("관리자만 접근 가능합니다."); location.href="/";</script>'
+      );
+  }
+  next();
+};
+
+app.get("/ping", (req, res) => {
+  res.status(200).send("pong");
+});
+
+// 5. 라우터 연결 (권한 미들웨어 적용)
+app.use("/api", authRoutes); // 로그인/회원가입은 체크 안함
+app.use("/api/inventory", checkLogin, inventoryRoutes); // 재고는 로그인해야 함
+app.use("/api/calendar", checkLogin, calendarRoutes); // 달력은 로그인만 하면 됨
+app.use(
+  "/api/options",
+  (req, res, next) => {
+    // GET(조회)은 누구나 가능, POST/DELETE(수정)는 관리자만 가능하게 분리
+    if (req.method === "GET") {
+      return next(); // 조회는 checkAdmin 건너뜀
+    }
+    checkAdmin(req, res, next); // 그 외엔 관리자 체크
+  },
+  optionRoutes
+); // 옵션은 관리자만!
+
+const Item = require("./models/Item");
+
+// 6. 서버 시작
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, async () => {
+  console.log(`🚀 서버 실행 중: http://localhost:${PORT}`);
+  try {
+    if (!redisClient.isOpen) await redisClient.connect();
+
+    // 1. [임시 추가] 기존 DB의 지저분한 소수점 데이터 일괄 정제
+    const Item = require("./models/Item");
+    const allItems = await Item.find({});
+
+    console.log("🔍 소수점 데이터 정제 시작...");
+    for (const item of allItems) {
+      // 소수점 한 자리로 반올림 (7.7999 -> 7.8)
+      const cleanedQty = parseFloat(item.quantity.toFixed(1));
+
+      // 기존 수량과 정제된 수량이 다를 때만 업데이트
+      if (item.quantity !== cleanedQty) {
+        await Item.updateOne(
+          { _id: item._id },
+          { $set: { quantity: cleanedQty } }
+        );
+        console.log(
+          `✅ 정제됨: ${item.name} (${item.quantity} -> ${cleanedQty})`
+        );
+      }
+    }
+    console.log("✨ 모든 재고 데이터 정제 완료");
+
+    // 2. 캐시 초기화 및 예열
+    await redisClient.del("cache:inventory");
+    await redisClient.del("cache:options");
+
+    const items = await Item.find().sort({ updatedAt: -1 });
+    await redisClient.set("cache:inventory", JSON.stringify(items));
+
+    const Option = require("./models/Option");
+    const options = await Option.find();
+    await redisClient.set("cache:options", JSON.stringify(options));
+
+    console.log(
+      `🔥 데이터 예열 완료: 재고 ${items.length}개, 옵션 ${options.length}개`
+    );
+  } catch (e) {
+    console.error("초기화 중 오류:", e);
+  }
+});
+
+
+// --- END OF FILE: server.js ---

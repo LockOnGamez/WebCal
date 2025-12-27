@@ -80,6 +80,11 @@
     color: #2196F3 !important;
     text-decoration: underline;
 }
+
+/* public/calendar.html 스타일 섹션에 추가 */
+.fc-event-time {
+    display: none !important;
+}
     </style>
 </head>
 <body>
@@ -193,6 +198,7 @@
                 locale: 'ko',
                 selectable: true,
                 height: 'auto',
+                displayEventTime:false,
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',

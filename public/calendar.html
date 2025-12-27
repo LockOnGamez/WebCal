@@ -68,6 +68,18 @@
         .fc-day-sun a, .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion { color: #F44336 !important; } /* 일요일 */
         .fc-day-sat a, .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion { color: #2196F3 !important; } /* 토요일 */
         .fc-daygrid-day-number { font-weight: 800; font-size: 1.1em; }
+
+        /* 일요일 및 휴일 강제 빨간색 표시 */
+.fc-day-sun .fc-daygrid-day-number,
+.holiday-red {
+    color: #F44336 !important;
+}
+
+/* 오늘 날짜는 파란색 계열로 강조 (선택) */
+.fc-day-today .fc-daygrid-day-number {
+    color: #2196F3 !important;
+    text-decoration: underline;
+}
     </style>
 </head>
 <body>
@@ -189,11 +201,13 @@
                 
                 // 공휴일 및 일요일 빨간색 처리 로직 추가
                 dayCellDidMount: function(info) {
-                    const dateStr = info.date.toISOString().split('T')[0];
+                    const dateStr = info.date.toLocaleDateString('sv-SE');
                     const monthDay = dateStr.substring(5);
                     if (holidays.includes(monthDay) || holidays.includes(dateStr) || info.date.getDay() === 0) {
                         const numberEl = info.el.querySelector('.fc-daygrid-day-number');
-                        if (numberEl) numberEl.style.color = '#F44336';
+                        if (numberEl){
+                             numberEl.style.setProperty('color', '#F44336', 'important');
+                            }
                     }
                 },
 
@@ -225,29 +239,59 @@
         }
 
         async function saveEvent() {
-            const id = document.getElementById('edit-event-id').value;
-            const type = document.getElementById('modal-type').value;
-            const date = document.getElementById('modal-date').value;
-            const getItems = (id) => Array.from(document.querySelectorAll(`#${id} tr`)).map(tr => ({
-                name: tr.querySelector('.input-name').value,
-                size: tr.querySelector('.input-size').value,
-                length: tr.querySelector('.input-length').value,
-                quantity: Number(tr.querySelector('.input-qty').value)
-            })).filter(i => i.name);
+    const id = document.getElementById('edit-event-id').value;
+    const type = document.getElementById('modal-type').value;
+    const date = document.getElementById('modal-date').value;
+    
+    // [수정] 수량을 읽어올 때 parseFloat와 toFixed 적용
+    const getItems = (tbodyId) => Array.from(document.querySelectorAll(`#${tbodyId} tr`)).map(tr => {
+        const name = tr.querySelector('.input-name').value;
+        const size = tr.querySelector('.input-size').value;
+        const length = tr.querySelector('.input-length').value;
+        const qtyRaw = tr.querySelector('.input-qty').value;
+        
+        return {
+            name: name.trim(),
+            size: size || "-",
+            length: length || "-",
+            quantity: parseFloat(parseFloat(qtyRaw).toFixed(1)) // 소수점 한자리 고정
+        };
+    }).filter(i => i.name);
 
-            const products = getItems('product-tbody');
-            const materials = type === '생산' ? getItems('material-tbody') : [];
-            if(!products.length) return alert("품목을 선택하세요.");
+    const products = getItems('product-tbody');
+    const materials = type === '생산' ? getItems('material-tbody') : [];
+    
+    if(!products.length) return alert("품목을 선택하세요.");
 
-            const url = id ? `${API_URL}/${id}` : API_URL;
-            const res = await fetch(url, {
-                method: id ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                // username 대신 닉네임이 저장되도록 currentNick 전송
-                body: JSON.stringify({ start: date, type, username: currentNick || currentUser, products, materials })
-            });
-            if(res.ok) { closeModal(); calendarInstance.refetchEvents(); }
+    // 로딩 표시 시작 (필요 시)
+    const url = id ? `${API_URL}/${id}` : API_URL;
+    const method = id ? 'PUT' : 'POST'; // [확인] 백엔드에 PUT 라우터가 구현되어 있어야 함
+
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                start: date, 
+                type, 
+                username: currentNick || currentUser, 
+                products, 
+                materials 
+            })
+        });
+
+        if(res.ok) { 
+            alert(id ? "수정되었습니다." : "저장되었습니다.");
+            closeModal(); 
+            calendarInstance.refetchEvents(); 
+        } else {
+            const errData = await res.json();
+            alert("오류 발생: " + errData.message);
         }
+    } catch (err) {
+        console.error("저장 실패:", err);
+    }
+}
 
         function logout() {
             localStorage.removeItem('username');
@@ -296,13 +340,13 @@
                 return html;
             };
             tr.innerHTML = `
-                <td><select class="input-name">${createOpts(dropdownOptions.items, data?.name)}</select></td>
-                <td><select class="input-size">${createOpts(dropdownOptions.sizes, data?.size)}</select></td>
-                <td><select class="input-length">${createOpts(dropdownOptions.lengths, data?.length)}</select></td>
-                <td><input type="number" class="input-qty" value="${data?.quantity || 1}" style="width:60px; height:35px; border-radius:8px; border:1px solid #ddd; text-align:center;"></td>
-                <td><button onclick="this.closest('tr').remove()" style="background:none; font-size:18px;">❌</button></td>
-            `;
-            tbody.appendChild(tr);
+        <td><select class="input-name">${createOpts(dropdownOptions.items, data?.name)}</select></td>
+        <td><select class="input-size">${createOpts(dropdownOptions.sizes, data?.size)}</select></td>
+        <td><select class="input-length">${createOpts(dropdownOptions.lengths, data?.length)}</select></td>
+        <td><input type="number" class="input-qty" step="0.1" value="${data?.quantity || 1}" style="width:60px; height:35px; border-radius:8px; border:1px solid #ddd; text-align:center;"></td>
+        <td><button onclick="this.closest('tr').remove()" style="background:none; font-size:18px;">❌</button></td>
+    `;
+    tbody.appendChild(tr);
         }
         async function deleteEvent() {
             if(!confirm("삭제하시겠습니까?")) return;

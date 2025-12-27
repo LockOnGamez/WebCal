@@ -14,54 +14,47 @@ router.get("/", async (req, res) => {
   }
 });
 
-// 2. 일정 추가 (재고 연동 포함)
+// 2. 일정 추가 (재고 연동 및 소수점 처리 포함)
 router.post("/", async (req, res) => {
   const { type, products, materials, start, username } = req.body;
 
   try {
-    // [검증] 최소 데이터 확인
     if (!products || products.length === 0 || !products[0].name) {
       return res
         .status(400)
         .json({ message: "유효한 품목 데이터가 없습니다." });
     }
 
-    // [제목 생성] 달력 라벨 표시용
     const mainItem = products[0].name;
     const extraCount =
       products.length > 1 ? ` 외 ${products.length - 1}건` : "";
     const generatedTitle = `[${type}] ${mainItem}${extraCount}`;
 
-    // [데이터 통합] 스키마 구조(items 배열)에 맞게 role 부여 및 정규화
     const combinedItems = [];
-
-    // 제품(입고/출고/생산결과) 처리
-    if (products) {
-      products.forEach((p) => {
-        combinedItems.push({
-          name: p.name.trim(),
-          size: p.size ? p.size.toString().trim() : "-",
-          length: p.length ? p.length.toString().trim() : "-",
-          quantity: Number(p.quantity) || 0,
-          role: "product",
-        });
+    // 제품 처리
+    products.forEach((p) => {
+      combinedItems.push({
+        name: p.name.trim(),
+        size: p.size ? p.size.toString().trim() : "-",
+        length: p.length ? p.length.toString().trim() : "-",
+        quantity: parseFloat(Number(p.quantity).toFixed(1)), // 소수점 한자리 고정
+        role: "product",
       });
-    }
+    });
 
-    // 원자재(생산 시 소모품) 처리
+    // 원자재 처리
     if (type === "생산" && materials) {
       materials.forEach((m) => {
         combinedItems.push({
           name: m.name.trim(),
           size: m.size ? m.size.toString().trim() : "-",
           length: m.length ? m.length.toString().trim() : "-",
-          quantity: Number(m.quantity) || 0,
+          quantity: parseFloat(Number(m.quantity).toFixed(1)),
           role: "material",
         });
       });
     }
 
-    // [DB 저장] 달력 이벤트 생성
     const newEvent = new Event({
       title: generatedTitle,
       start,
@@ -71,38 +64,44 @@ router.post("/", async (req, res) => {
     });
     await newEvent.save();
 
-    // [재고 연동] 품목+사이즈+길이 기준으로 업데이트
+    // 재고 연동 로직
     for (const item of combinedItems) {
       if (item.quantity === 0) continue;
 
       let amount = 0;
       if (item.role === "product") {
-        // 입고/생산은 +, 출고는 -
         amount =
           type === "입고" || type === "생산" ? item.quantity : -item.quantity;
       } else {
-        // 원자재(material)는 무조건 -
         amount = -item.quantity;
       }
 
-      // name, size, length 세 가지가 모두 일치해야 같은 재고로 인식함
-      await Item.findOneAndUpdate(
-        {
+      // [수정] 부동 소수점 오차 방지를 위해 기존 수량을 가져와서 계산 후 저장
+      const targetItem = await Item.findOne({
+        name: item.name,
+        size: item.size,
+        length: item.length,
+      });
+      if (targetItem) {
+        targetItem.quantity = parseFloat(
+          (targetItem.quantity + amount).toFixed(1)
+        );
+        targetItem.lastUpdatedBy = username;
+        targetItem.updatedAt = Date.now();
+        await targetItem.save();
+      } else {
+        await Item.create({
           name: item.name,
           size: item.size,
           length: item.length,
-        },
-        {
-          $inc: { quantity: amount },
-          $set: { lastUpdatedBy: username, updatedAt: Date.now() },
-        },
-        { upsert: true } // 없으면 새로 생성
-      );
+          quantity: parseFloat(item.quantity.toFixed(1)),
+          lastUpdatedBy: username,
+          updatedAt: Date.now(),
+        });
+      }
     }
 
-    // Redis 캐시 삭제 (재고 목록 갱신용)
     await redisClient.del("cache:inventory");
-
     res.status(201).json(newEvent);
   } catch (err) {
     console.error("저장 에러:", err);
@@ -110,32 +109,137 @@ router.post("/", async (req, res) => {
   }
 });
 
-// 3. 일정 삭제 (재고 완벽 복구 포함)
+// 3. 일정 수정 (PUT) - 기존 재고 복구 후 새 데이터 반영
+router.put("/:id", async (req, res) => {
+  try {
+    const oldEvent = await Event.findById(req.params.id);
+    if (!oldEvent)
+      return res.status(404).json({ message: "일정을 찾을 수 없습니다." });
+
+    // [A] 기존 재고 원상복구 (역계산)
+    for (const item of oldEvent.items) {
+      let restoreAmount = 0;
+      if (item.role === "product") {
+        restoreAmount =
+          oldEvent.type === "입고" || oldEvent.type === "생산"
+            ? -item.quantity
+            : item.quantity;
+      } else {
+        restoreAmount = item.quantity; // 소모됐던 원자재 다시 채워줌
+      }
+
+      const target = await Item.findOne({
+        name: item.name,
+        size: item.size,
+        length: item.length,
+      });
+      if (target) {
+        target.quantity = parseFloat(
+          (target.quantity + restoreAmount).toFixed(1)
+        );
+        await target.save();
+      }
+    }
+
+    // [B] 새로운 데이터 정규화
+    const { type, products, materials, start, username } = req.body;
+    const combinedItems = [];
+    products.forEach((p) =>
+      combinedItems.push({
+        ...p,
+        role: "product",
+        quantity: parseFloat(Number(p.quantity).toFixed(1)),
+      })
+    );
+    if (type === "생산" && materials) {
+      materials.forEach((m) =>
+        combinedItems.push({
+          ...m,
+          role: "material",
+          quantity: parseFloat(Number(m.quantity).toFixed(1)),
+        })
+      );
+    }
+
+    const generatedTitle = `[${type}] ${combinedItems[0].name}${
+      combinedItems.length > 1 ? " 외 " + (combinedItems.length - 1) + "건" : ""
+    }`;
+
+    // [C] 일정 문서 업데이트
+    const updatedEvent = await Event.findByIdAndUpdate(
+      req.params.id,
+      {
+        title: generatedTitle,
+        start,
+        type,
+        items: combinedItems,
+        createdBy: username,
+        updatedAt: Date.now(),
+      },
+      { new: true }
+    );
+
+    // [D] 새로운 재고 수량 반영
+    for (const item of combinedItems) {
+      let amount =
+        item.role === "product"
+          ? type === "입고" || type === "생산"
+            ? item.quantity
+            : -item.quantity
+          : -item.quantity;
+
+      const target = await Item.findOne({
+        name: item.name,
+        size: item.size,
+        length: item.length,
+      });
+      if (target) {
+        target.quantity = parseFloat((target.quantity + amount).toFixed(1));
+        target.lastUpdatedBy = username;
+        await target.save();
+      } else {
+        await Item.create({
+          ...item,
+          quantity: parseFloat(amount.toFixed(1)),
+          lastUpdatedBy: username,
+        });
+      }
+    }
+
+    await redisClient.del("cache:inventory");
+    res.json(updatedEvent);
+  } catch (err) {
+    console.error("수정 에러:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 4. 일정 삭제 (재고 복구 포함)
 router.delete("/:id", async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event)
       return res.status(404).json({ message: "일정을 찾을 수 없습니다." });
 
-    // [재고 복구] 등록 시 적용했던 수량을 반대로 적용
     for (const item of event.items) {
-      let restoreAmount = 0;
-
-      if (item.role === "product") {
-        // 입고/생산으로 더했던 건 빼고(-), 출고로 뺐던 건 더함(+)
-        restoreAmount =
-          event.type === "입고" || event.type === "생산"
+      let restoreAmount =
+        item.role === "product"
+          ? event.type === "입고" || event.type === "생산"
             ? -item.quantity
-            : item.quantity;
-      } else {
-        // 소모되었던 원자재는 다시 채워줌(+)
-        restoreAmount = item.quantity;
-      }
+            : item.quantity
+          : item.quantity;
 
-      await Item.findOneAndUpdate(
-        { name: item.name, size: item.size, length: item.length },
-        { $inc: { quantity: restoreAmount } }
-      );
+      const target = await Item.findOne({
+        name: item.name,
+        size: item.size,
+        length: item.length,
+      });
+      if (target) {
+        target.quantity = parseFloat(
+          (target.quantity + restoreAmount).toFixed(1)
+        );
+        await target.save();
+      }
     }
 
     await Event.findByIdAndDelete(req.params.id);

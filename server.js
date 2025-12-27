@@ -114,14 +114,32 @@ server.listen(PORT, async () => {
   try {
     if (!redisClient.isOpen) await redisClient.connect();
 
-    // [중요 수정] flushDb()는 세션을 포함한 모든 데이터를 지웁니다.
-    // 운영 중에는 절대 사용하지 마세요. 대신 특정 캐시만 삭제합니다.
+    // 1. [임시 추가] 기존 DB의 지저분한 소수점 데이터 일괄 정제
+    const Item = require("./models/Item");
+    const allItems = await Item.find({});
+
+    console.log("🔍 소수점 데이터 정제 시작...");
+    for (const item of allItems) {
+      // 소수점 한 자리로 반올림 (7.7999 -> 7.8)
+      const cleanedQty = parseFloat(item.quantity.toFixed(1));
+
+      // 기존 수량과 정제된 수량이 다를 때만 업데이트
+      if (item.quantity !== cleanedQty) {
+        await Item.updateOne(
+          { _id: item._id },
+          { $set: { quantity: cleanedQty } }
+        );
+        console.log(
+          `✅ 정제됨: ${item.name} (${item.quantity} -> ${cleanedQty})`
+        );
+      }
+    }
+    console.log("✨ 모든 재고 데이터 정제 완료");
+
+    // 2. 캐시 초기화 및 예열
     await redisClient.del("cache:inventory");
     await redisClient.del("cache:options");
-    console.log("🧹 기존 재고/옵션 캐시만 초기화 완료");
 
-    // DB 데이터 예열 (Warm-up)
-    const Item = require("./models/Item");
     const items = await Item.find().sort({ updatedAt: -1 });
     await redisClient.set("cache:inventory", JSON.stringify(items));
 

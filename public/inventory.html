@@ -3,104 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>📦 재고 관리 시스템</title>
+    <title>📦 스마트 재고 관리 시스템</title>
     <style>
-        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: #f8f9fa; margin: 0; color: #333; }
+        /* 기본 레이아웃 */
+        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: #f4f7f9; margin: 0; color: #333; }
         .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         
-        /* 상단 입력 박스 */
-        .input-box { background: white; padding: 18px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e9ecef; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        @media (min-width: 768px) { .input-grid { grid-template-columns: repeat(6, 1fr); } }
+        /* 입력 카드 */
+        .card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .input-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 768px) { .input-grid { grid-template-columns: repeat(3, 1fr) 120px 140px 120px; } }
 
-        /* 입력창 디자인 */
-        select, input { width: 100%; height: 45px; border: 1px solid #ddd; border-radius: 8px; padding: 0 10px; font-size: 15px; box-sizing: border-box; }
-        .btn-submit { background: #333; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 8px; height: 45px; }
+        select, input { width: 100%; height: 50px; border: 2px solid #edf2f7; border-radius: 12px; padding: 0 15px; font-size: 15px; box-sizing: border-box; }
+        .btn-submit { background: #333; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 12px; height: 50px; }
 
-        /* 테이블 공통 스타일 */
-        .section-title { font-size: 1.2rem; margin: 30px 0 15px 0; font-weight: bold; border-left: 5px solid; padding-left: 10px; }
-        .finished-title { color: #28a745; border-color: #28a745; }
-        .raw-title { color: #007bff; border-color: #007bff; }
+        /* 필터 버튼 */
+        .filter-container { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .filter-btn { padding: 10px 18px; border-radius: 20px; border: none; background: white; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.05); white-space: nowrap; }
+        .filter-btn.active { background: #2196F3; color: white; }
 
-        .pc-table { width: 100%; border-collapse: collapse; display: none; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        /* --- 테이블 디자인 (PC) --- */
+        .pc-table { width: 100%; border-collapse: separate; border-spacing: 0; display: none; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         @media (min-width: 768px) { .pc-table { display: table; } }
-        .pc-table th { background: #444; color: white; padding: 12px; font-size: 14px; }
-        .pc-table td { padding: 12px; text-align: center; vertical-align: middle; border-bottom: 1px solid #eee; }
 
-        /* 배지 및 수량조절 */
-        .category-badge { color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.85em; font-weight: bold; }
-        .qty-wrapper { display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .qty-text { font-size: 1.1rem; font-weight: 800; color: #000; min-width: 35px; }
-        .qty-btn { width: 32px; height: 32px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 18px; color: white; }
-        .btn-dec { background: #ff9800; }
-        .btn-inc { background: #4CAF50; }
-        .btn-del-card { background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .pc-table th { background: #f8fafc; color: #64748b; padding: 15px; font-size: 13px; border-bottom: 2px solid #edf2f7; }
+        .pc-table td { padding: 15px; text-align: center; border-bottom: 1px solid #edf2f7; }
 
-        /* 모바일 전용 */
+        /* 지그재그 효과 및 호버 강화 */
+        .pc-table tbody tr:nth-child(even) { background-color: #f1f5f9 !important; }
+        .pc-table tbody tr:nth-child(odd) { background-color: #ffffff !important; }
+        .pc-table tbody tr:hover { background-color: #e2e8f0 !important; }
+
+        /* --- 모바일 카드 디자인 --- */
         .mobile-only-section { display: block; }
         @media (min-width: 768px) { .mobile-only-section { display: none; } }
-        .mobile-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #e9ecef; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-        /* 로딩 스피너 */
-        .spinner { width: 50px; height: 50px; border: 5px solid #e0e0e0; border-top: 5px solid #2196F3; border-radius: 50%; animation: spin 1s linear infinite; }
+        .mobile-card { background: white; border-radius: 16px; padding: 18px; margin-bottom: 15px; border: 1px solid #edf2f7; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        
+        /* 수량 컨트롤 유닛 */
+        .qty-control { display: inline-flex; align-items: center; background: #e2e8f0; padding: 4px; border-radius: 12px; gap: 8px; }
+        .qty-text { font-size: 1.2rem; font-weight: 900; min-width: 50px; text-align: center; color: #1e293b; }
+        .qty-text.zero { color: #ef4444; }
+        .qty-control button { width: 35px; height: 35px; border: none; border-radius: 8px; background: white; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+        /* 배지 스타일 */
+        .badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; color: white; }
+        .badge-finished { background: #10b981; }
+        .badge-raw { background: #3b82f6; }
+        .badge-stock-out { background: #ef4444; margin-left: 5px; }
+
+        /* 로딩 레이어 */
+        #loading-layer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #2196F3; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="loading-layer" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
+    <div id="loading-layer">
         <div class="spinner"></div>
-        <p style="margin-top: 15px; font-weight: bold; color: #333;">데이터 처리 중...</p>
+        <p style="margin-top: 15px; font-weight: bold;">데이터 처리 중...</p>
     </div>
 
     <div class="header-box">
-        <h1>📦 재고 관리</h1>
+        <h1>📦 스마트 재고 관리</h1>
         <div>
-            <button onclick="location.href='/calendar.html'" style="padding:8px 15px; background:#2196F3; color:white; border:none; border-radius:5px; cursor:pointer;">📅 달력</button>
-            <button onclick="logout()" style="padding:8px 15px; background:white; border:1px solid #ccc; border-radius:5px; cursor:pointer;">로그아웃</button>
+            <button onclick="location.href='/calendar.html'" style="padding:10px 20px; background:#2196F3; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold;">📅 달력보기</button>
+            <button onclick="logout()" style="padding:10px 15px; background:none; border:none; color:#64748b; cursor:pointer;">로그아웃</button>
         </div>
     </div>
 
-    <div class="input-box">
-        <h3 style="margin:0 0 15px 0;">➕ 새 물품 등록</h3>
+    <div class="card">
         <div class="input-grid">
-            <select id="new-name"><option value="" disabled selected hidden>📦 품목 선택</option></select>
-            <select id="new-size"><option value="" disabled selected hidden>📐 사이즈 선택</option></select>
-            <select id="new-length"><option value="" disabled selected hidden>📏 길이 선택</option></select>
+            <select id="new-name"></select>
+            <select id="new-size"></select>
+            <select id="new-length"></select>
             <input type="number" id="new-qty" value="0" placeholder="수량">
             <select id="new-category">
                 <option value="완제품">🟢 완제품</option>
                 <option value="원자재">🔵 원자재</option>
-                <option value="기타">⚪ 기타</option>
             </select>
-            <button class="btn-submit" onclick="addItem()">등록하기</button>
+            <button class="btn-submit" onclick="addItem()">물품 등록</button>
         </div>
     </div>
 
-    <div id="user-info" style="margin-bottom: 15px; font-weight: bold; color: #666;"></div>
+    <div class="filter-container">
+        <button class="filter-btn active" onclick="filterItems('전체', this)">전체</button>
+        <button class="filter-btn" onclick="filterItems('완제품', this)">완제품</button>
+        <button class="filter-btn" onclick="filterItems('원자재', this)">원자재</button>
+        <button class="filter-btn" onclick="filterItems('품절', this)" style="color:#ef4444;">🚨 품절/부족</button>
+        <input type="text" id="search-input" placeholder="검색..." onkeyup="searchItems()" style="height:40px; width:150px; border-radius:10px; border:1px solid #ddd; padding:0 10px;">
+    </div>
 
-    <div class="inventory-container">
-        <h2 class="section-title finished-title">🟢 완제품 현황</h2>
-        <table class="pc-table">
-            <thead>
-                <tr><th>카테고리</th><th>품목명</th><th>사이즈</th><th>길이</th><th>수량</th><th>관리</th></tr>
-            </thead>
-            <tbody id="pc-list-finished"></tbody>
-        </table>
-
-        <h2 class="section-title raw-title">🔵 원자재 현황</h2>
-        <table class="pc-table">
-            <thead>
-                <tr><th>카테고리</th><th>품목명</th><th>사이즈</th><th>길이</th><th>수량</th><th>관리</th></tr>
-            </thead>
-            <tbody id="pc-list-raw"></tbody>
-        </table>
-
-        <div class="mobile-only-section">
-            <h2 class="section-title finished-title">🟢 완제품</h2>
-            <div id="mobile-list-finished"></div>
-            
-            <h2 class="section-title raw-title">🔵 원자재</h2>
-            <div id="mobile-list-raw"></div>
+    <div id="inventory-content">
+        <div id="finished-section">
+            <h2 style="color:#2e7d32; font-size: 1.2rem;">🟢 완제품 현황 <span id="count-finished" style="font-size:0.8rem; color:#94a3b8; font-weight: normal;"></span></h2>
+            <table class="pc-table">
+                <thead><tr><th>상태</th><th>품목 정보</th><th>사이즈</th><th>길이</th><th>수량 제어</th><th>관리</th></tr></thead>
+                <tbody id="pc-list-finished"></tbody>
+            </table>
+            <div class="mobile-only-section" id="mobile-list-finished"></div>
+        </div>
+        
+        <div id="raw-section" style="margin-top:40px;">
+            <h2 style="color:#1565c0; font-size: 1.2rem;">🔵 원자재 현황 <span id="count-raw" style="font-size:0.8rem; color:#94a3b8; font-weight: normal;"></span></h2>
+            <table class="pc-table">
+                <thead><tr><th>상태</th><th>품목 정보</th><th>사이즈</th><th>길이</th><th>수량 제어</th><th>관리</th></tr></thead>
+                <tbody id="pc-list-raw"></tbody>
+            </table>
+            <div class="mobile-only-section" id="mobile-list-raw"></div>
         </div>
     </div>
 
@@ -109,13 +119,12 @@
         const API_OPT = '/api/options';
         const currentUser = localStorage.getItem('username');
         const currentNick = localStorage.getItem('nickname');
+        let allItemsData = [];
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.onload = () => {
             if (!currentUser) { location.href = '/'; return; }
-            const userInfoEl = document.getElementById('user-info');
-            if (userInfoEl) { userInfoEl.innerText = `👤 접속자: ${currentNick || currentUser}님`; }
             initPage();
-        });
+        };
 
         async function initPage() {
             await loadOptions();
@@ -126,20 +135,22 @@
             try {
                 const res = await fetch(API_OPT);
                 const options = await res.json();
-                const nameSel = document.getElementById('new-name');
-                const sizeSel = document.getElementById('new-size');
-                const lenSel = document.getElementById('new-length');
+                const sel = {
+                    name: document.getElementById('new-name'),
+                    size: document.getElementById('new-size'),
+                    len: document.getElementById('new-length')
+                };
 
-                nameSel.innerHTML = '<option value="" disabled selected hidden>📦 품목 선택</option>';
-                sizeSel.innerHTML = '<option value="" disabled selected hidden>📐 사이즈 선택</option>';
-                lenSel.innerHTML = '<option value="" disabled selected hidden>📏 길이 선택</option>';
+                sel.name.innerHTML = '<option value="">품목 선택</option>';
+                sel.size.innerHTML = '<option value="">사이즈 선택</option>';
+                sel.len.innerHTML = '<option value="">길이 선택</option>';
 
                 options.forEach(opt => {
                     const o = document.createElement('option');
                     o.value = opt.value; o.innerText = opt.value;
-                    if (opt.type === 'itemName') nameSel.appendChild(o);
-                    else if (opt.type === 'size') sizeSel.appendChild(o.cloneNode(true));
-                    else if (opt.type === 'length') lenSel.appendChild(o.cloneNode(true));
+                    if (opt.type === 'itemName') sel.name.appendChild(o);
+                    else if (opt.type === 'size') sel.size.appendChild(o);
+                    else if (opt.type === 'length') sel.len.appendChild(o);
                 });
             } catch (e) { console.error(e); }
         }
@@ -148,89 +159,78 @@
             showLoading(true);
             try {
                 const res = await fetch(API_URL);
-                const items = await res.json();
-                
-                const finishedPC = document.getElementById('pc-list-finished');
-                const rawPC = document.getElementById('pc-list-raw');
-                const finishedMobile = document.getElementById('mobile-list-finished');
-                const rawMobile = document.getElementById('mobile-list-raw');
-
-                [finishedPC, rawPC, finishedMobile, rawMobile].forEach(el => el.innerHTML = '');
-
-                items.forEach(item => {
-                    const isRaw = item.category === '원자재';
-                    const bgColor = isRaw ? '#D1E9FF' : '#D4F1D8';
-                    const badgeColor = isRaw ? '#007bff' : '#28a745';
-
-                    // 1. PC 테이블 행 생성
-                    const tr = document.createElement('tr');
-                    tr.style.backgroundColor = bgColor;
-                    tr.innerHTML = `
-                        <td><span class="category-badge" style="background:${badgeColor}">${item.category}</span></td>
-                        <td style="font-weight:bold;">${item.name}</td>
-                        <td>${item.size || '-'}</td>
-                        <td>${item.length || '-'}</td>
-                        <td>
-                            <div class="qty-wrapper">
-                                <button class="qty-btn btn-dec" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
-                                <span class="qty-text">${item.quantity}</span>
-                                <button class="qty-btn btn-inc" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
-                            </div>
-                        </td>
-                        <td><button onclick="deleteItem('${item._id}')" class="btn-del-card">삭제</button></td>
-                    `;
-
-                    // 2. 모바일 카드 생성
-                    const card = document.createElement('div');
-                    card.className = 'mobile-card';
-                    card.style.backgroundColor = bgColor;
-                    card.style.borderLeft = `6px solid ${badgeColor}`;
-                    card.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <b style="font-size:1.1rem;">${item.name}</b>
-                            <span class="category-badge" style="background:${badgeColor}">${item.category}</span>
-                        </div>
-                        <div style="font-size:14px; color:#333; margin-bottom:10px;">규격: ${item.size} / ${item.length}</div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div class="qty-wrapper">
-                                <button class="qty-btn btn-dec" onclick="updateStock('${item._id}', ${item.quantity - 1})">-</button>
-                                <b class="qty-text">${item.quantity}</b>
-                                <button class="qty-btn btn-inc" onclick="updateStock('${item._id}', ${item.quantity + 1})">+</button>
-                            </div>
-                            <button onclick="deleteItem('${item._id}')" class="btn-del-card">삭제</button>
-                        </div>
-                    `;
-
-                    if (isRaw) {
-                        rawPC.appendChild(tr);
-                        rawMobile.appendChild(card);
-                    } else {
-                        finishedPC.appendChild(tr);
-                        finishedMobile.appendChild(card);
-                    }
-                });
-            } catch (err) { alert("재고 로드 실패"); }
-            finally { setTimeout(() => showLoading(false), 300); }
+                allItemsData = await res.json();
+                renderItems(allItemsData);
+            } catch (err) { console.error(err); }
+            finally { showLoading(false); }
         }
 
-        async function addItem() {
-            const name = document.getElementById('new-name').value;
-            const size = document.getElementById('new-size').value;
-            const length = document.getElementById('new-length').value;
-            const quantity = document.getElementById('new-qty').value;
-            const category = document.getElementById('new-category').value;
+        function renderItems(items) {
+            const pcF = document.getElementById('pc-list-finished');
+            const pcR = document.getElementById('pc-list-raw');
+            const mobF = document.getElementById('mobile-list-finished');
+            const mobR = document.getElementById('mobile-list-raw');
 
-            if(!name) return alert("품목을 선택해주세요.");
+            [pcF, pcR, mobF, mobR].forEach(el => el.innerHTML = '');
 
-            showLoading(true);
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, size, length, quantity, category, username: currentNick || currentUser })
-                });
-                await loadItems();
-            } finally { showLoading(false); }
+            // --- 정렬 로직 적용: 수량 있는 것 우선 -> 최신 수정순 ---
+            items.sort((a, b) => {
+                if (a.quantity > 0 && b.quantity <= 0) return -1;
+                if (a.quantity <= 0 && b.quantity > 0) return 1;
+                return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+            });
+
+            items.forEach(item => {
+                const isRaw = item.category === '원자재';
+                const qtyClass = item.quantity <= 0 ? 'zero' : '';
+                const badgeClass = isRaw ? 'badge-raw' : 'badge-finished';
+                const stockOut = item.quantity <= 0 ? '<span class="badge badge-stock-out">품절</span>' : '';
+
+                const row = `
+                    <tr>
+                        <td><span class="badge ${badgeClass}">${item.category}</span>${stockOut}</td>
+                        <td style="text-align:left; font-weight:800; padding-left:20px;">${item.name}</td>
+                        <td><b>${item.size}</b></td>
+                        <td><b>${item.length}</b></td>
+                        <td>
+                            <div class="qty-control">
+                                <button onclick="updateStock('${item._id}', ${item.quantity - 1})">－</button>
+                                <span class="qty-text ${qtyClass}">${item.quantity}</span>
+                                <button onclick="updateStock('${item._id}', ${item.quantity + 1})">＋</button>
+                            </div>
+                        </td>
+                        <td><button onclick="deleteItem('${item._id}')" style="color:#cbd5e1; background:none; border:none; cursor:pointer; font-size:12px;">삭제</button></td>
+                    </tr>`;
+                
+                const card = `
+                    <div class="mobile-card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span class="badge ${badgeClass}">${item.category}</span>
+                            ${stockOut}
+                        </div>
+                        <div style="font-weight:800; font-size:1.1rem; margin-bottom:5px;">${item.name}</div>
+                        <div style="color:#64748b; font-size:0.9rem; margin-bottom:15px;">규격: ${item.size} / ${item.length}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="qty-control">
+                                <button onclick="updateStock('${item._id}', ${item.quantity - 1})">－</button>
+                                <span class="qty-text ${qtyClass}">${item.quantity}</span>
+                                <button onclick="updateStock('${item._id}', ${item.quantity + 1})">＋</button>
+                            </div>
+                            <button onclick="deleteItem('${item._id}')" style="color:#ef4444; background:none; border:none; font-weight:bold;">삭제</button>
+                        </div>
+                    </div>`;
+
+                if(isRaw) {
+                    pcR.innerHTML += row;
+                    mobR.innerHTML += card;
+                } else {
+                    pcF.innerHTML += row;
+                    mobF.innerHTML += card;
+                }
+            });
+
+            document.getElementById('count-finished').innerText = `(${pcF.children.length}건)`;
+            document.getElementById('count-raw').innerText = `(${pcR.children.length}건)`;
         }
 
         async function updateStock(id, newQty) {
@@ -243,21 +243,46 @@
             loadItems();
         }
 
+        async function addItem() {
+            const data = {
+                name: document.getElementById('new-name').value,
+                size: document.getElementById('new-size').value,
+                length: document.getElementById('new-length').value,
+                quantity: document.getElementById('new-qty').value,
+                category: document.getElementById('new-category').value,
+                username: currentNick || currentUser
+            };
+            if(!data.name) return alert("품목을 선택하세요.");
+            showLoading(true);
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            loadItems();
+        }
+
         async function deleteItem(id) {
             if(!confirm("삭제하시겠습니까?")) return;
             await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
             loadItems();
         }
 
-        function showLoading(show) {
-            document.getElementById('loading-layer').style.display = show ? 'flex' : 'none';
+        function filterItems(type, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if(type === '전체') renderItems(allItemsData);
+            else if(type === '품절') renderItems(allItemsData.filter(i => i.quantity <= 0));
+            else renderItems(allItemsData.filter(i => i.category === type));
         }
 
-        function logout() { 
-            localStorage.removeItem('username'); 
-            localStorage.removeItem('nickname'); 
-            location.href = '/'; 
+        function searchItems() {
+            const term = document.getElementById('search-input').value.toLowerCase();
+            renderItems(allItemsData.filter(i => i.name.toLowerCase().includes(term) || i.size.toLowerCase().includes(term)));
         }
+
+        function showLoading(show) { document.getElementById('loading-layer').style.display = show ? 'flex' : 'none'; }
+        function logout() { localStorage.clear(); location.href = '/'; }
     </script>
 </body>
 </html>

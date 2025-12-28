@@ -12,6 +12,8 @@ const session = require("express-session");
 const { RedisStore } = require("connect-redis");
 const redisClient = require("./config/redis");
 
+const holidayRoutes = require(`./routes/holidays`);
+
 dotenv.config();
 
 // 1. 앱 초기화
@@ -103,6 +105,8 @@ app.use(
   },
   optionRoutes
 ); // 옵션은 관리자만!
+
+app.use(`/api/holidays`, holidayRoutes);
 
 const Item = require("./models/Item");
 

@@ -85,11 +85,76 @@
         </div>
     </div>
 
+    <div class="section">
+    <h2>👥 전체 회원 관리</h2>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>아이디</th><th>닉네임</th><th>권한</th><th>관리</th></tr>
+            </thead>
+            <tbody id="full-user-list"></tbody>
+        </table>
+    </div>
+</div>
+
     <script>
         const API_OPT = '/api/options';
         const API_ADMIN = '/api/admin';
 
-        window.onload = function() { loadOptions(); loadPendingUsers(); };
+        window.onload = function() { loadOptions(); loadPendingUsers(); loadFullUsers();};
+
+// 전체 회원 목록 불러오기
+async function loadFullUsers() {
+    try {
+        const res = await fetch('/api/admin/users'); // server.js 설정에 따라 주소 확인 필요
+        const users = await res.json();
+        const list = document.getElementById('full-user-list');
+        list.innerHTML = '';
+
+        if (users.length === 0) {
+            list.innerHTML = '<tr><td colspan="4">등록된 회원이 없습니다.</td></tr>';
+            return;
+        }
+
+        users.forEach(user => {
+            list.innerHTML += `
+                <tr>
+                    <td>${user.username}</td>
+                    <td>${user.nickname}</td>
+                    <td>${user.role === 'admin' ? '<b>관리자</b>' : '일반'}</td>
+                    <td>
+                        <button onclick="resetPassword('${user._id}')" style="background:#f59e0b;">PW초기화</button>
+                        <button class="btn-ban" onclick="banUser('${user._id}')">강퇴</button>
+                    </td>
+                </tr>`;
+        });
+    } catch (err) {
+        console.error("회원 목록 로드 실패:", err);
+    }
+}
+
+// 비밀번호 초기화 함수
+async function resetPassword(id) {
+    if (!confirm("비밀번호를 '1234'로 초기화하시겠습니까?")) return;
+
+    try {
+        const response = await fetch('/api/admin/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: id })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert(data.message);
+        } else {
+            alert("초기화 실패: " + data.message);
+        }
+    } catch (err) {
+        console.error("초기화 에러:", err);
+        alert("서버 통신 오류");
+    }
+}
 
         async function loadOptions() {
             const res = await fetch(API_OPT);
@@ -125,48 +190,75 @@
         }
 
         async function loadPendingUsers() {
-            const res = await fetch(`${API_ADMIN}/pending`);
-            const users = await res.json();
-            const list = document.getElementById('user-list');
-            list.innerHTML = '';
-            if (users.length === 0) {
-                list.innerHTML = '<tr><td colspan="4">대기 중인 회원이 없습니다.</td></tr>';
-                return;
-            }
-            users.forEach(user => {
-                list.innerHTML += `
-                    <tr>
-                        <td>${user.username}</td>
-                        <td>${user.nickname}</td>
-                        <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-                        <td>
-                            <button class="btn-approve" onclick="approveUser('${user.username}')">승인</button>
-                            <button class="btn-ban" onclick="banUser('${user.username}')">거절</button>
-                        </td>
-                    </tr>`;
-            });
-        }
+    const res = await fetch(`${API_ADMIN}/pending`);
+    const users = await res.json();
+    const list = document.getElementById('user-list');
+    list.innerHTML = '';
+    
+    if (users.length === 0) {
+        list.innerHTML = '<tr><td colspan="4">대기 중인 회원이 없습니다.</td></tr>';
+        return;
+    }
+
+    users.forEach(user => {
+        list.innerHTML += `
+            <tr>
+                <td>${user.username}</td>
+                <td>${user.nickname}</td>
+                <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+                <td>
+                    <button class="btn-approve" onclick="approveUser('${user._id}')">승인</button>
+                    <button class="btn-ban" onclick="banUser('${user._id}')">거절</button>
+                </td>
+            </tr>`;
+    });
+}
         
-        async function approveUser(username) {
-            await fetch(`${API_ADMIN}/approve`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ targetUsername: username })
-            });
-            alert('승인되었습니다.');
-            loadPendingUsers();
+        // admin.html 내 승인 함수 예시
+async function approveUser(id) { // 여기서 id는 유저의 _id 값이어야 합니다.
+    if (!confirm("승인하시겠습니까?")) return;
+
+    try {
+        const response = await fetch('/api/admin/approve', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: id }) // 서버가 기다리는 'userId'와 매칭
+        });
+
+        if (!response.ok) {
+            // 서버에서 보낸 에러 메시지를 확인하기 위해 json 파싱
+            const errData = await response.json();
+            throw new Error(errData.message || '서버 응답 오류');
         }
 
-        async function banUser(username) {
-            if(!confirm('삭제하시겠습니까?')) return;
-            await fetch(`${API_ADMIN}/ban`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ targetUsername: username })
-            });
+        const data = await response.json();
+        alert(data.message);
+        loadPendingUsers(); // 목록 새로고침
+        
+    } catch (err) {
+        console.error("네트워크 에러:", err);
+        alert(err.message);
+    }
+}
+
+        async function banUser(id) {
+    if(!confirm('삭제하시겠습니까?')) return;
+    
+    try {
+        const res = await fetch(`/api/admin/reject`, { // 주소 확인!
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: id }) // userId로 통일
+        });
+        
+        if(res.ok) {
             alert('삭제되었습니다.');
             loadPendingUsers();
         }
+    } catch (err) {
+        console.error(err);
+    }
+}
     </script>
 </body>
 </html>

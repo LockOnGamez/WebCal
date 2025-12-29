@@ -5,58 +5,136 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🏠 스마트 공장 시스템</title>
     <style>
-        body { padding: 20px; font-family: 'Pretendard', sans-serif; background-color: #f4f7f9; margin: 0; color: #333; }
-        .header { margin-bottom: 30px; text-align: center; }
-        .header h1 { font-size: 1.5rem; color: #1e293b; }
-        .user-name { color: #2196F3; font-weight: 800; }
-
-        /* 카드 그리드 레이아웃 */
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 500px; margin: 0 auto; }
-        @media (max-width: 350px) { .menu-grid { grid-template-columns: 1fr; } }
-
-        .menu-card {
-            background: white; border-radius: 24px; padding: 25px 15px; text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: none; cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex; flex-direction: column; align-items: center; gap: 12px;
-            min-height: 160px; justify-content: center;
+        /* 기본 베이스 스타일 */
+        body { 
+            padding: 20px; 
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; 
+            background-color: #f4f7f9; 
+            margin: 0; 
+            color: #334155; 
+            -webkit-tap-highlight-color: transparent;
         }
-        .menu-card:active { transform: scale(0.95); background-color: #f8fafc; }
-        .menu-card .icon { font-size: 2.5rem; }
-        .menu-card span { font-weight: 700; font-size: 1.1rem; }
 
-        /* 색상 포인트 */
-        .card-in { color: #10b981; }
-        .card-out { color: #ef4444; }
+        .header { margin: 30px 0; text-align: center; }
+        .header h1 { font-size: 1.4rem; margin-bottom: 5px; color: #1e293b; }
+        .user-name { color: #2196F3; font-weight: 800; }
+        .header p { color: #64748b; font-size: 0.9rem; margin: 0; }
+
+        /* 메뉴 그리드: 2열 자동 배치 */
+        .menu-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 15px; 
+            max-width: 500px; 
+            margin: 0 auto; 
+        }
+
+        /* 메뉴 카드 공통 스타일 */
+        .menu-card {
+            background: white; 
+            border-radius: 24px; 
+            padding: 25px 10px; 
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.03); 
+            border: 2px solid transparent; 
+            cursor: pointer;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+            min-height: 150px;
+        }
+
+        .menu-card:active { 
+            transform: scale(0.95); 
+            background-color: #f8fafc; 
+        }
+
+        .menu-card .icon { font-size: 2.2rem; }
+        .menu-card span { font-weight: 700; font-size: 1.05rem; }
+
+        /* 상태별 색상 포인트 */
         .card-stock { color: #3b82f6; }
         .card-cal { color: #f59e0b; }
-        .card-admin { color: #6366f1; border: 2px dashed #6366f1; } /* 관리자 버튼 강조 */
+        
+        /* 생산 기록 버튼 (강조형) */
+        .card-prod { 
+            grid-column: span 2; /* 5번째 버튼이므로 가로 전체 채우기 */
+            background: #ecfdf5; 
+            border-color: #10b981; 
+            color: #047857;
+            flex-direction: row; /* 모바일에서 가로형으로 표시 */
+            min-height: 100px;
+            margin-top: 5px;
+        }
+        .card-prod .icon { font-size: 2rem; margin-right: 10px; }
 
-        .logout-btn {
-            margin-top: 40px; width: 100%; max-width: 200px; padding: 12px;
-            background: #cbd5e1; color: #475569; border: none; border-radius: 12px;
-            font-weight: bold; cursor: pointer; display: block; margin: 40px auto 0 auto;
+        /* 관리자 전용 스타일 */
+        .card-admin { 
+            grid-column: span 2; 
+            border: 2px dashed #6366f1; 
+            color: #4f46e5;
+            background: #f5f3ff;
+            min-height: 80px;
+            flex-direction: row;
         }
 
-        /* 관리자 버튼 초기 숨김 */
-        #admin-menu { display: none; }
+        /* 로그아웃 버튼 */
+        .logout-btn {
+            margin: 40px auto 20px auto; 
+            width: 120px; 
+            padding: 12px;
+            background: #e2e8f0; 
+            color: #64748b; 
+            border: none; 
+            border-radius: 12px;
+            font-weight: 600; 
+            cursor: pointer; 
+            display: block;
+            font-size: 0.9rem;
+        }
+
+        /* 로딩 레이어 */
+        #loading-layer { 
+            display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.9); z-index: 9999; 
+            justify-content: center; align-items: center; flex-direction: column; 
+            backdrop-filter: blur(5px);
+        }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #2196F3; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 모바일 최적화 미세 조정 */
+        @media (max-width: 400px) {
+            .menu-grid { gap: 10px; }
+            .menu-card { min-height: 130px; border-radius: 20px; }
+            .menu-card span { font-size: 0.95rem; }
+        }
     </style>
 </head>
 <body>
+    <div id="loading-layer">
+        <div class="spinner"></div>
+        <p style="margin-top: 15px; font-weight: bold;">정보 동기화 중...</p>
+    </div>
+
     <div class="header">
         <h1>안녕하세요, <span id="user-display" class="user-name">...</span>님!</h1>
-        <p style="color: #64748b; font-size: 0.9rem;">오늘의 업무를 선택해 주세요.</p>
+        <p>오늘의 업무를 선택해 주세요.</p>
     </div>
 
     <div class="menu-grid">
-        <button class="menu-card card-in" id="btn-check-in" onclick="handleAttendance('check-in')">
+        <button class="menu-card" id="btn-check-in" onclick="handleAttendance('check-in')">
             <div class="icon">🌅</div>
             <span>출근 체크</span>
         </button>
-        <button class="menu-card card-out" id="btn-check-out" onclick="handleAttendance('check-out')">
+        <button class="menu-card" id="btn-check-out" onclick="handleAttendance('check-out')">
             <div class="icon">🌙</div>
             <span>퇴근 체크</span>
         </button>
+
         <button class="menu-card card-stock" onclick="location.href='/inventory.html'">
             <div class="icon">📦</div>
             <span>재고 관리</span>
@@ -66,9 +144,14 @@
             <span>작업/근무 달력</span>
         </button>
         
-        <button id="admin-menu" class="menu-card card-admin" onclick="location.href='/admin.html'">
+        <button class="menu-card card-prod" onclick="location.href='/production.html'">
+            <div class="icon">🔨</div>
+            <span>생산 기록 등록</span>
+        </button>
+
+        <button id="admin-menu" class="menu-card card-admin" style="display:none;" onclick="location.href='/admin.html'">
             <div class="icon">🛡️</div>
-            <span>시스템 관리</span>
+            <span>시스템 관리자 모드</span>
         </button>
     </div>
 
@@ -82,48 +165,28 @@
             if (!currentUser) { location.href = '/'; return; }
             document.getElementById('user-display').innerText = currentNick || currentUser;
             
-            // 1. 관리자 권한 확인 및 버튼 노출
-            await checkAdminStatus();
-            
-            // 2. 오늘의 출퇴근 상태 확인
-            await checkAttendanceStatus();
-            
-            // 3. 공휴일 미리 로드
-            prefetchHolidays();
+            try {
+                await Promise.all([
+                    checkAdminStatus(),
+                    checkAttendanceStatus()
+                ]);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setTimeout(() => {
+                    document.getElementById('loading-layer').style.display = 'none';
+                }, 300);
+            }
         };
 
-        // [추가] 관리자 여부 확인 함수
         async function checkAdminStatus() {
             try {
-                // 서버 세션 정보를 확인하는 경로 (없을 경우를 대비해 기존 데이터 활용 가능)
-                // 여기서는 로그인 시 저장된 role 정보를 사용하거나 서버에 직접 물어봅니다.
-                const res = await fetch(`/api/admin/check`); // 서버에 관리자 여부 확인 API 호출
+                const res = await fetch(`/api/admin/check`);
                 const data = await res.json();
-
                 if (data.isAdmin) {
                     document.getElementById('admin-menu').style.display = 'flex';
-                    // 관리자일 경우 그리드를 홀수 개(5개)에 맞춰 조정하거나 스타일 변경 가능
-                    const grid = document.querySelector('.menu-grid');
-                    grid.style.maxWidth = '600px'; 
                 }
-            } catch (err) {
-                console.log("일반 사용자 모드로 진입합니다.");
-            }
-        }
-
-        async function prefetchHolidays() {
-            const currentYear = new Date().getFullYear();
-            const yearsToFetch = [currentYear, currentYear + 1]; 
-            let cache = JSON.parse(localStorage.getItem('holiday_cache')) || {};
-            for (const year of yearsToFetch) {
-                if (cache[year]) continue;
-                try {
-                    const res = await fetch(`/api/holidays/${year}`);
-                    const data = await res.json();
-                    cache[year] = data;
-                    localStorage.setItem('holiday_cache', JSON.stringify(cache));
-                } catch (e) { console.error(e); }
-            }
+            } catch (err) { console.log("일반 사용자 모드"); }
         }
 
         async function checkAttendanceStatus() {
@@ -131,47 +194,42 @@
                 const res = await fetch(`/api/attendance/status/${currentUser}`);
                 const data = await res.json();
                 if (data) {
-                    if (data.clockIn) {
-                        const inTime = new Date(data.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        updateButtonUI('check-in', inTime);
-                    }
-                    if (data.clockOut) {
-                        const outTime = new Date(data.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        updateButtonUI('check-out', outTime);
-                    }
+                    if (data.clockIn) updateButtonUI('check-in', data.clockIn);
+                    if (data.clockOut) updateButtonUI('check-out', data.clockOut);
                 }
             } catch (err) { console.error(err); }
         }
 
-        function updateButtonUI(type, time) {
+        function updateButtonUI(type, isoTime) {
+            const time = new Date(isoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const isBtnIn = type === 'check-in';
             const btn = document.getElementById(isBtnIn ? 'btn-check-in' : 'btn-check-out');
             btn.onclick = null;
-            btn.style.background = '#f1f5f9';
+            btn.style.backgroundColor = '#f1f5f9';
             btn.innerHTML = `
                 <div class="icon">${isBtnIn ? '✅' : '🏁'}</div>
                 <span style="color: #94a3b8;">${isBtnIn ? '출근' : '퇴근'} 완료</span>
-                <small style="font-size: 0.85rem; color: #64748b; margin-top: 5px; font-weight: bold;">${time}</small>
+                <small style="font-size: 0.8rem; color: #64748b; font-weight: bold;">${time}</small>
             `;
         }
 
         async function handleAttendance(type) {
             const modeName = type === 'check-in' ? '출근' : '퇴근';
             if (!confirm(`${modeName} 체크를 하시겠습니까?`)) return;
+            
             try {
                 const res = await fetch(`/api/attendance/${type}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: currentUser, nickname: currentNick })
                 });
-                if (res.ok) { await checkAttendanceStatus(); } 
+                if (res.ok) { location.reload(); } 
                 else { const data = await res.json(); alert(data.message); }
             } catch (err) { alert("통신 오류"); }
         }
 
         function logout() {
-            localStorage.removeItem('username');
-            localStorage.removeItem('nickname');
+            localStorage.clear();
             location.href = '/';
         }
     </script>

@@ -122,11 +122,7 @@
         
         alert("로그인 성공! " + data.user.nickname + "님 환영합니다.");
         
-        if (data.user.role === 'admin') {
-            location.href = '/admin.html';
-        } else {
-            location.href = '/inventory.html';
-        }
+        location.href = '/main.html';
     } else {
         alert(data.message);
     }

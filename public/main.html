@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏠 스마트 공장 시스템</title>
+    <style>
+        body { padding: 20px; font-family: 'Pretendard', sans-serif; background-color: #f4f7f9; margin: 0; color: #333; }
+        .header { margin-bottom: 30px; text-align: center; }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 500px; margin: 0 auto; }
+        .menu-card {
+            background: white; border-radius: 24px; padding: 30px 15px; text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: none; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 10px; transition: 0.2s;
+        }
+        .menu-card:active { transform: scale(0.95); }
+        .icon { font-size: 2.5rem; }
+        .card-in { color: #10b981; } .card-out { color: #ef4444; }
+        .card-stock { color: #3b82f6; } .card-cal { color: #f59e0b; }
+        .logout-btn { margin: 40px auto; display: block; padding: 10px 20px; border-radius: 10px; border: none; background: #cbd5e1; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>안녕하세요, <span id="user-display" style="color:#2196F3">...</span>님!</h1>
+    </div>
+    <div class="menu-grid">
+        <button class="menu-card card-in" id="btn-in" onclick="handleAttendance('check-in')"><div class="icon">🌅</div><span>출근 체크</span></button>
+        <button class="menu-card card-out" id="btn-out" onclick="handleAttendance('check-out')"><div class="icon">🌙</div><span>퇴근 체크</span></button>
+        <button class="menu-card card-stock" onclick="location.href='/inventory.html'"><div class="icon">📦</div><span>재고 관리</span></button>
+        <button class="menu-card card-cal" onclick="location.href='/calendar.html'"><div class="icon">📅</div><span>작업/근무 달력</span></button>
+    </div>
+    <button class="logout-btn" onclick="logout()">로그아웃</button>
+
+    <script>
+        const currentUser = localStorage.getItem('username');
+        const currentNick = localStorage.getItem('nickname');
+
+        window.onload = async () => {
+            if (!currentUser) location.href = '/';
+            document.getElementById('user-display').innerText = currentNick || currentUser;
+            await checkStatus();
+            prefetchHolidays();
+        };
+
+        async function checkStatus() {
+            const res = await fetch(`/api/attendance/status/${currentUser}`);
+            const data = await res.json();
+            if (data?.clockIn) updateUI('in', data.clockIn);
+            if (data?.clockOut) updateUI('out', data.clockOut);
+        }
+
+        function updateUI(type, time) {
+            const btn = document.getElementById(`btn-${type}`);
+            btn.onclick = null; btn.style.background = '#f1f5f9'; btn.style.opacity = '0.8';
+            btn.innerHTML = `<div class="icon">${type==='in'?'✅':'🏁'}</div><span style="color:#94a3b8">${type==='in'?'출근':'퇴근'} 완료</span>
+                             <small style="font-weight:bold">${new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>`;
+        }
+
+        async function handleAttendance(type) {
+            if (!confirm(`${type==='check-in'?'출근':'퇴근'} 하시겠습니까?`)) return;
+            const res = await fetch(`/api/attendance/${type}`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: currentUser, nickname: currentNick })
+            });
+            if (res.ok) { alert("완료되었습니다."); location.reload(); }
+            else { const d = await res.json(); alert(d.message); }
+        }
+
+        async function prefetchHolidays() {
+            const y = new Date().getFullYear();
+            let cache = JSON.parse(localStorage.getItem('holiday_cache')) || {};
+            if (!cache[y]) {
+                const res = await fetch(`/api/holidays/${y}`);
+                cache[y] = await res.json();
+                localStorage.setItem('holiday_cache', JSON.stringify(cache));
+            }
+        }
+
+        function logout() { localStorage.clear(); location.href = '/'; }
+    </script>
+</body>
+</html>

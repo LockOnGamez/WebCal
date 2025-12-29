@@ -121,9 +121,32 @@
         const currentNick = localStorage.getItem('nickname');
         let allItemsData = [];
 
+        // [추가] 공휴일 미리 가져오기 함수
+    async function prefetchHolidays() {
+        const currentYear = new Date().getFullYear();
+        const yearsToFetch = [currentYear, currentYear + 1]; // 올해, 내년
+        // 기존 캐시 확인
+        let cache = JSON.parse(localStorage.getItem('holiday_cache')) || {};
+
+        for (const year of yearsToFetch) {
+            if (cache[year]) continue; // 이미 있으면 패스
+
+            try {
+                const res = await fetch(`/api/holidays/${year}`);
+                const data = await res.json();
+                cache[year] = data;
+                localStorage.setItem('holiday_cache', JSON.stringify(cache));
+                console.log(`✅ ${year}년 공휴일 미리 준비 완료`);
+            } catch (e) {
+                console.error(`${year}년 공휴일 예열 실패`, e);
+            }
+        }
+    }
+
         window.onload = () => {
             if (!currentUser) { location.href = '/'; return; }
             initPage();
+            prefetchHolidays();
         };
 
         async function initPage() {

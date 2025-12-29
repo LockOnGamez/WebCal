@@ -1,0 +1,14 @@
+const mongoose = require("mongoose");
+
+const attendanceSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  username: { type: String, required: true },
+  nickname: { type: String },
+  date: { type: String, required: true }, // 관리 편의를 위한 YYYY-MM-DD (문자열)
+  clockIn: { type: Date, required: true },
+  clockOut: { type: Date },
+  duration: { type: Number, default: 0 }, // 근무 시간 (초 단위)
+  createdAt: { type: Date, default: Date.now },
+});
+
+module.exports = mongoose.model("Attendance", attendanceSchema);

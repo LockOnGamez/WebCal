@@ -14,6 +14,8 @@ const redisClient = require("./config/redis");
 
 const holidayRoutes = require(`./routes/holidays`);
 
+const attendanceRoutes = require(`./routes/attendance`);
+
 dotenv.config();
 
 // 1. 앱 초기화
@@ -107,6 +109,8 @@ app.use(
 ); // 옵션은 관리자만!
 
 app.use(`/api/holidays`, holidayRoutes);
+
+app.use("/api/attendance", checkLogin, attendanceRoutes);
 
 const Item = require("./models/Item");
 

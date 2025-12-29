@@ -3,364 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🏭 생산 및 재고 달력</title>
+    <title>📅 작업 및 근무 달력</title>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <style>
-        /* 기본 레이아웃 및 폰트 */
-        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: #f0f2f5; margin: 0; color: #333; }
+        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: #f0f2f5; margin: 0; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .header h1 { font-size: 1.6rem; margin: 0; }
+        #calendar { background: white; padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         .nav-btns { display: flex; gap: 8px; align-items: center; }
-        #calendar { background: white; padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: none; }
-
-        /* 로딩 스피너 스타일 */
-        .spinner { 
-            width: 50px; height: 50px; 
-            border: 5px solid #e0e0e0; 
-            border-top: 5px solid #2196F3; 
-            border-radius: 50%; 
-            animation: spin 1s linear infinite; 
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* 모달 및 폼 스타일 */
+        .mode-toggles { background: #eee; padding: 5px; border-radius: 12px; display: flex; gap: 5px; }
+        .mode-btn { border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .active-work { background: #2196F3; color: white; }
+        .active-att { background: #10b981; color: white; }
+        
+        /* 시간 표기 강제 숨김 */
+        .fc-event-time { display: none !important; }
+        
+        /* 휴일 및 날짜 스타일 */
+        .holiday-name { font-size: 0.65rem; color: #F44336; margin-top: -2px; font-weight: 500; text-align: right; display: block; }
+        .fc-daygrid-day-top { flex-direction: column !important; align-items: flex-end !important; padding-right: 5px !important; }
+        .fc-daygrid-day-number { float: none !important; padding: 0 !important; }
+        .fc-day-sun .fc-daygrid-day-number { color: #F44336 !important; }
+        
+        /* 모달 스타일 */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; backdrop-filter: blur(4px); }
-        .modal-content { background: white; width: 95%; max-width: 600px; padding: 30px; margin: 40px auto; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); box-sizing: border-box; }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 700; color: #444; font-size: 15px; }
-        .form-group select, .form-group input { width: 100%; height: 50px; padding: 0 15px; border: 2px solid #eef0f2; border-radius: 12px; font-size: 16px; box-sizing: border-box; background-color: #fdfdfd; transition: all 0.2s; }
-        .table-container { width: 100%; overflow-x: auto; margin-top: 10px; border-radius: 12px; border: 1px solid #eee; }
-        .item-table { width: 100%; border-collapse: collapse; min-width: 450px; }
-        .item-table th { background: #f8f9fa; padding: 12px; font-size: 14px; color: #666; }
-        .item-table td { padding: 10px; border-bottom: 1px solid #f1f1f1; text-align: center; }
-
-        /* 버튼 스타일 */
-        button { padding: 12px 20px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-        .btn-blue { background: #2196F3; color: white; width: 100%; font-size: 16px; box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3); }
-        .btn-green { background: #4CAF50; color: white; }
+        .modal-content { background: white; width: 95%; max-width: 500px; padding: 30px; margin: 40px auto; border-radius: 24px; box-sizing: border-box; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; height: 45px; padding: 0 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        
+        button { padding: 12px 20px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
+        .btn-blue { background: #2196F3; color: white; width: 100%; }
         .btn-red { background: #F44336; color: white; }
         .btn-gray { background: #eee; color: #333; }
-        .floating-btn { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background: linear-gradient(135deg, #2196F3, #1976D2); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 8px 20px rgba(33, 150, 243, 0.4); z-index: 999; border: none; }
-
-        /* --- 달력 커스텀 스타일 (공휴일 관련) --- */
-        .fc-day-sun .fc-daygrid-day-number { color: #F44336 !important; }
-        .fc-day-sat .fc-daygrid-day-number { color: #2196F3 !important; }
-        .fc-day-today .fc-daygrid-day-number { color: #2196F3 !important; text-decoration: underline; }
-        .fc-event-time { display: none !important; }
-
-        /* 날짜 상단 영역 우측 정렬 */
-        .fc-daygrid-day-top {
-            flex-direction: column !important;
-            align-items: flex-end !important;
-            padding-right: 5px !important;
-        }
-
-        .fc-daygrid-day-number {
-            float: none !important;
-            padding: 0 !important;
-        }
-
-        /* 공휴일 이름 스타일 (우측 정렬 및 괄호) */
-        .holiday-name {
-            font-size: 0.65rem;
-            color: #F44336;
-            margin-top: -2px;
-            font-weight: 500;
-            text-align: right;
-            line-height: 1.1;
-            display: block;
-        }
+        
+        #loading-layer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #e0e0e0; border-top: 5px solid #2196F3; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="loading-layer" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
-        <div class="spinner"></div>
-        <p style="margin-top: 15px; font-weight: bold; color: #333;">데이터 처리 중...</p>
-    </div>
+    <div id="loading-layer"><div class="spinner"></div><p>데이터 처리 중...</p></div>
 
     <div class="header">
-        <h1>📅 생산 및 재고 달력</h1>
+        <h1 id="cal-title">📅 작업 달력</h1>
         <div class="nav-btns">
-            <span id="user-display" style="font-weight: 800; color: #2196F3; background: white; padding: 8px 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);"></span>
-            <button class="btn-gray" onclick="location.href='/inventory.html'">📦 재고현황</button>
-            <button class="btn-gray" onclick="logout()">로그아웃</button>
+            <div class="mode-toggles">
+                <button id="m-work" class="mode-btn active-work" onclick="setMode('work')">📦 작업</button>
+                <button id="m-att" class="mode-btn" onclick="setMode('att')">🕒 근무</button>
+            </div>
+            <button onclick="location.href='/main.html'" style="padding:8px 15px; border-radius:10px; border:none; background:#333; color:white; font-weight:bold;">🏠 홈</button>
         </div>
-    </div>
-
-    <div style="margin-bottom: 15px; display: flex; gap: 15px; font-size: 14px; font-weight: bold;">
-        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #4CAF50; border-radius: 3px;"></span> 입고</span>
-        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #F44336; border-radius: 3px;"></span> 출고</span>
-        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #2196F3; border-radius: 3px;"></span> 생산</span>
     </div>
 
     <div id="calendar"></div>
 
-    <button class="floating-btn" onclick="openQuickAdd()">+</button>
-
-    <div id="eventModal" class="modal">
+    <div id="attendanceModal" class="modal">
         <div class="modal-content">
-            <h3 id="modal-title">📝 작업 등록</h3>
-            <input type="hidden" id="edit-event-id">
-            <div class="form-group"><label>날짜</label><input type="date" id="modal-date"></div>
+            <h3>🕒 근무 기록 수정</h3>
+            <input type="hidden" id="att-id">
             <div class="form-group">
-                <label>작업 구분</label>
-                <select id="modal-type" onchange="toggleProductionMode()">
-                    <option value="입고">🟢 입고</option>
-                    <option value="출고">🔴 출고</option>
-                    <option value="생산">🔵 생산</option>
-                </select>
+                <label>이름(닉네임)</label>
+                <input type="text" id="att-name">
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
-                <label style="font-weight:bold;">📦 대상 품목</label>
-                <button class="btn-green" onclick="addRow('product-tbody')" style="padding:6px 12px; font-size:12px;">+ 품목추가</button>
+            <div class="form-group">
+                <label>출근 시간</label>
+                <input type="datetime-local" id="att-in">
             </div>
-            <div class="table-container">
-                <table class="item-table">
-                    <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
-                    <tbody id="product-tbody"></tbody>
-                </table>
+            <div class="form-group">
+                <label>퇴근 시간</label>
+                <input type="datetime-local" id="att-out">
             </div>
-            <div id="material-section" style="display:none; margin-top:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <label style="font-weight:bold; color: #F44336;">🔨 소모 원자재</label>
-                    <button class="btn-red" onclick="addRow('material-tbody')" style="padding:6px 12px; font-size:12px;">+ 자재추가</button>
-                </div>
-                <div class="table-container">
-                    <table class="item-table">
-                        <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
-                        <tbody id="material-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 10px;">
-                <button class="btn-blue" onclick="saveEvent()">💾 저장하기</button>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn-gray" onclick="closeModal()" style="flex:1;">취소</button>
-                    <button id="btn-delete" class="btn-red" onclick="deleteEvent()" style="flex:1; display:none;">🗑 삭제</button>
-                </div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn-blue" onclick="saveAttendanceEdit()" style="flex:2;">💾 저장</button>
+                <button class="btn-gray" onclick="closeAttModal()" style="flex:1;">취소</button>
             </div>
         </div>
     </div>
 
     <script>
-        const API_URL = '/api/calendar';
-        const API_OPT = '/api/options';
-        const currentUser = localStorage.getItem('username');
-        const currentNick = localStorage.getItem('nickname');
-
-        let holidayCache = {}; 
-        let dropdownOptions = { items: [], sizes: [], lengths: [] };
+        let currentMode = 'work';
         let calendarInstance;
+        const holidayCache = JSON.parse(localStorage.getItem('holiday_cache')) || {};
 
-        // 로딩 제어 함수
-        function showLoading(show) {
-            const loader = document.getElementById('loading-layer');
-            if(loader) loader.style.display = show ? 'flex' : 'none';
+        document.addEventListener('DOMContentLoaded', () => { initCalendar(); });
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('cal-title').innerText = mode === 'work' ? '📅 작업 달력' : '🕒 근무 일지';
+            document.getElementById('m-work').className = `mode-btn ${mode==='work'?'active-work':''}`;
+            document.getElementById('m-att').className = `mode-btn ${mode==='att'?'active-att':''}`;
+            calendarInstance.refetchEvents();
         }
 
-        if (!currentUser) { location.href = '/'; }
-        document.getElementById('user-display').innerText = `👤 ${currentNick || currentUser}님`;
-
-        document.addEventListener('DOMContentLoaded', async function() {
-            showLoading(true); // 초기 로딩 시작
-            try {
-                await loadDropdownOptions();
-                initCalendar();
-            } finally {
-                setTimeout(() => showLoading(false), 300);
-            }
-        });
-
-        async function fetchYearHolidays(year) {
-            if (holidayCache[year]) return; 
-            showLoading(true);
-            try {
-                const res = await fetch(`/api/holidays/${year}`);
-                const data = await res.json();
-                holidayCache[year] = data;
-                if (calendarInstance) calendarInstance.render(); 
-            } catch (err) {
-                console.error(year + "년 공휴일 로드 실패:", err);
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        async function loadDropdownOptions() {
-            try {
-                const res = await fetch(API_OPT);
-                const data = await res.json();
-                dropdownOptions.items = data.filter(d => d.type === 'itemName' || d.type === 'item').map(d => d.value);
-                dropdownOptions.sizes = data.filter(d => d.type === 'size').map(d => d.value);
-                dropdownOptions.lengths = data.filter(d => d.type === 'length').map(d => d.value);
-            } catch (err) { console.error(err); }
+        function formatDuration(s) {
+            if (!s || s < 0) return "근무 중";
+            const h = Math.floor(s/3600); const m = Math.floor((s%3600)/60);
+            return `${h}시간 ${m}분`;
         }
 
         function initCalendar() {
-            const calendarEl = document.getElementById('calendar');
-            calendarInstance = new FullCalendar.Calendar(calendarEl, {
+            calendarInstance = new FullCalendar.Calendar(document.getElementById('calendar'), {
                 initialView: 'dayGridMonth',
                 locale: 'ko',
-                selectable: true,
                 height: 'auto',
-                displayEventTime: false,
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,listMonth'
+                displayEventTime: false, // 시간 표기 제거
+                events: async function(info, success, failure) {
+                    try {
+                        const url = currentMode === 'work' ? '/api/calendar' : '/api/attendance/all';
+                        const res = await fetch(url);
+                        const data = await res.json();
+                        const evts = data.map(d => {
+                            if (currentMode === 'work') {
+                                return { 
+                                    id: d._id,
+                                    title: d.title, 
+                                    start: d.start, 
+                                    display: 'block',
+                                    backgroundColor: d.type==='출고'?'#F44336':d.type==='생산'?'#2196F3':'#4CAF50' 
+                                };
+                            } else {
+                                const inT = new Date(d.clockIn).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                                const outT = d.clockOut ? new Date(d.clockOut).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...';
+                                return { 
+                                    id: d._id,
+                                    title: `${d.nickname || d.username}: ${inT}~${outT} (${formatDuration(d.duration)})`, 
+                                    start: d.date, 
+                                    backgroundColor: '#10b981', 
+                                    allDay: true,
+                                    extendedProps: { ...d } // 원본 데이터 보관
+                                };
+                            }
+                        });
+                        success(evts);
+                    } catch (e) { failure(e); }
                 },
-                
-                datesSet: async function(info) {
-                    const currentYear = info.view.currentStart.getFullYear();
-                    const nextYear = currentYear + 1;
-                    await fetchYearHolidays(currentYear);
-                    await fetchYearHolidays(nextYear);
+                eventClick: function(info) {
+                    if (currentMode === 'att') {
+                        openAttModal(info.event.extendedProps);
+                    } else {
+                        // 기존 작업 수정 로직 호출 (필요 시)
+                        alert("작업 수정은 관리자 페이지 혹은 전용 팝업을 이용하세요.");
+                    }
                 },
-
-                dayCellDidMount: function(info) {
-                    const dateStr = info.date.toLocaleDateString('sv-SE');
-                    const year = info.date.getFullYear();
-                    const holiday = holidayCache[year] ? holidayCache[year].find(h => h.date === dateStr) : null;
-                    
-                    if (info.date.getDay() === 0 || holiday) {
-                        const numberEl = info.el.querySelector('.fc-daygrid-day-number');
-                        if (numberEl) {
-                            numberEl.style.setProperty('color', '#F44336', 'important');
-                            if (holiday && !info.el.querySelector('.holiday-name')) {
-                                const nameDiv = document.createElement('div');
-                                nameDiv.className = 'holiday-name';
-                                nameDiv.innerText = `(${holiday.name})`;
-                                numberEl.parentElement.appendChild(nameDiv);
+                dayCellDidMount: (info) => {
+                    const dStr = info.date.toLocaleDateString('sv-SE');
+                    const h = holidayCache[info.date.getFullYear()]?.find(x => x.date === dStr);
+                    if (info.date.getDay() === 0 || h) {
+                        const num = info.el.querySelector('.fc-daygrid-day-number');
+                        if (num) {
+                            num.style.setProperty('color', '#F44336', 'important');
+                            if (h) {
+                                const div = document.createElement('div'); div.className = 'holiday-name'; div.innerText = `(${h.name})`;
+                                num.parentElement.appendChild(div);
                             }
                         }
                     }
-                },
-
-                events: async function(info, successCallback, failureCallback) {
-                    try {
-                        const res = await fetch(API_URL);
-                        const rawEvents = await res.json();
-                        const events = rawEvents.map(event => {
-                            let color = '#4CAF50';
-                            if (event.type === '출고') color = '#F44336';
-                            else if (event.type === '생산') color = '#2196F3';
-                            return {
-                                id: event._id,
-                                title: event.title,
-                                start: event.start,
-                                backgroundColor: color,
-                                borderColor: color,
-                                textColor: '#ffffff',
-                                extendedProps: { type: event.type, items: event.items }
-                            };
-                        });
-                        successCallback(events);
-                    } catch (err) { failureCallback(err); }
-                },
-                select: (info) => openModal(info.startStr, null),
-                eventClick: (info) => openModal(info.event.startStr, info.event)
+                }
             });
             calendarInstance.render();
         }
 
-        async function saveEvent() {
-            const id = document.getElementById('edit-event-id').value;
-            const type = document.getElementById('modal-type').value;
-            const date = document.getElementById('modal-date').value;
+        // 근무 기록 수정 모달 열기
+        function openAttModal(data) {
+            document.getElementById('att-id').value = data._id;
+            document.getElementById('att-name').value = data.nickname || data.username;
             
-            const getItems = (tbodyId) => Array.from(document.querySelectorAll(`#${tbodyId} tr`)).map(tr => {
-                return {
-                    name: tr.querySelector('.input-name').value.trim(),
-                    size: tr.querySelector('.input-size').value || "-",
-                    length: tr.querySelector('.input-length').value || "-",
-                    quantity: parseFloat(parseFloat(tr.querySelector('.input-qty').value).toFixed(1))
-                };
-            }).filter(i => i.name);
-
-            const products = getItems('product-tbody');
-            const materials = type === '생산' ? getItems('material-tbody') : [];
-            if(!products.length) return alert("품목을 선택하세요.");
-
-            const url = id ? `${API_URL}/${id}` : API_URL;
-            const method = id ? 'PUT' : 'POST';
-
-            showLoading(true); // 저장 시 로딩 시작
-            try {
-                const res = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ start: date, type, username: currentNick || currentUser, products, materials })
-                });
-                if(res.ok) { 
-                    alert(id ? "수정되었습니다." : "저장되었습니다.");
-                    closeModal(); 
-                    calendarInstance.refetchEvents(); 
-                } else {
-                    const errData = await res.json();
-                    alert("오류 발생: " + errData.message);
-                }
-            } catch (err) { 
-                console.error("저장 실패:", err); 
-            } finally {
-                setTimeout(() => showLoading(false), 300);
-            }
-        }
-
-        function logout() { localStorage.removeItem('username'); localStorage.removeItem('nickname'); location.href = '/'; }
-        function openQuickAdd() { const today = new Date().toISOString().split('T')[0]; openModal(today, null); }
-        function openModal(dateStr, event) {
-            document.getElementById('modal-date').value = dateStr.split('T')[0];
-            document.getElementById('product-tbody').innerHTML = '';
-            document.getElementById('material-tbody').innerHTML = '';
-            if (event) {
-                document.getElementById('edit-event-id').value = event.id;
-                document.getElementById('modal-title').innerText = "📝 작업 수정";
-                document.getElementById('btn-delete').style.display = 'inline-block';
-                const props = event.extendedProps;
-                document.getElementById('modal-type').value = props.type;
-                if (props.items) {
-                    props.items.forEach(item => { addRow(item.role === 'material' ? 'material-tbody' : 'product-tbody', item); });
-                }
-            } else {
-                document.getElementById('edit-event-id').value = '';
-                document.getElementById('modal-title').innerText = "📝 새 작업 등록";
-                document.getElementById('btn-delete').style.display = 'none';
-                addRow('product-tbody'); 
-            }
-            toggleProductionMode();
-            document.getElementById('eventModal').style.display = 'block';
-        }
-        function closeModal() { document.getElementById('eventModal').style.display = 'none'; }
-        function toggleProductionMode() { document.getElementById('material-section').style.display = (document.getElementById('modal-type').value === '생산') ? 'block' : 'none'; }
-        function addRow(tbodyId, data = null) {
-            const tbody = document.getElementById(tbodyId);
-            const tr = document.createElement('tr');
-            const createOpts = (list, selectedVal) => {
-                let html = '<option value="">선택</option>';
-                list.forEach(v => html += `<option value="${v}" ${String(v)===String(selectedVal)?'selected':''}>${v}</option>`);
-                return html;
+            // datetime-local 형식으로 변환 (YYYY-MM-DDTHH:mm)
+            const toLocalISO = (dateStr) => {
+                if(!dateStr) return "";
+                const date = new Date(dateStr);
+                date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+                return date.toISOString().slice(0, 16);
             };
-            tr.innerHTML = `
-                <td><select class="input-name">${createOpts(dropdownOptions.items, data?.name)}</select></td>
-                <td><select class="input-size">${createOpts(dropdownOptions.sizes, data?.size)}</select></td>
-                <td><select class="input-length">${createOpts(dropdownOptions.lengths, data?.length)}</select></td>
-                <td><input type="number" class="input-qty" step="0.1" value="${data?.quantity || 1}" style="width:60px; height:35px; border-radius:8px; border:1px solid #ddd; text-align:center;"></td>
-                <td><button onclick="this.closest('tr').remove()" style="background:none; font-size:18px;">❌</button></td>
-            `;
-            tbody.appendChild(tr);
+            
+            document.getElementById('att-in').value = toLocalISO(data.clockIn);
+            document.getElementById('att-out').value = toLocalISO(data.clockOut);
+            document.getElementById('attendanceModal').style.display = 'block';
         }
-        async function deleteEvent() {
-            if(!confirm("삭제하시겠습니까?")) return;
-            const id = document.getElementById('edit-event-id').value;
-            showLoading(true); // 삭제 시 로딩 시작
+
+        function closeAttModal() { document.getElementById('attendanceModal').style.display = 'none'; }
+
+        // 근무 기록 수정 저장
+        async function saveAttendanceEdit() {
+            const id = document.getElementById('att-id').value;
+            const nickname = document.getElementById('att-name').value;
+            const clockIn = document.getElementById('att-in').value;
+            const clockOut = document.getElementById('att-out').value;
+
+            document.getElementById('loading-layer').style.display = 'flex';
             try {
-                const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-                if(res.ok) { 
-                    closeModal(); 
-                    calendarInstance.refetchEvents(); 
+                const res = await fetch(`/api/attendance/edit/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nickname, clockIn, clockOut })
+                });
+                
+                if (res.ok) {
+                    alert("수정되었습니다.");
+                    closeAttModal();
+                    calendarInstance.refetchEvents();
+                } else {
+                    alert("수정 실패");
                 }
+            } catch (e) {
+                console.error(e);
             } finally {
-                showLoading(false);
+                document.getElementById('loading-layer').style.display = 'none';
             }
         }
     </script>

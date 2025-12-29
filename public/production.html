@@ -3,17 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>생산 기록 - 스마트 팩토리</title>
+    <title>🔨 생산 기록 등록</title>
     <style>
-        body { background-color: #f4f7f9; padding: 20px; font-family: -apple-system, sans-serif; margin: 0; }
-        .prod-container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); box-sizing: border-box; }
-        h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 10px; margin-bottom: 25px; color: #1e293b; }
-        .input-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #475569; font-size: 0.9rem; }
-        select, input { width: 100%; padding: 15px; font-size: 16px; border-radius: 12px; border: 1px solid #ddd; background-color: #fff; box-sizing: border-box; }
-        .submit-btn { width: 100%; padding: 20px; font-size: 18px; background: #28a745; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        .submit-btn:active { transform: scale(0.98); opacity: 0.9; }
-        .back-link { display: block; text-align: center; margin-top: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; }
+        body { background-color: #f4f7f9; padding: 10px; font-family: -apple-system, sans-serif; margin: 0; }
+        .prod-container { 
+            width: 100%; max-width: 500px; margin: 0 auto; background: white; 
+            padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); box-sizing: border-box; 
+        }
+        h1 { font-size: 1.4rem; text-align: center; margin-bottom: 20px; color: #1e293b; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #475569; font-size: 0.95rem; }
+        
+        /* 모바일 터치를 위해 높이 확장 */
+        select, input { 
+            width: 100%; height: 55px; padding: 0 15px; font-size: 17px; 
+            border-radius: 12px; border: 1px solid #ddd; background-color: #fff; box-sizing: border-box; 
+        }
+        
+        .tube-selection { display: flex; gap: 15px; padding: 5px 0; }
+        .tube-selection label { font-weight: normal; font-size: 1rem; display: flex; align-items: center; gap: 5px; }
+        .tube-selection input { width: 22px; height: 22px; }
+
+        .submit-btn { 
+            width: 100%; height: 60px; font-size: 1.2rem; background: #28a745; color: white; 
+            border: none; border-radius: 15px; cursor: pointer; font-weight: bold; margin-top: 15px; 
+        }
+        .submit-btn:active { transform: scale(0.98); }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #64748b; text-decoration: none; }
     </style>
 </head>
 <body>
@@ -21,23 +37,17 @@
         <h1>🔨 생산 기록 등록</h1>
 
         <div class="input-group">
-    <label>사용 지관 선택</label>
-    <div style="display: flex; gap: 20px; padding: 10px 0;">
-        <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
-            <input type="radio" name="tubeType" value="종이지관(6)" checked style="width: 20px; height: 20px;"> 종이지관(6)
-        </label>
-        <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
-            <input type="radio" name="tubeType" value="pp지관(6)" style="width: 20px; height: 20px;"> pp지관(6)
-        </label>
-    </div>
-</div>
+            <label>사용 지관 선택</label>
+            <div class="tube-selection">
+                <label><input type="radio" name="tubeType" value="종이지관(6)" checked> 종이(6)</label>
+                <label><input type="radio" name="tubeType" value="pp지관(6)"> PP(6)</label>
+            </div>
+        </div>
         
         <div class="input-group">
-            <label>사용한 원자재 (원단)</label>
+            <label>사용한 원단</label>
             <select id="select-material"><option value="">원단 선택</option></select>
         </div>
-
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
 
         <div class="input-group">
             <label>폭 (Width)</label>
@@ -51,27 +61,20 @@
 
         <div class="input-group">
             <label>생산 수량 (개)</label>
-            <input type="number" id="quantity" placeholder="이번 시간 생산량 입력" inputmode="numeric">
+            <input type="number" id="quantity" placeholder="수량 입력" inputmode="numeric">
         </div>
 
-        <button class="submit-btn" onclick="submitProduction()">기록 저장 (재고/일정 반영)</button>
-        <a href="main.html" class="back-link">메인으로 돌아가기</a>
+        <button class="submit-btn" onclick="submitProduction()">기록 저장</button>
+        <a href="main.html" class="back-link">🏠 메인 화면으로</a>
     </div>
 
     <script>
         window.onload = async () => {
             try {
-                const [invRes, optRes] = await Promise.all([
-                    fetch('/api/inventory'),
-                    fetch('/api/options') 
-                ]);
-
-                if (!invRes.ok || !optRes.ok) throw new Error("데이터 응답 오류");
-
+                const [invRes, optRes] = await Promise.all([fetch('/api/inventory'), fetch('/api/options')]);
                 const inventory = await invRes.json();
                 const options = await optRes.json();
 
-                // 1. 원자재 채우기
                 const materialSelect = document.getElementById('select-material');
                 inventory.filter(item => item.category === '원자재').forEach(m => {
                     const opt = document.createElement('option');
@@ -81,50 +84,36 @@
                     materialSelect.appendChild(opt);
                 });
 
-                // 2. 옵션 분류 (관리자 페이지 데이터 타입 매칭)
                 const widthSelect = document.getElementById('width');
                 const sizeSelect = document.getElementById('size');
-
                 options.forEach(opt => {
                     const element = document.createElement('option');
                     element.value = opt.value;
                     element.textContent = opt.value;
-
-                    if (opt.type === 'size') { // 관리자 페이지의 '사이즈' 칸
-                        widthSelect.appendChild(element);
-                    } else if (opt.type === 'length') { // 관리자 페이지의 '길이' 칸
+                    if (opt.type === 'size') widthSelect.appendChild(element);
+                    else if (opt.type === 'length') {
                         element.textContent = opt.value + "m";
                         sizeSelect.appendChild(element);
                     }
                 });
-
-            } catch (err) {
-                console.error("로드 실패:", err);
-                alert("설정 데이터를 불러오지 못했습니다.");
-            }
+            } catch (err) { alert("데이터 로드 실패"); }
         };
 
         async function submitProduction() {
             const materialEl = document.getElementById('select-material');
-            if (!materialEl.value) return alert("원자재를 선택하세요.");
+            if (!materialEl.value) return alert("원단을 선택하세요.");
             
-            const selectedTube = document.querySelector('input[name="tubeType"]:checked').value;
-    const selectedText = materialEl.options[materialEl.selectedIndex].text;
-    const selectedRawName = materialEl.options[materialEl.selectedIndex].dataset.rawName;
-    
-    const data = {
-        materialId: materialEl.value,
-        materialName: selectedText,
-        category: selectedRawName,
-        width: document.getElementById('width').value,
-        size: document.getElementById('size').value,
-        quantity: parseInt(document.getElementById('quantity').value),
-        tubeName: selectedTube // [추가] 선택된 지관 이름 전달
-    };
+            const data = {
+                materialId: materialEl.value,
+                materialName: materialEl.options[materialEl.selectedIndex].text,
+                category: materialEl.options[materialEl.selectedIndex].dataset.rawName,
+                width: document.getElementById('width').value,
+                size: document.getElementById('size').value.replace('m', ''),
+                quantity: parseInt(document.getElementById('quantity').value),
+                tubeName: document.querySelector('input[name="tubeType"]:checked').value
+            };
 
-            if(!data.width || !data.size || !data.quantity) {
-                alert("모든 항목을 선택하고 수량을 입력하세요."); return;
-            }
+            if(!data.width || !data.size || !data.quantity) return alert("모든 항목을 입력하세요.");
 
             const res = await fetch('/api/inventory/produce', {
                 method: 'POST',
@@ -132,13 +121,8 @@
                 body: JSON.stringify(data)
             });
 
-            if(res.ok) {
-                alert("성공적으로 기록되었습니다.");
-                location.reload();
-            } else {
-                const errData = await res.json();
-                alert("저장 실패: " + errData.error);
-            }
+            if(res.ok) { alert("성공!"); location.reload(); }
+            else { const err = await res.json(); alert("에러: " + err.error); }
         }
     </script>
 </body>

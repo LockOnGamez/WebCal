@@ -96,29 +96,21 @@ router.get("/admin/pending", async (req, res) => {
 // 4. (관리자용) 승인 처리 - ID 기반으로 수정 및 권한 부여
 router.post("/admin/approve", async (req, res) => {
   try {
-    const { userId } = req.body; // 프론트엔드에서 넘겨주는 데이터 이름 확인
+    const { userId } = req.body; // 프론트엔드에서 보낸 ID
 
-    console.log("승인 요청 ID:", userId); // 서버 터미널에 ID가 잘 찍히는지 확인용
-
-    if (!userId) {
-      return res.status(400).json({ message: "userId가 누락되었습니다." });
-    }
-
-    // [수정] findOneAndUpdate를 사용하여 더 유연하게 매칭
-    const updatedUser = await User.findOneAndUpdate(
-      { _id: userId },
-      { $set: { isApproved: true, role: "user" } },
+    // findByIdAndUpdate를 사용하여 상태와 권한을 동시에 변경
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { isApproved: true, role: "user" }, // 승인 완료 및 일반 유저 권한 부여
       { new: true }
     );
 
     if (!updatedUser) {
-      return res.status(404).json({ message: "해당 유저를 찾을 수 없습니다." });
+      return res.status(404).json({ message: "유저를 찾을 수 없습니다." });
     }
 
-    console.log(`✅ ${updatedUser.username} 승인 완료`);
     res.json({ message: `${updatedUser.username} 승인 완료` });
   } catch (err) {
-    console.error("🔥 서버 승인 로직 에러:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -126,9 +118,10 @@ router.post("/admin/approve", async (req, res) => {
 // 5. (관리자용) 가입 거절 (유저 삭제)
 router.post("/admin/reject", async (req, res) => {
   try {
-    const { userId } = req.body;
-    await User.findByIdAndDelete(userId);
-    res.json({ message: "가입 신청이 거절 및 삭제되었습니다." });
+    const { username } = req.body;
+    // 유저 찾아서 삭제
+    await User.findOneAndDelete({ username });
+    res.json({ message: `${username} 님의 가입을 거절(삭제)했습니다.` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -140,42 +133,6 @@ router.get("/admin/check", (req, res) => {
     res.json({ isAdmin: true });
   } else {
     res.json({ isAdmin: false });
-  }
-});
-
-// [추가] 전체 회원 목록 조회 (이미 승인된 유저만)
-router.get("/admin/users", async (req, res) => {
-  try {
-    // isApproved가 true인 유저만 찾기
-    const users = await User.find({ isApproved: true });
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// [추가] 비밀번호 초기화 (1234로 초기화)
-router.post("/admin/reset-password", async (req, res) => {
-  try {
-    const { userId } = req.body;
-
-    // 보안을 위해 실제 서비스 시에는 암호화(bcrypt 등)를 권장하지만,
-    // 현재 구조에 맞춰 평문 또는 기존 방식대로 저장합니다.
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { password: "1234" },
-      { new: true }
-    );
-
-    if (!user) {
-      return res.status(404).json({ message: "유저를 찾을 수 없습니다." });
-    }
-
-    res.json({
-      message: `${user.username}님의 비밀번호가 '1234'로 초기화되었습니다.`,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
 });
 

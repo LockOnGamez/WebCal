@@ -94,4 +94,44 @@ router.put("/edit/:id", async (req, res) => {
   }
 });
 
+// [추가] 특정 직원 검색 및 월간 통계 API
+router.get("/summary", async (req, res) => {
+  try {
+    const { nickname, month } = req.query; // nickname: 검색어, month: "2025-12"
+    let query = {};
+
+    // 1. 이름/닉네임 검색 (부분 일치 검색 적용)
+    if (nickname && nickname.trim() !== "") {
+      query.$or = [
+        { nickname: { $regex: nickname, $options: "i" } },
+        { username: { $regex: nickname, $options: "i" } },
+      ];
+    }
+
+    // 2. 월별 필터링 (해당 월의 시작일부터 끝일까지)
+    if (month && month.trim() !== "") {
+      // date 필드가 "2025-12-01" 형식이므로 "2025-12"로 시작하는 모든 데이터를 찾음
+      query.date = { $regex: `^${month}` };
+    }
+
+    const records = await Attendance.find(query).sort({ date: -1 });
+
+    // 3. 총 근무 시간 계산
+    const totalSeconds = records.reduce(
+      (acc, rec) => acc + (rec.duration || 0),
+      0
+    );
+    const totalHours = (totalSeconds / 3600).toFixed(1);
+
+    res.json({
+      records,
+      totalHours,
+      count: records.length,
+    });
+  } catch (err) {
+    console.error("검색 에러:", err);
+    res.status(500).json({ message: "서버 검색 오류" });
+  }
+});
+
 module.exports = router;

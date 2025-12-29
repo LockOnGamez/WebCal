@@ -116,4 +116,13 @@ router.post("/admin/reject", async (req, res) => {
   }
 });
 
+// 관리자 권한 확인 API
+router.get("/admin/check", (req, res) => {
+  if (req.session.user && req.session.user.role === "admin") {
+    res.json({ isAdmin: true });
+  } else {
+    res.json({ isAdmin: false });
+  }
+});
+
 module.exports = router;

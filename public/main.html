@@ -7,29 +7,71 @@
     <style>
         body { padding: 20px; font-family: 'Pretendard', sans-serif; background-color: #f4f7f9; margin: 0; color: #333; }
         .header { margin-bottom: 30px; text-align: center; }
+        .header h1 { font-size: 1.5rem; color: #1e293b; }
+        .user-name { color: #2196F3; font-weight: 800; }
+
+        /* 카드 그리드 레이아웃 */
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 500px; margin: 0 auto; }
+        @media (max-width: 350px) { .menu-grid { grid-template-columns: 1fr; } }
+
         .menu-card {
-            background: white; border-radius: 24px; padding: 30px 15px; text-align: center;
+            background: white; border-radius: 24px; padding: 25px 15px; text-align: center;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: none; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; gap: 10px; transition: 0.2s;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+            min-height: 160px; justify-content: center;
         }
-        .menu-card:active { transform: scale(0.95); }
-        .icon { font-size: 2.5rem; }
-        .card-in { color: #10b981; } .card-out { color: #ef4444; }
-        .card-stock { color: #3b82f6; } .card-cal { color: #f59e0b; }
-        .logout-btn { margin: 40px auto; display: block; padding: 10px 20px; border-radius: 10px; border: none; background: #cbd5e1; font-weight: bold; }
+        .menu-card:active { transform: scale(0.95); background-color: #f8fafc; }
+        .menu-card .icon { font-size: 2.5rem; }
+        .menu-card span { font-weight: 700; font-size: 1.1rem; }
+
+        /* 색상 포인트 */
+        .card-in { color: #10b981; }
+        .card-out { color: #ef4444; }
+        .card-stock { color: #3b82f6; }
+        .card-cal { color: #f59e0b; }
+        .card-admin { color: #6366f1; border: 2px dashed #6366f1; } /* 관리자 버튼 강조 */
+
+        .logout-btn {
+            margin-top: 40px; width: 100%; max-width: 200px; padding: 12px;
+            background: #cbd5e1; color: #475569; border: none; border-radius: 12px;
+            font-weight: bold; cursor: pointer; display: block; margin: 40px auto 0 auto;
+        }
+
+        /* 관리자 버튼 초기 숨김 */
+        #admin-menu { display: none; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>안녕하세요, <span id="user-display" style="color:#2196F3">...</span>님!</h1>
+        <h1>안녕하세요, <span id="user-display" class="user-name">...</span>님!</h1>
+        <p style="color: #64748b; font-size: 0.9rem;">오늘의 업무를 선택해 주세요.</p>
     </div>
+
     <div class="menu-grid">
-        <button class="menu-card card-in" id="btn-in" onclick="handleAttendance('check-in')"><div class="icon">🌅</div><span>출근 체크</span></button>
-        <button class="menu-card card-out" id="btn-out" onclick="handleAttendance('check-out')"><div class="icon">🌙</div><span>퇴근 체크</span></button>
-        <button class="menu-card card-stock" onclick="location.href='/inventory.html'"><div class="icon">📦</div><span>재고 관리</span></button>
-        <button class="menu-card card-cal" onclick="location.href='/calendar.html'"><div class="icon">📅</div><span>작업/근무 달력</span></button>
+        <button class="menu-card card-in" id="btn-check-in" onclick="handleAttendance('check-in')">
+            <div class="icon">🌅</div>
+            <span>출근 체크</span>
+        </button>
+        <button class="menu-card card-out" id="btn-check-out" onclick="handleAttendance('check-out')">
+            <div class="icon">🌙</div>
+            <span>퇴근 체크</span>
+        </button>
+        <button class="menu-card card-stock" onclick="location.href='/inventory.html'">
+            <div class="icon">📦</div>
+            <span>재고 관리</span>
+        </button>
+        <button class="menu-card card-cal" onclick="location.href='/calendar.html'">
+            <div class="icon">📅</div>
+            <span>작업/근무 달력</span>
+        </button>
+        
+        <button id="admin-menu" class="menu-card card-admin" onclick="location.href='/admin.html'">
+            <div class="icon">🛡️</div>
+            <span>시스템 관리</span>
+        </button>
     </div>
+
     <button class="logout-btn" onclick="logout()">로그아웃</button>
 
     <script>
@@ -37,47 +79,101 @@
         const currentNick = localStorage.getItem('nickname');
 
         window.onload = async () => {
-            if (!currentUser) location.href = '/';
+            if (!currentUser) { location.href = '/'; return; }
             document.getElementById('user-display').innerText = currentNick || currentUser;
-            await checkStatus();
+            
+            // 1. 관리자 권한 확인 및 버튼 노출
+            await checkAdminStatus();
+            
+            // 2. 오늘의 출퇴근 상태 확인
+            await checkAttendanceStatus();
+            
+            // 3. 공휴일 미리 로드
             prefetchHolidays();
         };
 
-        async function checkStatus() {
-            const res = await fetch(`/api/attendance/status/${currentUser}`);
-            const data = await res.json();
-            if (data?.clockIn) updateUI('in', data.clockIn);
-            if (data?.clockOut) updateUI('out', data.clockOut);
-        }
+        // [추가] 관리자 여부 확인 함수
+        async function checkAdminStatus() {
+            try {
+                // 서버 세션 정보를 확인하는 경로 (없을 경우를 대비해 기존 데이터 활용 가능)
+                // 여기서는 로그인 시 저장된 role 정보를 사용하거나 서버에 직접 물어봅니다.
+                const res = await fetch(`/api/admin/check`); // 서버에 관리자 여부 확인 API 호출
+                const data = await res.json();
 
-        function updateUI(type, time) {
-            const btn = document.getElementById(`btn-${type}`);
-            btn.onclick = null; btn.style.background = '#f1f5f9'; btn.style.opacity = '0.8';
-            btn.innerHTML = `<div class="icon">${type==='in'?'✅':'🏁'}</div><span style="color:#94a3b8">${type==='in'?'출근':'퇴근'} 완료</span>
-                             <small style="font-weight:bold">${new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>`;
-        }
-
-        async function handleAttendance(type) {
-            if (!confirm(`${type==='check-in'?'출근':'퇴근'} 하시겠습니까?`)) return;
-            const res = await fetch(`/api/attendance/${type}`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: currentUser, nickname: currentNick })
-            });
-            if (res.ok) { alert("완료되었습니다."); location.reload(); }
-            else { const d = await res.json(); alert(d.message); }
-        }
-
-        async function prefetchHolidays() {
-            const y = new Date().getFullYear();
-            let cache = JSON.parse(localStorage.getItem('holiday_cache')) || {};
-            if (!cache[y]) {
-                const res = await fetch(`/api/holidays/${y}`);
-                cache[y] = await res.json();
-                localStorage.setItem('holiday_cache', JSON.stringify(cache));
+                if (data.isAdmin) {
+                    document.getElementById('admin-menu').style.display = 'flex';
+                    // 관리자일 경우 그리드를 홀수 개(5개)에 맞춰 조정하거나 스타일 변경 가능
+                    const grid = document.querySelector('.menu-grid');
+                    grid.style.maxWidth = '600px'; 
+                }
+            } catch (err) {
+                console.log("일반 사용자 모드로 진입합니다.");
             }
         }
 
-        function logout() { localStorage.clear(); location.href = '/'; }
+        async function prefetchHolidays() {
+            const currentYear = new Date().getFullYear();
+            const yearsToFetch = [currentYear, currentYear + 1]; 
+            let cache = JSON.parse(localStorage.getItem('holiday_cache')) || {};
+            for (const year of yearsToFetch) {
+                if (cache[year]) continue;
+                try {
+                    const res = await fetch(`/api/holidays/${year}`);
+                    const data = await res.json();
+                    cache[year] = data;
+                    localStorage.setItem('holiday_cache', JSON.stringify(cache));
+                } catch (e) { console.error(e); }
+            }
+        }
+
+        async function checkAttendanceStatus() {
+            try {
+                const res = await fetch(`/api/attendance/status/${currentUser}`);
+                const data = await res.json();
+                if (data) {
+                    if (data.clockIn) {
+                        const inTime = new Date(data.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        updateButtonUI('check-in', inTime);
+                    }
+                    if (data.clockOut) {
+                        const outTime = new Date(data.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        updateButtonUI('check-out', outTime);
+                    }
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function updateButtonUI(type, time) {
+            const isBtnIn = type === 'check-in';
+            const btn = document.getElementById(isBtnIn ? 'btn-check-in' : 'btn-check-out');
+            btn.onclick = null;
+            btn.style.background = '#f1f5f9';
+            btn.innerHTML = `
+                <div class="icon">${isBtnIn ? '✅' : '🏁'}</div>
+                <span style="color: #94a3b8;">${isBtnIn ? '출근' : '퇴근'} 완료</span>
+                <small style="font-size: 0.85rem; color: #64748b; margin-top: 5px; font-weight: bold;">${time}</small>
+            `;
+        }
+
+        async function handleAttendance(type) {
+            const modeName = type === 'check-in' ? '출근' : '퇴근';
+            if (!confirm(`${modeName} 체크를 하시겠습니까?`)) return;
+            try {
+                const res = await fetch(`/api/attendance/${type}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: currentUser, nickname: currentNick })
+                });
+                if (res.ok) { await checkAttendanceStatus(); } 
+                else { const data = await res.json(); alert(data.message); }
+            } catch (err) { alert("통신 오류"); }
+        }
+
+        function logout() {
+            localStorage.removeItem('username');
+            localStorage.removeItem('nickname');
+            location.href = '/';
+        }
     </script>
 </body>
 </html>

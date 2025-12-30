@@ -3,119 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🏠 스마트 공장 시스템</title>
+    <title>🔥 Smart Factory</title>
     <style>
+        /* 1. 배경: 깊은 다크 네이비 색상 */
         body { 
-            padding: 15px; 
-            font-family: 'Pretendard', -apple-system, sans-serif; 
-            background-color: #f4f7f9; 
+            background-color: #0f172a; 
             margin: 0; 
-            color: #334155; 
+            padding: 20px; 
+            font-family: 'Pretendard', -apple-system, sans-serif; 
+            color: #f1f5f9; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
         }
-        .header { margin: 20px 0; text-align: center; }
-        .header h1 { font-size: 1.5rem; margin-bottom: 5px; color: #1e293b; }
-        .user-name { color: #2196F3; font-weight: 800; }
 
-        /* 메뉴 그리드: 모바일에서 터치하기 쉬운 크기로 조정 */
+        /* 2. 헤더: 그라데이션 텍스트 효과 */
+        .header { 
+            width: 100%; max-width: 500px; margin: 30px 0; text-align: left; 
+        }
+        .header h1 { 
+            font-size: 1.8rem; margin: 0; font-weight: 900; 
+            background: linear-gradient(to right, #4ade80, #3b82f6); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .header p { color: #94a3b8; font-size: 0.95rem; margin-top: 5px; }
+
+        /* 3. 그리드: 벤토(Bento) 도시락 스타일 배치 */
         .menu-grid { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
-            gap: 12px; 
+            gap: 15px; 
+            width: 100%; 
             max-width: 500px; 
-            margin: 0 auto; 
         }
 
+        /* 4. 카드 공통 스타일: 반투명 유리 느낌 (Glassmorphism) */
         .menu-card {
-            background: white; 
-            border-radius: 20px; 
-            padding: 20px 10px; 
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
+            background: rgba(30, 41, 59, 0.7); 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px; 
+            padding: 20px; 
+            text-align: center; 
             cursor: pointer;
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             justify-content: center;
-            gap: 10px;
-            transition: transform 0.1s;
-            border: none;
+            gap: 12px;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            color: #e2e8f0;
             min-height: 140px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-        .menu-card:active { transform: scale(0.95); background-color: #f8fafc; }
-        .menu-card .icon { font-size: 2.5rem; }
-        .menu-card span { font-weight: 700; font-size: 1.1rem; }
 
-        /* 생산 기록 버튼 강조 (가로 전폭) */
+        /* 눌렀을 때 쫀득한 느낌 */
+        .menu-card:active { transform: scale(0.96); background: rgba(30, 41, 59, 0.9); }
+
+        .menu-card .icon { font-size: 2.8rem; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+        .menu-card span { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.5px; }
+
+        /* 5. 생산 기록 버튼: 주인공처럼 화려하게 (가로 2칸 차지) */
         .card-prod { 
             grid-column: span 2; 
-            background: #28a745; 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
             color: white;
             flex-direction: row; 
-            min-height: 90px;
-            margin-top: 5px;
+            min-height: 100px;
+            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
         }
-        .card-prod .icon { font-size: 2.2rem; margin-right: 15px; }
-        .card-prod span { font-size: 1.3rem; }
+        .card-prod .icon { margin-right: 15px; font-size: 2.5rem; }
+        .card-prod span { font-size: 1.4rem; }
 
-        /* 관리자 모드 */
+        /* 6. 출퇴근 버튼 상태별 스타일 */
+        .btn-active { border: 1px solid rgba(59, 130, 246, 0.5); }
+        .btn-done { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); color: #64748b; }
+        .btn-done .icon { filter: grayscale(100%); opacity: 0.5; }
+
+        /* 관리자 버튼 */
         .card-admin { 
             grid-column: span 2; 
-            background: #f1f5f9; 
-            color: #64748b;
-            min-height: 60px;
+            background: rgba(99, 102, 241, 0.1); 
+            border: 1px dashed rgba(99, 102, 241, 0.4);
+            color: #818cf8;
+            min-height: 70px;
             flex-direction: row;
         }
 
+        /* 7. 로그아웃 버튼 */
         .logout-btn {
-            margin: 30px auto; 
-            width: 100px; 
-            padding: 10px;
-            background: #e2e8f0; 
+            margin-top: 40px; 
+            padding: 12px 25px;
+            background: transparent; 
             color: #64748b; 
-            border: none; 
-            border-radius: 10px;
+            border: 1px solid #334155; 
+            border-radius: 50px;
             font-weight: 600; 
+            font-size: 0.9rem;
             cursor: pointer; 
-            display: block;
+            transition: 0.2s;
         }
+        .logout-btn:active { background: #334155; color: white; }
 
+        /* 로딩 레이어 (다크 모드) */
         #loading-layer { 
             display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: white; z-index: 9999; justify-content: center; align-items: center; flex-direction: column; 
+            background: rgba(15, 23, 42, 0.9); z-index: 9999; 
+            justify-content: center; align-items: center; flex-direction: column; 
+            backdrop-filter: blur(5px);
         }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #2196F3; border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { width: 45px; height: 45px; border: 4px solid #1e293b; border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="loading-layer"><div class="spinner"></div><p>정보 동기화 중...</p></div>
+    <div id="loading-layer"><div class="spinner"></div><p style="margin-top:20px; font-weight:bold; color:#94a3b8;">SYSTEM SYNC...</p></div>
 
     <div class="header">
-        <h1>안녕하세요, <span id="user-display" class="user-name">...</span>님!</h1>
+        <p style="font-size:0.9rem; font-weight:600; color:#64748b; margin-bottom:5px;">FACTORY OS v2.0</p>
+        <h1>HELLO, <span id="user-display" style="color:white;">User</span>.</h1>
+        <p>오늘도 안전 작업 하세요!</p>
     </div>
 
     <div class="menu-grid">
-        <button class="menu-card" id="btn-check-in" onclick="handleAttendance('check-in')">
-            <div class="icon">🌅</div><span>출근 체크</span>
+        <button class="menu-card btn-active" id="btn-check-in" onclick="handleAttendance('check-in')">
+            <div class="icon">☀️</div><span>출근 하기</span>
         </button>
-        <button class="menu-card" id="btn-check-out" onclick="handleAttendance('check-out')">
-            <div class="icon">🌙</div><span>퇴근 체크</span>
+        <button class="menu-card btn-active" id="btn-check-out" onclick="handleAttendance('check-out')">
+            <div class="icon">🌙</div><span>퇴근 하기</span>
         </button>
-        <button class="menu-card" style="color:#3b82f6;" onclick="location.href='/inventory.html'">
-            <div class="icon">📦</div><span>재고 관리</span>
+
+        <button class="menu-card" onclick="location.href='/inventory.html'">
+            <div class="icon">📦</div><span>재고 현황</span>
         </button>
-        <button class="menu-card" style="color:#f59e0b;" onclick="location.href='/calendar.html'">
-            <div class="icon">📅</div><span>업무 달력</span>
+        <button class="menu-card" onclick="location.href='/calendar.html'">
+            <div class="icon">📅</div><span>작업 달력</span>
         </button>
+
         <button class="menu-card card-prod" onclick="location.href='/production.html'">
-            <div class="icon">🔨</div><span>생산 기록 등록</span>
+            <div class="icon">🔨</div><span>생산 등록</span>
         </button>
+
         <button id="admin-menu" class="menu-card card-admin" style="display:none;" onclick="location.href='/admin.html'">
-            <div class="icon">🛡️</div><span>관리자 모드</span>
+            <div class="icon">🛡️</div><span>관리자 설정</span>
         </button>
     </div>
 
-    <button class="logout-btn" onclick="logout()">로그아웃</button>
+    <button class="logout-btn" onclick="logout()">LOGOUT</button>
 
     <script>
         const currentUser = localStorage.getItem('username');
@@ -124,10 +163,13 @@
         window.onload = async () => {
             if (!currentUser) { location.href = '/'; return; }
             document.getElementById('user-display').innerText = currentNick || currentUser;
+            
             try {
                 await Promise.all([checkAdminStatus(), checkAttendanceStatus()]);
             } catch (err) { console.error(err); }
-            finally { document.getElementById('loading-layer').style.display = 'none'; }
+            finally { 
+                setTimeout(() => document.getElementById('loading-layer').style.display = 'none', 300); 
+            }
         };
 
         async function checkAdminStatus() {
@@ -149,13 +191,21 @@
             const time = new Date(isoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const isBtnIn = type === 'check-in';
             const btn = document.getElementById(isBtnIn ? 'btn-check-in' : 'btn-check-out');
+            
+            // 완료된 버튼 스타일 변경 (어둡게 처리)
             btn.onclick = null;
-            btn.style.backgroundColor = '#f1f5f9';
-            btn.innerHTML = `<div class="icon">${isBtnIn ? '✅' : '🏁'}</div><span style="color: #94a3b8;">${isBtnIn ? '출근' : '퇴근'} 완료</span><small>${time}</small>`;
+            btn.className = 'menu-card btn-done';
+            btn.innerHTML = `
+                <div class="icon">${isBtnIn ? '✅' : '🏠'}</div>
+                <span style="color:#94a3b8;">${isBtnIn ? '출근' : '퇴근'} 완료</span>
+                <small style="font-weight:bold; color:#cbd5e1;">${time}</small>
+            `;
         }
 
         async function handleAttendance(type) {
-            if (!confirm(`체크하시겠습니까?`)) return;
+            const msg = type === 'check-in' ? '오늘 하루도 파이팅입니다! 출근 찍을까요?' : '고생하셨습니다! 퇴근 찍을까요?';
+            if (!confirm(msg)) return;
+            
             const res = await fetch(`/api/attendance/${type}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

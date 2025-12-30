@@ -3,82 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>📅 통합 관리 시스템</title>
+    <title>📅 작업 달력</title>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <style>
-        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: #f0f2f5; margin: 0; }
+        /* Dark Theme Base */
+        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: #0f172a; color: #f1f5f9; margin: 0; }
+        
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        #calendar { background: white; padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .nav-btns { display: flex; gap: 8px; align-items: center; }
-        .mode-toggles { background: #eee; padding: 5px; border-radius: 12px; display: flex; gap: 5px; }
-        .mode-btn { border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
-        .active-work { background: #2196F3; color: white; }
+        .header h1 { margin: 0; font-size: 1.6rem; background: linear-gradient(to right, #3b82f6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* [수정됨] FullCalendar Dark Mode Overrides */
+        #calendar { 
+            background: rgba(30, 41, 59, 0.5); 
+            padding: 15px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #e2e8f0;
+        }
+
+        /* 1. 달력 헤더 (일, 월, 화...) 스타일 수정 */
+        .fc-theme-standard th { 
+            background-color: #1e293b !important; /* 배경 어둡게 */
+            border-color: #334155 !important; 
+        }
+        .fc-col-header-cell-cushion { 
+            color: #f1f5f9 !important; /* 글씨 하얗게 */
+            text-decoration: none !important; 
+            padding: 10px 0 !important;
+        }
+
+        /* 2. 리스트 뷰 날짜 구분 바 (2025년 12월...) 스타일 수정 */
+        .fc .fc-list-day-cushion {
+            background-color: #1e293b !important; /* 배경 어둡게 */
+        }
+        .fc-list-day-text, .fc-list-day-side-text {
+            color: #f1f5f9 !important; /* 글씨 하얗게 */
+            font-weight: bold;
+            text-decoration: none !important;
+        }
+        
+        /* 리스트 뷰 테두리 및 배경 */
+        .fc-theme-standard .fc-list { border: 1px solid #334155; }
+        .fc-list-event:hover td { background-color: #334155 !important; }
+
+        /* 그리드(칸) 테두리 색상 */
+        .fc-theme-standard td, .fc-theme-standard th { border-color: #334155 !important; }
+        .fc-daygrid-day-number { color: #cbd5e1 !important; text-decoration: none !important; }
+
+        /* 버튼 스타일 */
+        .fc .fc-button-primary { background-color: #334155; border-color: #334155; }
+        .fc .fc-button-primary:hover { background-color: #475569; border-color: #475569; }
+        .fc .fc-button-primary:not(:disabled).fc-button-active { background-color: #2563eb; border-color: #2563eb; }
+        
+        /* 오늘 날짜 표시 */
+        .fc-day-today { background-color: rgba(59, 130, 246, 0.1) !important; }
+        
+        /* 주말 색상 처리 */
+        .fc-day-sun .fc-daygrid-day-number { color: #f87171 !important; }
+        .fc-day-sat .fc-daygrid-day-number { color: #60a5fa !important; }
+        .holiday-name { font-size: 0.7rem; color: #f87171; margin-top: -2px; display: block; }
+        .fc-event-time { display: none; }
+
+        /* Control Buttons */
+        .mode-toggles { background: #1e293b; padding: 5px; border-radius: 12px; display: flex; gap: 5px; }
+        .mode-btn { border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; background: transparent; color: #94a3b8; }
+        .active-work { background: #3b82f6; color: white; }
         .active-att { background: #10b981; color: white; }
         
-        .search-bar { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; display: none; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .search-bar input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; }
-        .summary-badge { background: #e0f2fe; color: #0369a1; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 0.95rem; margin-bottom: 15px; display: none; border-left: 5px solid #0369a1; }
+        .nav-home { padding:8px 15px; border-radius:10px; border:none; background:#334155; color:white; font-weight:bold; cursor: pointer;}
 
-        .fc-event-time, .fc-list-event-time { display: none !important; }
-        .fc-day-sun .fc-daygrid-day-number, .fc-list-day-side-text.is-sun { color: #F44336 !important; }
-        .fc-day-sat .fc-daygrid-day-number, .fc-list-day-side-text.is-sat { color: #2196F3 !important; }
-        .holiday-name { font-size: 0.65rem; color: #F44336; margin-top: -2px; font-weight: 500; text-align: right; display: block; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; backdrop-filter: blur(4px); }
-        .modal-content { background: white; width: 95%; max-width: 600px; padding: 30px; margin: 40px auto; border-radius: 24px; box-sizing: border-box; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; height: 45px; padding: 0 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        .table-container { width: 100%; overflow-x: auto; margin-top: 10px; border-radius: 12px; border: 1px solid #eee; }
-        .item-table { width: 100%; border-collapse: collapse; min-width: 450px; }
-        .item-table th { background: #f8f9fa; padding: 12px; font-size: 14px; }
-        .item-table td { padding: 10px; border-bottom: 1px solid #f1f1f1; text-align: center; }
+        /* Search Bar */
+        .search-bar { background: #1e293b; padding: 15px; border-radius: 15px; margin-bottom: 15px; display: none; align-items: center; gap: 10px; }
+        .search-bar input { flex: 1; padding: 10px; border: 1px solid #334155; background: #0f172a; color: white; border-radius: 10px; }
+        .summary-badge { background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 15px; border-radius: 12px; font-weight: bold; margin-bottom: 15px; display: none; border: 1px solid rgba(56, 189, 248, 0.3); }
 
-        button { padding: 12px 20px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
-        .btn-blue { background: #2196F3; color: white; }
-        .btn-green { background: #4CAF50; color: white; }
-        .btn-red { background: #F44336; color: white; }
-        .btn-gray { background: #eee; color: #333; }
-        
-        #loading-layer { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); }
-        .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #2196F3; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* [추가] 플로팅 버튼 스타일 */
+        /* Floating Button */
         .floating-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #2196F3;
-            color: white;
-            font-size: 30px;
-            border: none;
-            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
-            cursor: pointer;
-            z-index: 900;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            transition: transform 0.2s;
+            position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
+            border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white; font-size: 30px; border: none;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            cursor: pointer; z-index: 900; display: flex; justify-content: center; align-items: center;
         }
-        .floating-btn:active { transform: scale(0.95); }
+
+        /* Modal Dark */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto; backdrop-filter: blur(5px); }
+        .modal-content { 
+            background: #1e293b; color: white;
+            width: 95%; max-width: 600px; padding: 25px; margin: 40px auto; 
+            border-radius: 20px; border: 1px solid #334155;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 0.9rem; }
+        .form-group input, .form-group select { 
+            width: 100%; height: 45px; padding: 0 10px; 
+            border: 1px solid #334155; background: #0f172a; color: white; 
+            border-radius: 10px; box-sizing: border-box; 
+        }
+
+        /* Item Table in Modal */
+        .item-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .item-table th { background: #334155; color: #cbd5e1; padding: 10px; font-size: 13px; text-align: center; }
+        .item-table td { padding: 8px; border-bottom: 1px solid #334155; text-align: center; }
+        .item-table select, .item-table input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; height: 35px; }
+
+        /* Buttons */
+        .btn-blue { background: #3b82f6; color: white; }
+        .btn-green { background: #10b981; color: white; }
+        .btn-red { background: #ef4444; color: white; }
+        .btn-gray { background: #475569; color: white; }
+        button[class^="btn-"] { padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+        /* Loading */
+        #loading-layer { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
     </style>
 </head>
 <body>
-    <div id="loading-layer"><div class="spinner"></div><p style="margin-top: 15px; font-weight: bold;">데이터 동기화 중...</p></div>
+    <div id="loading-layer"><div class="spinner"></div><p style="margin-top: 15px; font-weight: bold; color:#94a3b8;">데이터 동기화...</p></div>
 
     <div class="header">
         <h1 id="cal-title">📅 작업 달력</h1>
-        <div class="nav-btns">
+        <div class="nav-btns" style="display:flex; gap:10px;">
             <div class="mode-toggles">
                 <button id="m-work" class="mode-btn active-work" onclick="setMode('work')">📦 작업</button>
                 <button id="m-att" class="mode-btn" onclick="setMode('att')">🕒 근무</button>
             </div>
-            <button onclick="location.href='/main.html'" style="padding:8px 15px; border-radius:10px; border:none; background:#334155; color:white; font-weight:bold;">🏠 홈</button>
+            <button onclick="location.href='/main.html'" class="nav-home">🏠 홈</button>
         </div>
     </div>
 
@@ -94,7 +147,7 @@
 
     <div id="eventModal" class="modal">
         <div class="modal-content">
-            <h3 id="modal-title">📝 작업 수정</h3>
+            <h3 id="modal-title" style="margin-top:0; border-bottom:1px solid #334155; padding-bottom:10px;">📝 작업 관리</h3>
             <input type="hidden" id="edit-event-id">
             <div class="form-group"><label>날짜</label><input type="date" id="modal-date"></div>
             <div class="form-group">
@@ -106,17 +159,33 @@
                 </select>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-                <label style="font-weight:bold;">📦 품목</label>
+                <label style="font-weight:bold; color:#cbd5e1;">📦 품목 리스트</label>
                 <button class="btn-green" onclick="addRow('product-tbody')" style="padding:6px 12px; font-size:12px;">+ 추가</button>
             </div>
-            <div class="table-container"><table class="item-table"><thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead><tbody id="product-tbody"></tbody></table></div>
-            <div id="material-section" style="display:none; margin-top:15px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;"><label style="font-weight:bold; color:#F44336;">🔨 원자재</label><button class="btn-red" onclick="addRow('material-tbody')" style="padding:6px 12px; font-size:12px;">+ 추가</button></div>
-                <div class="table-container"><table class="item-table"><thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead><tbody id="material-tbody"></tbody></table></div>
+            <div style="overflow-x:auto;">
+                <table class="item-table">
+                    <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
+                    <tbody id="product-tbody"></tbody>
+                </table>
+            </div>
+            <div id="material-section" style="display:none; margin-top:20px; border-top:1px dashed #334155; padding-top:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label style="font-weight:bold; color:#f87171;">🔨 소모 원자재</label>
+                    <button class="btn-red" onclick="addRow('material-tbody')" style="padding:6px 12px; font-size:12px;">+ 추가</button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="item-table">
+                        <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
+                        <tbody id="material-tbody"></tbody>
+                    </table>
+                </div>
             </div>
             <div style="margin-top: 25px; display: flex; flex-direction: column; gap: 10px;">
-                <button class="btn-blue" onclick="saveEvent()">💾 저장</button>
-                <div style="display:flex; gap:10px;"><button class="btn-gray" onclick="closeModal()" style="flex:1;">취소</button><button id="btn-delete" class="btn-red" onclick="deleteEvent()" style="flex:1;">🗑 삭제</button></div>
+                <button class="btn-blue" onclick="saveEvent()">💾 저장 하기</button>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-gray" onclick="closeModal()" style="flex:1;">취소</button>
+                    <button id="btn-delete" class="btn-red" onclick="deleteEvent()" style="flex:1;">🗑 삭제</button>
+                </div>
             </div>
         </div>
     </div>
@@ -125,9 +194,9 @@
         <div class="modal-content">
             <h3>🕒 근무 기록 수정</h3>
             <input type="hidden" id="att-id">
-            <div class="form-group"><label>이름(닉네임)</label><input type="text" id="att-name"></div>
-            <div class="form-group"><label>출근 시간</label><input type="datetime-local" id="att-in"></div>
-            <div class="form-group"><label>퇴근 시간</label><input type="datetime-local" id="att-out"></div>
+            <div class="form-group"><label>이름</label><input type="text" id="att-name"></div>
+            <div class="form-group"><label>출근</label><input type="datetime-local" id="att-in"></div>
+            <div class="form-group"><label>퇴근</label><input type="datetime-local" id="att-out"></div>
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button class="btn-blue" onclick="saveAttendanceEdit()" style="flex:2;">💾 저장</button>
                 <button class="btn-gray" onclick="closeAttModal()" style="flex:1;">취소</button>
@@ -169,7 +238,6 @@
             document.getElementById('m-work').className = `mode-btn ${mode==='work'?'active-work':''}`;
             document.getElementById('m-att').className = `mode-btn ${mode==='att'?'active-att':''}`;
             document.getElementById('att-search-bar').style.display = mode === 'att' ? 'flex' : 'none';
-            // 모드 변경 시 플로팅 버튼 숨김/표시 (작업 모드일 때만 표시)
             document.querySelector('.floating-btn').style.display = mode === 'work' ? 'flex' : 'none';
             
             if (mode === 'work') {
@@ -208,7 +276,7 @@
                     try {
                         const centerDate = new Date((info.start.getTime() + info.end.getTime()) / 2);
                         const targetMonth = centerDate.getFullYear() + "-" + 
-                                           String(centerDate.getMonth() + 1).padStart(2, '0');
+                                            String(centerDate.getMonth() + 1).padStart(2, '0');
                         
                         let url = '';
                         if (currentMode === 'work') {
@@ -241,7 +309,8 @@
                             if (currentMode === 'work') {
                                 return { 
                                     id: d._id, title: d.title, start: d.start, display: 'block',
-                                    backgroundColor: d.type==='출고'?'#F44336':d.type==='생산'?'#2196F3':'#4CAF50',
+                                    backgroundColor: d.type==='출고'?'#ef4444':d.type==='생산'?'#3b82f6':'#10b981',
+                                    borderColor: 'transparent',
                                     extendedProps: { ...d } 
                                 };
                             } else {
@@ -251,8 +320,9 @@
                                 return { 
                                     id: d._id, 
                                     title: `${d.nickname || d.username}: ${inT}~${outT} (${formatDuration(d.duration)})`, 
-                                    start: d.date, // YYYY-MM-DD
+                                    start: d.date, 
                                     backgroundColor: '#10b981', 
+                                    borderColor: 'transparent',
                                     allDay: true, 
                                     extendedProps: { ...d } 
                                 };
@@ -276,37 +346,32 @@
                     const num = info.el.querySelector('.fc-daygrid-day-number');
                     if (num) {
                         if (info.date.getDay() === 0 || h) {
-                            num.style.setProperty('color', '#F44336', 'important');
+                            num.style.setProperty('color', '#f87171', 'important');
                             if (h) {
                                 const div = document.createElement('div'); div.className = 'holiday-name'; div.innerText = `(${h.name})`;
                                 num.parentElement.appendChild(div);
                             }
-                        } else if (info.date.getDay() === 6) num.style.setProperty('color', '#2196F3', 'important');
+                        } else if (info.date.getDay() === 6) num.style.setProperty('color', '#60a5fa', 'important');
                     }
                 }
             });
             calendarInstance.render();
         }
 
-        // [추가] 한국 시간(KST) 오늘 날짜로 작업 추가 모달 열기
         function openModalWithToday() {
-            // UTC 시간에 9시간(ms 단위)을 더해 한국 시간을 계산
             const offset = 1000 * 60 * 60 * 9;
             const now = new Date();
             const koreaNow = new Date(now.getTime() + offset);
             const todayStr = koreaNow.toISOString().split('T')[0];
-            
             openModal(todayStr, null);
         }
 
-        // --- 작업(Work) 모달 관련 함수 ---
         function openModal(dateStr, event) {
             document.getElementById('modal-date').value = dateStr.split('T')[0];
             document.getElementById('product-tbody').innerHTML = '';
             document.getElementById('material-tbody').innerHTML = '';
             
             if (event) {
-                // 수정 모드
                 document.getElementById('edit-event-id').value = event.id;
                 document.getElementById('btn-delete').style.display = 'inline-block';
                 document.getElementById('modal-title').innerText = '📝 작업 수정';
@@ -314,11 +379,9 @@
                 document.getElementById('modal-type').value = props.type;
                 if (props.items) props.items.forEach(i => addRow(i.role === 'material' ? 'material-tbody' : 'product-tbody', i));
             } else {
-                // 신규 등록 모드
                 document.getElementById('edit-event-id').value = '';
                 document.getElementById('btn-delete').style.display = 'none';
                 document.getElementById('modal-title').innerText = '📝 새 작업 추가';
-                // 기본적으로 품목 1줄 추가
                 addRow('product-tbody');
             }
             toggleProductionMode();
@@ -335,7 +398,7 @@
                 <td><select class="input-size">${createOpts(dropdownOptions.sizes, data?.size)}</select></td>
                 <td><select class="input-length">${createOpts(dropdownOptions.lengths, data?.length)}</select></td>
                 <td><input type="number" class="input-qty" step="0.1" value="${data?.quantity || 1}" style="width:60px; height:35px; text-align:center;"></td>
-                <td><button onclick="this.closest('tr').remove()" style="background:none; border:none; cursor:pointer;">❌</button></td>`;
+                <td><button onclick="this.closest('tr').remove()" style="background:none; border:none; cursor:pointer; color:#f87171;">❌</button></td>`;
             tbody.appendChild(tr);
         }
         async function saveEvent() {
@@ -364,7 +427,6 @@
             closeModal(); calendarInstance.refetchEvents();
         }
 
-        // --- 근무(Attendance) 모달 관련 함수 ---
         function openAttModal(data) {
             document.getElementById('att-id').value = data._id;
             document.getElementById('att-name').value = data.nickname || data.username;

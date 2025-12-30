@@ -3,89 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>시스템 로그인</title>
+    <title>시스템 접근</title>
     <style>
+        /* [UI 컨셉] Smart Factory Dark Mode */
         body { 
-            padding: 20px; 
-            font-family: 'Pretendard', sans-serif; 
-            text-align: center; 
-            background-color: #f5f5f5;
+            margin: 0; padding: 0;
+            background-color: #0f172a; /* Deep Navy */
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            color: #f1f5f9;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
-            margin: 0;
         }
+
+        /* 유리 질감 카드 */
         .container {
-            background: white;
-            padding: 30px 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
             max-width: 400px;
-            margin: 0 auto;
             width: 90%;
-            box-sizing: border-box;
+            text-align: center;
         }
-        h1 { font-size: 1.5rem; color: #333; margin-bottom: 30px; }
-        h3 { margin-top: 0; color: #555; }
+
+        h1 { font-size: 1.8rem; margin-bottom: 40px; font-weight: 800; letter-spacing: -1px; }
+        h1 span { color: #3b82f6; } /* 포인트 컬러 */
+        
+        h3 { margin-top: 0; color: #94a3b8; font-weight: 500; font-size: 1.1rem; margin-bottom: 20px; }
+
         input { 
-            padding: 15px; 
-            margin: 8px 0; 
-            width: 100%; 
-            box-sizing: border-box; 
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px; /* 아이폰 줌 방지 */
-        }
-        button { 
-            padding: 15px; 
             width: 100%;
-            cursor: pointer; 
-            background-color: #333;
+            padding: 15px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            background-color: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+
+        button.action-btn { 
+            padding: 16px;
+            width: 100%;
+            cursor: pointer;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: bold;
-            margin-top: 10px;
+            margin-top: 20px;
+            transition: 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
+        button.action-btn:active { transform: scale(0.98); }
+
         .toggle-btn {
             background: none;
-            color: #2196F3;
+            color: #60a5fa;
+            border: none;
             padding: 5px;
             font-size: 14px;
-            text-decoration: underline;
-            width: auto;
+            cursor: pointer;
             margin-top: 0;
+            text-decoration: underline;
         }
+
         .hidden { display: none; }
     </style>
 </head>
 <body>
-    <h1>🔒 시스템 접근</h1>
+    <h1>🔒 <span>SMART</span> FACTORY</h1>
 
     <div id="login-box" class="container">
-        <h3>로그인</h3>
+        <h3>사용자 로그인</h3>
         <input type="text" id="login-id" placeholder="아이디">
         <input type="password" id="login-pw" placeholder="비밀번호">
-        <button onclick="login()">로그인</button>
-        <p style="font-size: 14px; color: #666; margin-top: 20px;">
+        <button class="action-btn" onclick="login()">로그인</button>
+        <p style="font-size: 14px; color: #64748b; margin-top: 25px;">
             계정이 없으신가요? <button class="toggle-btn" onclick="toggleView()">회원가입 신청</button>
         </p>
     </div>
 
     <div id="register-box" class="container hidden">
-        <h3>회원가입 신청</h3>
+        <h3>신규 회원가입</h3>
         <input type="text" id="reg-id" placeholder="아이디">
         <input type="password" id="reg-pw" placeholder="비밀번호">
-        <input type="text" id="reg-nick" placeholder="닉네임">
-        <button onclick="register()">신청하기</button>
-        <p style="font-size: 14px; color: #666; margin-top: 20px;">
+        <input type="text" id="reg-nick" placeholder="닉네임 (작업자명)">
+        <button class="action-btn" onclick="register()">신청하기</button>
+        <p style="font-size: 14px; color: #64748b; margin-top: 25px;">
             이미 계정이 있으신가요? <button class="toggle-btn" onclick="toggleView()">로그인 하러가기</button>
         </p>
     </div>
 
     <script>
+        // 로직은 기존 유지
         function toggleView() {
             document.getElementById('login-box').classList.toggle('hidden');
             document.getElementById('register-box').classList.toggle('hidden');
@@ -106,27 +131,24 @@
         }
 
         async function login() {
-    const username = document.getElementById('login-id').value;
-    const password = document.getElementById('login-pw').value;
-    const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-    const data = await res.json();
-    
-    if (res.ok) {
-        // [수정] 아이디와 닉네임을 각각 저장합니다.
-        localStorage.setItem('username', data.user.username);
-        localStorage.setItem('nickname', data.user.nickname); 
-        
-        alert("로그인 성공! " + data.user.nickname + "님 환영합니다.");
-        
-        location.href = '/main.html';
-    } else {
-        alert(data.message);
-    }
-}
+            const username = document.getElementById('login-id').value;
+            const password = document.getElementById('login-pw').value;
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                localStorage.setItem('username', data.user.username);
+                localStorage.setItem('nickname', data.user.nickname); 
+                alert("로그인 성공! " + data.user.nickname + "님 환영합니다.");
+                location.href = '/main.html';
+            } else {
+                alert(data.message);
+            }
+        }
     </script>
 </body>
 </html>

@@ -3,75 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>📦 스마트 재고 관리 시스템</title>
+    <title>📦 재고 관리</title>
     <style>
-        /* 기본 레이아웃 */
-        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: #f4f7f9; margin: 0; color: #333; }
-        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        /* Dark Theme Base */
+        body { 
+            padding: 15px; 
+            font-family: 'Pretendard', sans-serif; 
+            background-color: #0f172a; 
+            color: #f1f5f9;
+            margin: 0; 
+        }
         
-        /* 입력 카드 */
-        .card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .input-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        @media (min-width: 768px) { .input-grid { grid-template-columns: repeat(3, 1fr) 120px 140px 120px; } }
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .header-box h1 { margin: 0; font-size: 1.5rem; background: linear-gradient(to right, #a78bfa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* Glass Input Card */
+        .card { 
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px; 
+            border-radius: 20px; 
+            margin-bottom: 25px; 
+        }
 
-        select, input { width: 100%; height: 50px; border: 2px solid #edf2f7; border-radius: 12px; padding: 0 15px; font-size: 15px; box-sizing: border-box; }
-        .btn-submit { background: #333; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 12px; height: 50px; }
+        .input-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        @media (min-width: 768px) { .input-grid { grid-template-columns: repeat(3, 1fr) 100px 120px 100px; } }
 
-        /* 필터 버튼 */
-        .filter-container { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .filter-btn { padding: 10px 18px; border-radius: 20px; border: none; background: white; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.05); white-space: nowrap; }
-        .filter-btn.active { background: #2196F3; color: white; }
+        select, input { 
+            width: 100%; height: 50px; 
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 12px; 
+            padding: 0 15px; 
+            font-size: 15px; 
+            box-sizing: border-box; 
+        }
+        select:focus, input:focus { outline: none; border-color: #3b82f6; }
 
-        /* --- 테이블 디자인 (PC) --- */
-        .pc-table { width: 100%; border-collapse: separate; border-spacing: 0; display: none; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .btn-submit { 
+            background: #3b82f6; color: white; border: none; 
+            cursor: pointer; font-weight: bold; border-radius: 12px; height: 50px; 
+            transition: 0.2s;
+        }
+        .btn-submit:active { transform: scale(0.98); }
+
+        /* Filter Buttons */
+        .filter-container { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .filter-btn { 
+            padding: 8px 16px; border-radius: 50px; border: 1px solid #334155; 
+            background: rgba(30, 41, 59, 0.5); color: #94a3b8; 
+            cursor: pointer; font-weight: 600; white-space: nowrap; transition: 0.2s;
+        }
+        .filter-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+        
+        /* PC Table Dark */
+        .pc-table { width: 100%; border-collapse: separate; border-spacing: 0; display: none; margin-bottom: 30px; }
         @media (min-width: 768px) { .pc-table { display: table; } }
 
-        .pc-table th { background: #f8fafc; color: #64748b; padding: 15px; font-size: 13px; border-bottom: 2px solid #edf2f7; }
-        .pc-table td { padding: 15px; text-align: center; border-bottom: 1px solid #edf2f7; }
+        .pc-table th { 
+            background: #1e293b; color: #94a3b8; padding: 15px; 
+            font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #334155; 
+        }
+        .pc-table td { 
+            padding: 15px; text-align: center; 
+            border-bottom: 1px solid #1e293b; background: rgba(30, 41, 59, 0.4); 
+        }
+        .pc-table tbody tr:hover td { background: rgba(59, 130, 246, 0.1); }
 
-        /* 지그재그 효과 및 호버 강화 */
-        .pc-table tbody tr:nth-child(even) { background-color: #f1f5f9 !important; }
-        .pc-table tbody tr:nth-child(odd) { background-color: #ffffff !important; }
-        .pc-table tbody tr:hover { background-color: #e2e8f0 !important; }
-
-        /* --- 모바일 카드 디자인 --- */
+        /* Mobile Card Dark */
         .mobile-only-section { display: block; }
         @media (min-width: 768px) { .mobile-only-section { display: none; } }
 
-        .mobile-card { background: white; border-radius: 16px; padding: 18px; margin-bottom: 15px; border: 1px solid #edf2f7; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        
-        /* 수량 컨트롤 유닛 */
-        .qty-control { display: inline-flex; align-items: center; background: #e2e8f0; padding: 4px; border-radius: 12px; gap: 8px; }
-        .qty-text { font-size: 1.2rem; font-weight: 900; min-width: 50px; text-align: center; color: #1e293b; }
+        .mobile-card { 
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px; 
+            padding: 18px; 
+            margin-bottom: 12px; 
+        }
+
+        /* Qty Control */
+        .qty-control { display: inline-flex; align-items: center; background: #0f172a; padding: 4px; border-radius: 10px; gap: 8px; border: 1px solid #334155; }
+        .qty-text { font-size: 1.1rem; font-weight: 800; min-width: 40px; text-align: center; color: white; }
         .qty-text.zero { color: #ef4444; }
-        .qty-control button { width: 35px; height: 35px; border: none; border-radius: 8px; background: white; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .qty-control button { 
+            width: 32px; height: 32px; border: none; border-radius: 8px; 
+            background: #334155; color: white; font-weight: bold; cursor: pointer; 
+        }
 
-        /* 배지 스타일 */
-        .badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; color: white; }
-        .badge-finished { background: #10b981; }
-        .badge-raw { background: #3b82f6; }
-        .badge-stock-out { background: #ef4444; margin-left: 5px; }
+        /* Badges */
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: white; }
+        .badge-finished { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .badge-raw { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+        .badge-stock-out { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); margin-left: 5px; }
 
-        /* 로딩 레이어 */
-        #loading-layer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #2196F3; border-radius: 50%; animation: spin 1s linear infinite; }
+        /* Loading */
+        #loading-layer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Nav Button */
+        .nav-btn { padding:10px 15px; background:rgba(30,41,59,0.8); color:#cbd5e1; border:1px solid #334155; border-radius:10px; cursor:pointer; font-weight:600; font-size:13px; display: flex; align-items: center; gap: 5px; text-decoration: none;}
+        .nav-btn:hover { background:#334155; color:white; }
+        .nav-btn-primary { background: #2563eb; color: white; border: none; }
     </style>
 </head>
 <body>
     <div id="loading-layer">
         <div class="spinner"></div>
-        <p style="margin-top: 15px; font-weight: bold;">데이터 처리 중...</p>
+        <p style="margin-top: 15px; font-weight: bold; color: #94a3b8;">데이터 동기화...</p>
     </div>
 
     <div class="header-box">
-        <h1>📦 스마트 재고 관리</h1>
+        <h1>📦 재고 현황</h1>
         <div style="display: flex; gap: 8px; align-items: center;">
-            <button onclick="location.href='/main.html'" style="padding:10px 15px; background:#334155; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold; display: flex; align-items: center; gap: 5px;">
-                <span>🏠</span> 홈
-            </button>
-            <button onclick="location.href='/calendar.html'" style="padding:10px 15px; background:#2196F3; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold;">📅 달력보기</button>
-            <button onclick="logout()" style="padding:10px 10px; background:none; border:none; color:#64748b; cursor:pointer; font-size: 14px;">로그아웃</button>
+            <button onclick="location.href='/main.html'" class="nav-btn">🏠 홈</button>
+            <button onclick="location.href='/calendar.html'" class="nav-btn nav-btn-primary">📅 달력</button>
         </div>
     </div>
 
@@ -85,7 +134,7 @@
                 <option value="완제품">🟢 완제품</option>
                 <option value="원자재">🔵 원자재</option>
             </select>
-            <button class="btn-submit" onclick="addItem()">물품 등록</button>
+            <button class="btn-submit" onclick="addItem()">등록</button>
         </div>
     </div>
 
@@ -93,13 +142,13 @@
         <button class="filter-btn active" onclick="filterItems('전체', this)">전체</button>
         <button class="filter-btn" onclick="filterItems('완제품', this)">완제품</button>
         <button class="filter-btn" onclick="filterItems('원자재', this)">원자재</button>
-        <button class="filter-btn" onclick="filterItems('품절', this)" style="color:#ef4444;">🚨 품절/부족</button>
-        <input type="text" id="search-input" placeholder="검색..." onkeyup="searchItems()" style="height:40px; width:150px; border-radius:10px; border:1px solid #ddd; padding:0 10px;">
+        <button class="filter-btn" onclick="filterItems('품절', this)" style="color:#f87171;">🚨 품절</button>
+        <input type="text" id="search-input" placeholder="검색..." onkeyup="searchItems()" style="height:34px; width:120px; background:#1e293b; border:1px solid #334155;">
     </div>
 
     <div id="inventory-content">
         <div id="finished-section">
-            <h2 style="color:#2e7d32; font-size: 1.2rem;">🟢 완제품 현황 <span id="count-finished" style="font-size:0.8rem; color:#94a3b8; font-weight: normal;"></span></h2>
+            <h2 style="color:#34d399; font-size: 1.1rem; border-bottom:1px solid #334155; padding-bottom:10px;">🟢 완제품 <span id="count-finished" style="font-size:0.8rem; color:#64748b;"></span></h2>
             <table class="pc-table">
                 <thead><tr><th>상태</th><th>품목 정보</th><th>사이즈</th><th>길이</th><th>수량 제어</th><th>관리</th></tr></thead>
                 <tbody id="pc-list-finished"></tbody>
@@ -108,7 +157,7 @@
         </div>
         
         <div id="raw-section" style="margin-top:40px;">
-            <h2 style="color:#1565c0; font-size: 1.2rem;">🔵 원자재 현황 <span id="count-raw" style="font-size:0.8rem; color:#94a3b8; font-weight: normal;"></span></h2>
+            <h2 style="color:#60a5fa; font-size: 1.1rem; border-bottom:1px solid #334155; padding-bottom:10px;">🔵 원자재 <span id="count-raw" style="font-size:0.8rem; color:#64748b;"></span></h2>
             <table class="pc-table">
                 <thead><tr><th>상태</th><th>품목 정보</th><th>사이즈</th><th>길이</th><th>수량 제어</th><th>관리</th></tr></thead>
                 <tbody id="pc-list-raw"></tbody>
@@ -118,33 +167,27 @@
     </div>
 
     <script>
+        // 로직 100% 보존
         const API_URL = '/api/inventory';
         const API_OPT = '/api/options';
         const currentUser = localStorage.getItem('username');
         const currentNick = localStorage.getItem('nickname');
         let allItemsData = [];
 
-        // [추가] 공휴일 미리 가져오기 함수
-    async function prefetchHolidays() {
-        const currentYear = new Date().getFullYear();
-        const yearsToFetch = [currentYear, currentYear + 1]; // 올해, 내년
-        // 기존 캐시 확인
-        let cache = JSON.parse(localStorage.getItem('holiday_cache')) || {};
-
-        for (const year of yearsToFetch) {
-            if (cache[year]) continue; // 이미 있으면 패스
-
-            try {
-                const res = await fetch(`/api/holidays/${year}`);
-                const data = await res.json();
-                cache[year] = data;
-                localStorage.setItem('holiday_cache', JSON.stringify(cache));
-                console.log(`✅ ${year}년 공휴일 미리 준비 완료`);
-            } catch (e) {
-                console.error(`${year}년 공휴일 예열 실패`, e);
+        async function prefetchHolidays() {
+            const currentYear = new Date().getFullYear();
+            const yearsToFetch = [currentYear, currentYear + 1];
+            let cache = JSON.parse(localStorage.getItem('holiday_cache')) || {};
+            for (const year of yearsToFetch) {
+                if (cache[year]) continue;
+                try {
+                    const res = await fetch(`/api/holidays/${year}`);
+                    const data = await res.json();
+                    cache[year] = data;
+                    localStorage.setItem('holiday_cache', JSON.stringify(cache));
+                } catch (e) { console.error(e); }
             }
         }
-    }
 
         window.onload = () => {
             if (!currentUser) { location.href = '/'; return; }
@@ -166,11 +209,9 @@
                     size: document.getElementById('new-size'),
                     len: document.getElementById('new-length')
                 };
-
                 sel.name.innerHTML = '<option value="">품목 선택</option>';
                 sel.size.innerHTML = '<option value="">사이즈 선택</option>';
                 sel.len.innerHTML = '<option value="">길이 선택</option>';
-
                 options.forEach(opt => {
                     const o = document.createElement('option');
                     o.value = opt.value; o.innerText = opt.value;
@@ -199,7 +240,6 @@
 
             [pcF, pcR, mobF, mobR].forEach(el => el.innerHTML = '');
 
-            // --- 정렬 로직 적용: 수량 있는 것 우선 -> 최신 수정순 ---
             items.sort((a, b) => {
                 if (a.quantity > 0 && b.quantity <= 0) return -1;
                 if (a.quantity <= 0 && b.quantity > 0) return 1;
@@ -215,9 +255,9 @@
                 const row = `
                     <tr>
                         <td><span class="badge ${badgeClass}">${item.category}</span>${stockOut}</td>
-                        <td style="text-align:left; font-weight:800; padding-left:20px;">${item.name}</td>
-                        <td><b>${item.size}</b></td>
-                        <td><b>${item.length}</b></td>
+                        <td style="text-align:left; font-weight:600; color:#f8fafc; padding-left:20px;">${item.name}</td>
+                        <td><span style="color:#cbd5e1;">${item.size}</span></td>
+                        <td><span style="color:#cbd5e1;">${item.length}</span></td>
                         <td>
                             <div class="qty-control">
                                 <button onclick="updateStock('${item._id}', ${item.quantity - 1})">－</button>
@@ -225,7 +265,7 @@
                                 <button onclick="updateStock('${item._id}', ${item.quantity + 1})">＋</button>
                             </div>
                         </td>
-                        <td><button onclick="deleteItem('${item._id}')" style="color:#cbd5e1; background:none; border:none; cursor:pointer; font-size:12px;">삭제</button></td>
+                        <td><button onclick="deleteItem('${item._id}')" style="color:#64748b; background:none; border:none; cursor:pointer; font-size:12px;">삭제</button></td>
                     </tr>`;
                 
                 const card = `
@@ -234,8 +274,8 @@
                             <span class="badge ${badgeClass}">${item.category}</span>
                             ${stockOut}
                         </div>
-                        <div style="font-weight:800; font-size:1.1rem; margin-bottom:5px;">${item.name}</div>
-                        <div style="color:#64748b; font-size:0.9rem; margin-bottom:15px;">규격: ${item.size} / ${item.length}</div>
+                        <div style="font-weight:700; font-size:1.1rem; margin-bottom:5px; color:#f8fafc;">${item.name}</div>
+                        <div style="color:#94a3b8; font-size:0.9rem; margin-bottom:15px;">규격: ${item.size} / ${item.length}</div>
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div class="qty-control">
                                 <button onclick="updateStock('${item._id}', ${item.quantity - 1})">－</button>
@@ -308,7 +348,6 @@
         }
 
         function showLoading(show) { document.getElementById('loading-layer').style.display = show ? 'flex' : 'none'; }
-        function logout() { localStorage.clear(); location.href = '/'; }
     </script>
 </body>
 </html>

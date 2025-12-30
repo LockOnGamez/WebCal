@@ -3,11 +3,21 @@ const router = express.Router();
 const Attendance = require("../models/Attendance");
 const User = require("../models/User");
 
-// 1. 상태 확인 (오늘 출퇴근 했는지)
+//한국시간 기준 문자열반환
+function getKSTDateString() {
+  const now = new Date();
+  //UTC시간에 9시간을 더함
+  const kstDate = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return kstDate.toISOString().split("T")[0];
+}
+
+// 1. 상태 확인
 router.get("/status/:username", async (req, res) => {
   try {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getKSTDateString(); // KST 기준 날짜
     const user = await User.findOne({ username: req.params.username });
+    if (!user) return res.json(null); // 유저가 없으면 null 반환
+
     const record = await Attendance.findOne({ userId: user._id, date: today });
     res.json(record);
   } catch (err) {
@@ -19,8 +29,10 @@ router.get("/status/:username", async (req, res) => {
 router.post("/check-in", async (req, res) => {
   try {
     const { username, nickname } = req.body;
-    const today = new Date().toISOString().split("T")[0];
+    const today = getKSTDateString(); // KST 기준 날짜
     const user = await User.findOne({ username });
+
+    // 이미 오늘 날짜(KST)로 기록이 있는지 확인
     const exists = await Attendance.findOne({ userId: user._id, date: today });
     if (exists) return res.status(400).json({ message: "이미 출근했습니다." });
 
@@ -29,7 +41,7 @@ router.post("/check-in", async (req, res) => {
       username,
       nickname,
       date: today,
-      clockIn: new Date(),
+      clockIn: new Date(), // 시간 자체는 타임스탬프로 저장 (프론트에서 변환)
     });
     await newIn.save();
     res.json({ time: newIn.clockIn });
@@ -42,8 +54,9 @@ router.post("/check-in", async (req, res) => {
 router.post("/check-out", async (req, res) => {
   try {
     const { username } = req.body;
-    const today = new Date().toISOString().split("T")[0];
+    const today = getKSTDateString(); // KST 기준 날짜
     const user = await User.findOne({ username });
+
     const record = await Attendance.findOne({ userId: user._id, date: today });
     if (!record)
       return res.status(400).json({ message: "출근 기록이 없습니다." });
@@ -51,6 +64,7 @@ router.post("/check-out", async (req, res) => {
       return res.status(400).json({ message: "이미 퇴근했습니다." });
 
     record.clockOut = new Date();
+    // 근무 시간 계산 (초 단위)
     record.duration = Math.floor((record.clockOut - record.clockIn) / 1000);
     await record.save();
     res.json({ time: record.clockOut });

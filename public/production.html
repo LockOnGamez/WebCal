@@ -5,16 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🔨 생산 기록 등록</title>
     <style>
+        /* 기본 스타일 */
         body { background-color: #f4f7f9; padding: 10px; font-family: -apple-system, sans-serif; margin: 0; }
         .prod-container { 
             width: 100%; max-width: 500px; margin: 0 auto; background: white; 
             padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); box-sizing: border-box; 
         }
         h1 { font-size: 1.4rem; text-align: center; margin-bottom: 20px; color: #1e293b; }
+        
+        /* 마지막 반영 시간 표시 */
+        #last-update-info {
+            text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 20px; 
+            background: #f1f5f9; padding: 10px; border-radius: 12px;
+        }
+
         .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #475569; font-size: 0.95rem; }
         
-        /* 모바일 터치를 위해 높이 확장 */
         select, input { 
             width: 100%; height: 55px; padding: 0 15px; font-size: 17px; 
             border-radius: 12px; border: 1px solid #ddd; background-color: #fff; box-sizing: border-box; 
@@ -30,11 +37,65 @@
         }
         .submit-btn:active { transform: scale(0.98); }
         .back-link { display: block; text-align: center; margin-top: 20px; color: #64748b; text-decoration: none; }
+
+        /* [추가] 확인 팝업 (Modal) 스타일 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+        .modal-box {
+            background: white; width: 90%; max-width: 400px; padding: 25px; 
+            border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center;
+        }
+        .modal-box h3 { margin: 0 0 15px 0; color: #1e293b; font-size: 1.3rem; }
+        .modal-info { text-align: left; background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+        .modal-info p { margin: 8px 0; font-size: 1rem; color: #475569; display: flex; justify-content: space-between; }
+        .modal-info b { color: #1e293b; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 15px; border: none; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+        .btn-cancel { background: #e2e8f0; color: #64748b; }
+        .btn-confirm { background: #28a745; color: white; }
+
+        /* [추가] 로딩 레이어 스타일 */
+        #loading-layer { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.8); z-index: 2000; 
+            justify-content: center; align-items: center; flex-direction: column; 
+        }
+        .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #28a745; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
+    <div id="loading-layer">
+        <div class="spinner"></div>
+        <p style="margin-top: 15px; font-weight: bold; color: #28a745;">저장 중입니다...</p>
+    </div>
+
+    <div id="confirm-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>📋 기록 확인</h3>
+            <div class="modal-info">
+                <p>품명: <b id="conf-name"></b></p>
+                <p>폭: <b id="conf-width"></b></p>
+                <p>길이: <b id="conf-length"></b></p>
+                <p>지관: <b id="conf-tube"></b></p>
+                <p style="font-size: 1.2rem; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;">생산 수량: <b id="conf-qty" style="color:#28a745;"></b></p>
+            </div>
+            <div class="modal-btns">
+                <button class="modal-btn btn-cancel" onclick="closeModal()">취소</button>
+                <button class="modal-btn btn-confirm" onclick="finalSubmit()">확인 (저장)</button>
+            </div>
+        </div>
+    </div>
+
     <div class="prod-container">
         <h1>🔨 생산 기록 등록</h1>
+        
+        <div id="last-update-info">
+            마지막 반영: <span id="last-update-time" style="font-weight: bold;">로딩 중...</span>
+        </div>
 
         <div class="input-group">
             <label>사용 지관 선택</label>
@@ -64,17 +125,20 @@
             <input type="number" id="quantity" placeholder="수량 입력" inputmode="numeric">
         </div>
 
-        <button class="submit-btn" onclick="submitProduction()">기록 저장</button>
+        <button class="submit-btn" onclick="openConfirmation()">기록 저장</button>
         <a href="main.html" class="back-link">🏠 메인 화면으로</a>
     </div>
 
     <script>
+        let pendingData = null; // 전송 대기 중인 데이터
+
         window.onload = async () => {
             try {
                 const [invRes, optRes] = await Promise.all([fetch('/api/inventory'), fetch('/api/options')]);
                 const inventory = await invRes.json();
                 const options = await optRes.json();
 
+                // 1. 원자재 드롭다운
                 const materialSelect = document.getElementById('select-material');
                 inventory.filter(item => item.category === '원자재').forEach(m => {
                     const opt = document.createElement('option');
@@ -84,6 +148,7 @@
                     materialSelect.appendChild(opt);
                 });
 
+                // 2. 옵션 분류
                 const widthSelect = document.getElementById('width');
                 const sizeSelect = document.getElementById('size');
                 options.forEach(opt => {
@@ -96,33 +161,95 @@
                         sizeSelect.appendChild(element);
                     }
                 });
-            } catch (err) { alert("데이터 로드 실패"); }
+
+                // 3. 마지막 반영 시간 표시
+                if (inventory && inventory.length > 0) {
+                    const sorted = inventory.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                    const lastItem = sorted[0];
+                    if (lastItem && lastItem.updatedAt) {
+                        const timeStr = new Date(lastItem.updatedAt).toLocaleString('ko-KR', {
+                            month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        });
+                        document.getElementById('last-update-time').innerText = timeStr + " (" + lastItem.name + ")";
+                    } else {
+                        document.getElementById('last-update-time').innerText = "기록 없음";
+                    }
+                } else {
+                    document.getElementById('last-update-time').innerText = "기록 없음";
+                }
+
+            } catch (err) { 
+                alert("데이터 로드 실패"); 
+                document.getElementById('last-update-time').innerText = "통신 오류";
+            }
         };
 
-        async function submitProduction() {
+        // 1단계: 팝업 띄우기
+        function openConfirmation() {
             const materialEl = document.getElementById('select-material');
             if (!materialEl.value) return alert("원단을 선택하세요.");
             
-            const data = {
+            const tubeName = document.querySelector('input[name="tubeType"]:checked').value;
+            const width = document.getElementById('width').value;
+            const size = document.getElementById('size').value;
+            const quantity = document.getElementById('quantity').value;
+
+            if(!width || !size || !quantity) return alert("모든 항목을 입력하세요.");
+
+            // 데이터 임시 저장
+            pendingData = {
                 materialId: materialEl.value,
                 materialName: materialEl.options[materialEl.selectedIndex].text,
                 category: materialEl.options[materialEl.selectedIndex].dataset.rawName,
-                width: document.getElementById('width').value,
-                size: document.getElementById('size').value.replace('m', ''),
-                quantity: parseInt(document.getElementById('quantity').value),
-                tubeName: document.querySelector('input[name="tubeType"]:checked').value
+                width: width,
+                size: size.replace('m', ''),
+                quantity: parseInt(quantity),
+                tubeName: tubeName
             };
 
-            if(!data.width || !data.size || !data.quantity) return alert("모든 항목을 입력하세요.");
+            // 팝업 텍스트 채우기
+            document.getElementById('conf-name').innerText = pendingData.category;
+            document.getElementById('conf-width').innerText = pendingData.width;
+            document.getElementById('conf-length').innerText = pendingData.size + "m";
+            document.getElementById('conf-tube').innerText = pendingData.tubeName;
+            document.getElementById('conf-qty').innerText = pendingData.quantity + "개";
 
-            const res = await fetch('/api/inventory/produce', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            // 팝업 표시
+            document.getElementById('confirm-modal').style.display = 'flex';
+        }
 
-            if(res.ok) { alert("성공!"); location.reload(); }
-            else { const err = await res.json(); alert("에러: " + err.error); }
+        function closeModal() {
+            document.getElementById('confirm-modal').style.display = 'none';
+            pendingData = null;
+        }
+
+        // 2단계: 실제 저장 (로딩 포함)
+        async function finalSubmit() {
+            if (!pendingData) return;
+
+            // 로딩 표시
+            document.getElementById('confirm-modal').style.display = 'none'; // 팝업 닫고
+            document.getElementById('loading-layer').style.display = 'flex'; // 로딩 열고
+
+            try {
+                const res = await fetch('/api/inventory/produce', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pendingData)
+                });
+
+                if(res.ok) {
+                    alert("✅ 성공적으로 기록되었습니다!");
+                    location.reload();
+                } else {
+                    const err = await res.json();
+                    alert("❌ 오류: " + err.error);
+                    document.getElementById('loading-layer').style.display = 'none';
+                }
+            } catch (err) {
+                alert("서버 연결 실패");
+                document.getElementById('loading-layer').style.display = 'none';
+            }
         }
     </script>
 </body>

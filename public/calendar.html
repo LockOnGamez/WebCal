@@ -43,6 +43,29 @@
         #loading-layer { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); }
         .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #2196F3; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* [추가] 플로팅 버튼 스타일 */
+        .floating-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #2196F3;
+            color: white;
+            font-size: 30px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+            cursor: pointer;
+            z-index: 900;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .floating-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -55,7 +78,7 @@
                 <button id="m-work" class="mode-btn active-work" onclick="setMode('work')">📦 작업</button>
                 <button id="m-att" class="mode-btn" onclick="setMode('att')">🕒 근무</button>
             </div>
-            <button onclick="location.href='/main.html'" style="padding:8px 15px; border-radius:10px; border:none; background:#333; color:white; font-weight:bold;">🏠 홈</button>
+            <button onclick="location.href='/main.html'" style="padding:8px 15px; border-radius:10px; border:none; background:#334155; color:white; font-weight:bold;">🏠 홈</button>
         </div>
     </div>
 
@@ -66,6 +89,8 @@
     <div id="att-summary" class="summary-badge"></div>
 
     <div id="calendar"></div>
+
+    <button class="floating-btn" onclick="openModalWithToday()">＋</button>
 
     <div id="eventModal" class="modal">
         <div class="modal-content">
@@ -144,6 +169,9 @@
             document.getElementById('m-work').className = `mode-btn ${mode==='work'?'active-work':''}`;
             document.getElementById('m-att').className = `mode-btn ${mode==='att'?'active-att':''}`;
             document.getElementById('att-search-bar').style.display = mode === 'att' ? 'flex' : 'none';
+            // 모드 변경 시 플로팅 버튼 숨김/표시 (작업 모드일 때만 표시)
+            document.querySelector('.floating-btn').style.display = mode === 'work' ? 'flex' : 'none';
+            
             if (mode === 'work') {
                 document.getElementById('att-summary').style.display = 'none';
                 currentSearchName = '';
@@ -159,13 +187,12 @@
         }
 
         async function searchAttendance() {
-    currentSearchName = document.getElementById('search-nickname').value.trim();
-    // 검색어가 없으면 전체 모드로 돌아가기 위해 빈값 처리
-    if (currentSearchName === "") {
-        document.getElementById('att-summary').style.display = 'none';
-    }
-    calendarInstance.refetchEvents();
-}
+            currentSearchName = document.getElementById('search-nickname').value.trim();
+            if (currentSearchName === "") {
+                document.getElementById('att-summary').style.display = 'none';
+            }
+            calendarInstance.refetchEvents();
+        }
 
         function initCalendar() {
             toggleLoading(true);
@@ -179,7 +206,6 @@
                 buttonText: { today: '오늘', month: '달력', list: '리스트' },
                 events: async function(info, success, failure) {
                     try {
-                        // [수정] 현재 달력의 '중앙 날짜'를 기준으로 연-월을 계산 (가장 정확함)
                         const centerDate = new Date((info.start.getTime() + info.end.getTime()) / 2);
                         const targetMonth = centerDate.getFullYear() + "-" + 
                                            String(centerDate.getMonth() + 1).padStart(2, '0');
@@ -198,7 +224,6 @@
                         
                         let rawData = [];
                         if (currentMode === 'att') {
-                            // [수정] 검색 결과(객체)와 전체 목록(배열) 대응
                             if (resData && resData.records) {
                                 rawData = resData.records;
                                 document.getElementById('att-summary').style.display = 'block';
@@ -220,7 +245,6 @@
                                     extendedProps: { ...d } 
                                 };
                             } else {
-                                // [중요] 날짜 매칭 확인: d.date 가 "2025-12-29" 형태인지 확인
                                 const inT = d.clockIn ? new Date(d.clockIn).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
                                 const outT = d.clockOut ? new Date(d.clockOut).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...';
                                 
@@ -264,20 +288,37 @@
             calendarInstance.render();
         }
 
+        // [추가] 한국 시간(KST) 오늘 날짜로 작업 추가 모달 열기
+        function openModalWithToday() {
+            // UTC 시간에 9시간(ms 단위)을 더해 한국 시간을 계산
+            const offset = 1000 * 60 * 60 * 9;
+            const now = new Date();
+            const koreaNow = new Date(now.getTime() + offset);
+            const todayStr = koreaNow.toISOString().split('T')[0];
+            
+            openModal(todayStr, null);
+        }
+
         // --- 작업(Work) 모달 관련 함수 ---
         function openModal(dateStr, event) {
             document.getElementById('modal-date').value = dateStr.split('T')[0];
             document.getElementById('product-tbody').innerHTML = '';
             document.getElementById('material-tbody').innerHTML = '';
+            
             if (event) {
+                // 수정 모드
                 document.getElementById('edit-event-id').value = event.id;
                 document.getElementById('btn-delete').style.display = 'inline-block';
+                document.getElementById('modal-title').innerText = '📝 작업 수정';
                 const props = event.extendedProps;
                 document.getElementById('modal-type').value = props.type;
                 if (props.items) props.items.forEach(i => addRow(i.role === 'material' ? 'material-tbody' : 'product-tbody', i));
             } else {
+                // 신규 등록 모드
                 document.getElementById('edit-event-id').value = '';
                 document.getElementById('btn-delete').style.display = 'none';
+                document.getElementById('modal-title').innerText = '📝 새 작업 추가';
+                // 기본적으로 품목 1줄 추가
                 addRow('product-tbody');
             }
             toggleProductionMode();

@@ -5,49 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>관리자 설정</title>
     <style>
-
-        /* 애니메이션 정의 */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translate3d(0, 20px, 0); }
-    to { opacity: 1; transform: translate3d(0, 0, 0); }
-}
-
-/* body 태그나 메인 컨테이너에 적용 */
-body {
-    animation: fadeInUp 0.5s ease-out forwards;
-}
-
-/* 버튼들에 쫀득한 느낌 추가 */
-button {
-    transition: transform 0.1s;
-}
-button:active {
-    transform: scale(0.95);
-}
-        body { 
-            padding: 20px; 
-            font-family: 'Pretendard', sans-serif; 
-            background-color: #0f172a; 
-            color: #f1f5f9;
-            max-width: 1200px; 
-            margin: 0 auto; 
+        /* [테마 변수] */
+        :root {
+            --bg-color: #f3f4f6;
+            --text-main: #1f2937;
+            --text-sub: #666;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --input-bg: #fff;
+            --table-head: #f8f9fa;
+        }
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --card-bg: rgba(30, 41, 59, 0.5);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --input-bg: #1e293b;
+            --table-head: #0f172a;
         }
 
-        h1 { font-size: 1.8rem; margin-bottom: 20px; color: #fff; border-bottom: 2px solid #334155; padding-bottom: 15px; }
-        .nav-links { margin-bottom: 30px; font-size: 14px; }
-        .nav-links a { color: #94a3b8; text-decoration: none; margin-right: 15px; transition: 0.2s; }
+        body { 
+            padding: 20px; font-family: 'Pretendard', sans-serif; 
+            background-color: var(--bg-color); color: var(--text-main);
+            max-width: 1200px; margin: 0 auto; transition: 0.3s;
+        }
+
+        h1 { font-size: 1.8rem; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
+        
+        .nav-links { margin-bottom: 30px; font-size: 14px; display: flex; align-items: center; gap: 15px; }
+        .nav-links a { color: var(--text-sub); text-decoration: none; transition: 0.2s; }
         .nav-links a:hover { color: #3b82f6; }
+        .nav-btn { cursor: pointer; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 5px 10px; border-radius: 8px; }
 
         .section { 
-            background: rgba(30, 41, 59, 0.5); 
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            margin-bottom: 30px; 
-            padding: 25px; 
-            border-radius: 20px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            margin-bottom: 30px; padding: 25px; border-radius: 20px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
         }
         h2 { margin-top: 0; color: #3b82f6; font-size: 1.3rem; margin-bottom: 20px; }
-        h3 { font-size: 1rem; margin-bottom: 10px; color: #cbd5e1; }
+        h3 { font-size: 1rem; margin-bottom: 10px; color: var(--text-sub); }
         
         /* Grid */
         .option-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
@@ -56,8 +53,8 @@ button:active {
         .input-group { display: flex; gap: 5px; margin-bottom: 15px; }
         input { 
             flex: 1; padding: 12px; 
-            background: #1e293b; border: 1px solid #334155; 
-            color: white; border-radius: 8px; font-size: 14px; 
+            background: var(--input-bg); border: 1px solid var(--border-color); 
+            color: var(--text-main); border-radius: 8px; font-size: 14px; 
         }
         input:focus { outline: none; border-color: #3b82f6; }
         
@@ -69,16 +66,16 @@ button:active {
         
         .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .tag { 
-            background: #1e293b; padding: 6px 12px; border-radius: 20px; 
-            display: flex; align-items: center; gap: 8px; font-size: 13px; border: 1px solid #334155; 
+            background: var(--input-bg); padding: 6px 12px; border-radius: 20px; 
+            display: flex; align-items: center; gap: 8px; font-size: 13px; border: 1px solid var(--border-color); 
         }
         .tag button { background: #ef4444; color: white; width: 20px; height: 20px; padding: 0; line-height: 20px; font-size: 10px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
 
         /* Table */
-        .table-wrapper { overflow-x: auto; margin-top: 15px; border-radius: 12px; border: 1px solid #334155; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; background: #1e293b; }
-        th, td { border-bottom: 1px solid #334155; padding: 15px; text-align: center; font-size: 14px; color: #cbd5e1; }
-        th { background: #0f172a; color: #94a3b8; font-weight: 600; }
+        .table-wrapper { overflow-x: auto; margin-top: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; background: var(--input-bg); }
+        th, td { border-bottom: 1px solid var(--border-color); padding: 15px; text-align: center; font-size: 14px; color: var(--text-sub); }
+        th { background: var(--table-head); color: var(--text-sub); font-weight: 600; }
         
         .btn-approve { background: #10b981; color: white; }
         .btn-ban { background: #ef4444; color: white; }
@@ -88,115 +85,87 @@ button:active {
 <body>
     <h1>🛡️ 관리자 대시보드</h1>
     <div class="nav-links">
-        <a href="/inventory.html">📦 재고관리로 이동</a>
-        <a href="/calendar.html">📅 달력으로 이동</a>
-        <a href="/main.html">🏠 메인으로 이동</a>
+        <button class="nav-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+        <a href="/inventory.html">📦 재고관리</a>
+        <a href="/calendar.html">📅 달력</a>
+        <a href="/main.html">🏠 메인</a>
     </div>
 
     <div class="section">
         <h2>⚙️ 기초 데이터 관리</h2>
         <div class="option-grid">
             <div>
-                <h3>품목명 (Item Name)</h3>
-                <div class="input-group">
-                    <input type="text" id="new-item" placeholder="예: 투명테이프">
-                    <button onclick="addOption('itemName', 'new-item')">추가</button>
-                </div>
+                <h3>품목명</h3>
+                <div class="input-group"><input type="text" id="new-item" placeholder="예: 투명"><button onclick="addOption('itemName', 'new-item')">추가</button></div>
                 <div id="list-itemName" class="tag-container"></div>
             </div>
-
             <div>
-                <h3>사이즈 (Size)</h3>
-                <div class="input-group">
-                    <input type="text" id="new-size" placeholder="예: 48mm">
-                    <button onclick="addOption('size', 'new-size')">추가</button>
-                </div>
+                <h3>사이즈</h3>
+                <div class="input-group"><input type="text" id="new-size" placeholder="예: 38"><button onclick="addOption('size', 'new-size')">추가</button></div>
                 <div id="list-size" class="tag-container"></div>
             </div>
-
             <div>
-                <h3>길이 (Length)</h3>
-                <div class="input-group">
-                    <input type="text" id="new-length" placeholder="예: 40">
-                    <button onclick="addOption('length', 'new-length')">추가</button>
-                </div>
+                <h3>길이</h3>
+                <div class="input-group"><input type="text" id="new-length" placeholder="예: 500"><button onclick="addOption('length', 'new-length')">추가</button></div>
                 <div id="list-length" class="tag-container"></div>
             </div>
         </div>
     </div>
 
     <div class="section">
-        <h2>👋 신규 가입 대기</h2>
-        <button onclick="loadPendingUsers()" class="btn-refresh">목록 새로고침</button>
+        <h2>👋 가입 승인 대기</h2>
+        <button onclick="loadPendingUsers()" class="btn-refresh">새로고침</button>
         <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr><th>아이디</th><th>닉네임</th><th>신청일</th><th>관리</th></tr>
-                </thead>
-                <tbody id="user-list"></tbody>
-            </table>
+            <table><thead><tr><th>ID</th><th>닉네임</th><th>신청일</th><th>관리</th></tr></thead><tbody id="user-list"></tbody></table>
         </div>
     </div>
 
     <div class="section">
-        <h2>👥 전체 회원 관리</h2>
+        <h2>👥 전체 회원</h2>
         <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr><th>아이디</th><th>닉네임</th><th>권한</th><th>관리</th></tr>
-                </thead>
-                <tbody id="full-user-list"></tbody>
-            </table>
+            <table><thead><tr><th>ID</th><th>닉네임</th><th>권한</th><th>관리</th></tr></thead><tbody id="full-user-list"></tbody></table>
         </div>
     </div>
 
     <script>
-        // 로직 유지
+        function initTheme() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.body.setAttribute('data-theme', saved);
+            document.getElementById('theme-btn').innerText = saved === 'dark' ? '🌙' : '☀️';
+        }
+        function toggleTheme() {
+            const nxt = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', nxt);
+            localStorage.setItem('theme', nxt);
+            document.getElementById('theme-btn').innerText = nxt === 'dark' ? '🌙' : '☀️';
+        }
+        initTheme();
+
         const API_OPT = '/api/options';
         const API_ADMIN = '/api/admin';
 
-        window.onload = function() { loadOptions(); loadPendingUsers(); loadFullUsers();};
+        window.onload = function() { initTheme(); loadOptions(); loadPendingUsers(); loadFullUsers();};
 
         async function loadFullUsers() {
             try {
-                const res = await fetch('/api/admin/users'); // server.js 라우트 필요 (없으면 추가 구현 필요하나 기존 코드에 있다고 가정)
-                // 만약 server.js에 /api/admin/users가 없다면 이 부분은 에러가 날 수 있습니다. 
-                // 기존 제공해주신 코드에는 /api/admin/pending 만 있고 전체 유저 조회는 없었습니다.
-                // 하지만 UI상으로는 존재하므로 비워두거나 에러처리를 합니다.
-                if(res.status === 404) return; 
-                
+                const res = await fetch('/api/admin/users');
+                if(res.status === 404) return;
                 const users = await res.json();
                 const list = document.getElementById('full-user-list');
                 list.innerHTML = '';
-                if (!users || users.length === 0) {
-                    list.innerHTML = '<tr><td colspan="4">등록된 회원이 없습니다.</td></tr>';
-                    return;
-                }
+                if (!users || users.length === 0) { list.innerHTML = '<tr><td colspan="4">회원 없음</td></tr>'; return; }
                 users.forEach(user => {
-                    list.innerHTML += `
-                        <tr>
-                            <td>${user.username}</td>
-                            <td>${user.nickname}</td>
-                            <td>${user.role === 'admin' ? '<b style="color:#fcd34d">관리자</b>' : '일반'}</td>
-                            <td>
-                                <button onclick="resetPassword('${user._id}')" style="background:#f59e0b;">PW초기화</button>
-                                <button class="btn-ban" onclick="banUser('${user._id}')">강퇴</button>
-                            </td>
-                        </tr>`;
+                    list.innerHTML += `<tr><td>${user.username}</td><td>${user.nickname}</td><td>${user.role==='admin'?'<b style="color:#f59e0b">관리자</b>':'일반'}</td><td><button onclick="resetPassword('${user._id}')" style="background:#f59e0b;">PW초기화</button><button class="btn-ban" onclick="banUser('${user._id}')">강퇴</button></td></tr>`;
                 });
-            } catch (err) { console.error("회원 목록 로드 실패:", err); }
+            } catch (err) { console.error(err); }
         }
 
         async function resetPassword(id) {
-            if (!confirm("비밀번호를 '1234'로 초기화하시겠습니까?")) return;
+            if (!confirm("비밀번호를 '1234'로 초기화합니까?")) return;
             try {
-                const response = await fetch('/api/admin/reset-password', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: id })
-                });
-                const data = await response.json();
-                alert(data.message || "처리되었습니다.");
-            } catch (err) { alert("통신 오류"); }
+                const res = await fetch('/api/admin/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: id }) });
+                const data = await res.json(); alert(data.message || "처리됨");
+            } catch (err) { alert("오류"); }
         }
 
         async function loadOptions() {
@@ -205,10 +174,8 @@ button:active {
             document.getElementById('list-itemName').innerHTML = '';
             document.getElementById('list-size').innerHTML = '';
             document.getElementById('list-length').innerHTML = '';
-
             options.forEach(opt => {
-                const tag = document.createElement('div');
-                tag.className = 'tag';
+                const tag = document.createElement('div'); tag.className = 'tag';
                 tag.innerHTML = `${opt.value} <button onclick="deleteOption('${opt._id}')">x</button>`;
                 document.getElementById(`list-${opt.type}`).appendChild(tag);
             });
@@ -218,16 +185,12 @@ button:active {
             const input = document.getElementById(inputId);
             const value = input.value.trim();
             if(!value) return;
-            const res = await fetch(API_OPT, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ type, value })
-            });
+            const res = await fetch(API_OPT, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type, value }) });
             if(res.ok) { input.value = ''; loadOptions(); }
         }
 
         async function deleteOption(id) {
-            if(!confirm('삭제하시겠습니까?')) return;
+            if(!confirm('삭제?')) return;
             await fetch(`${API_OPT}/${id}`, { method: 'DELETE' });
             loadOptions();
         }
@@ -237,47 +200,25 @@ button:active {
             const users = await res.json();
             const list = document.getElementById('user-list');
             list.innerHTML = '';
-            
-            if (users.length === 0) {
-                list.innerHTML = '<tr><td colspan="4">대기 중인 회원이 없습니다.</td></tr>';
-                return;
-            }
-
+            if (users.length === 0) { list.innerHTML = '<tr><td colspan="4">대기 없음</td></tr>'; return; }
             users.forEach(user => {
-                list.innerHTML += `
-                    <tr>
-                        <td>${user.username}</td>
-                        <td>${user.nickname}</td>
-                        <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-                        <td>
-                            <button class="btn-approve" onclick="approveUser('${user._id}')">승인</button>
-                            <button class="btn-ban" onclick="banUser('${user._id}')">거절</button>
-                        </td>
-                    </tr>`;
+                list.innerHTML += `<tr><td>${user.username}</td><td>${user.nickname}</td><td>${new Date(user.createdAt).toLocaleDateString()}</td><td><button class="btn-approve" onclick="approveUser('${user._id}')">승인</button><button class="btn-ban" onclick="banUser('${user._id}')">거절</button></td></tr>`;
             });
         }
         
         async function approveUser(id) { 
-            if (!confirm("승인하시겠습니까?")) return;
+            if (!confirm("승인합니까?")) return;
             try {
-                const response = await fetch('/api/admin/approve', { 
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: id }) 
-                });
-                const data = await response.json();
-                alert(data.message);
-                loadPendingUsers(); 
+                const res = await fetch('/api/admin/approve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: id }) });
+                const data = await res.json(); alert(data.message); loadPendingUsers(); 
             } catch (err) { alert(err.message); }
         }
 
         async function banUser(id) {
-            if(!confirm('삭제하시겠습니까?')) return;
+            if(!confirm('삭제합니까?')) return;
             try {
-                const res = await fetch(`/api/admin/reject`, { 
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: id }) 
-                });
-                if(res.ok) { alert('삭제되었습니다.'); loadPendingUsers(); loadFullUsers(); }
+                const res = await fetch(`/api/admin/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: id }) });
+                if(res.ok) { alert('삭제됨'); loadPendingUsers(); loadFullUsers(); }
             } catch (err) { console.error(err); }
         }
     </script>

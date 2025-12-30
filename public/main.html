@@ -5,47 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🔥 Smart Factory</title>
     <style>
+        /* [테마 변수 정의] */
+        :root {
+            /* ☀️ 기본: 화이트 테마 (수정 전 깔끔한 스타일) */
+            --bg-color: #f3f4f6;
+            --text-main: #1f2937;
+            --text-sub: #666666;
+            --card-bg: #ffffff;
+            --card-border: rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --highlight: #3b82f6;
+            --btn-hover: #f8f9fa;
+        }
+
+        [data-theme="dark"] {
+            /* 🌙 다크 테마 (딥 네이비 & 글래스모피즘) */
+            --bg-color: #0f172a;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --highlight: #60a5fa;
+            --btn-hover: rgba(30, 41, 59, 0.9);
+        }
+
         /* [애니메이션 정의] */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translate3d(0, 20px, 0); }
             to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
-        
-        @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.9); }
-            70% { opacity: 1; transform: scale(1.02); }
-            100% { opacity: 1; transform: scale(1); }
-        }
 
-        /* 1. 기본 설정 및 배경 */
+        /* 1. 기본 설정 */
         body { 
-            background-color: #0f172a; 
+            background-color: var(--bg-color); 
+            color: var(--text-main);
             margin: 0; 
             padding: 20px; 
             font-family: 'Pretendard', -apple-system, sans-serif; 
-            color: #f1f5f9; 
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            /* 페이지 로드 시 전체 페이드인 */
+            transition: background-color 0.3s ease, color 0.3s ease; /* 테마 전환 부드럽게 */
             animation: fadeInUp 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
-        /* 2. 헤더 */
-        .header { 
-            width: 100%; max-width: 500px; margin: 30px 0; text-align: left; 
-            /* 헤더는 약간 늦게 등장 */
+        /* 2. 헤더 영역 */
+        .header-wrapper {
+            width: 100%; max-width: 500px; 
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin: 30px 0;
             animation: fadeInUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
+        .header-content { text-align: left; }
+        
         .header h1 { 
             font-size: 1.8rem; margin: 0; font-weight: 900; 
             background: linear-gradient(to right, #4ade80, #3b82f6); 
-            background-clip: text; 
+            -webkit-background-clip: text; 
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: -0.5px;
         }
-        .header p { color: #94a3b8; font-size: 0.95rem; margin-top: 5px; }
+        .header p { color: var(--text-sub); font-size: 0.95rem; margin-top: 5px; }
+
+        /* 테마 토글 버튼 */
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            width: 45px; height: 45px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+        }
+        .theme-toggle:hover { transform: rotate(15deg) scale(1.1); }
 
         /* 3. 메뉴 그리드 */
         .menu-grid { 
@@ -56,12 +94,10 @@
             max-width: 500px; 
         }
 
-        /* 4. 카드 디자인 (Glassmorphism + Animation) */
+        /* 4. 카드 공통 스타일 */
         .menu-card {
-            background: rgba(30, 41, 59, 0.7); 
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: 24px; 
             padding: 20px; 
             text-align: center; 
@@ -71,19 +107,20 @@
             align-items: center; 
             justify-content: center;
             gap: 12px;
-            color: #e2e8f0;
+            color: var(--text-main);
             min-height: 140px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--card-shadow);
             
-            /* 기본 상태 트랜지션 (부드럽게) */
+            backdrop-filter: blur(10px); /* 다크모드일 때 유리 효과 */
+            -webkit-backdrop-filter: blur(10px);
+
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             
-            /* 순차적 등장 애니메이션 초기값 */
             opacity: 0; 
             animation: fadeInUp 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
-        /* [순차 등장] 각 카드가 0.1초씩 늦게 나타나도록 설정 */
+        /* 순차 등장 */
         .menu-card:nth-child(1) { animation-delay: 0.1s; }
         .menu-card:nth-child(2) { animation-delay: 0.15s; }
         .menu-card:nth-child(3) { animation-delay: 0.2s; }
@@ -91,28 +128,19 @@
         .menu-card:nth-child(5) { animation-delay: 0.3s; }
         .menu-card:nth-child(6) { animation-delay: 0.35s; }
 
-        /* [호버 효과] 마우스 올리면 붕 뜸 */
         .menu-card:hover { 
             transform: translateY(-5px) scale(1.02); 
-            background: rgba(40, 55, 80, 0.8);
-            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.3);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: var(--btn-hover);
+            border-color: var(--highlight);
         }
-        
-        /* [클릭 효과] 누르면 쫀득하게 들어감 */
-        .menu-card:active { 
-            transform: scale(0.95); 
-            background: rgba(30, 41, 59, 0.9); 
-        }
+        .menu-card:active { transform: scale(0.95); }
 
         .menu-card .icon { 
             font-size: 2.8rem; 
-            filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); 
             transition: transform 0.3s ease;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
-        /* 호버 시 아이콘도 살짝 움직임 */
         .menu-card:hover .icon { transform: scale(1.1) rotate(5deg); }
-
         .menu-card span { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.5px; }
 
         /* 5. 생산 기록 버튼 (강조) */
@@ -120,7 +148,7 @@
             grid-column: span 2; 
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             border: none;
-            color: white;
+            color: white !important; /* 항상 흰색 글씨 */
             flex-direction: row; 
             min-height: 100px;
             box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
@@ -133,12 +161,15 @@
         /* 6. 완료 상태 버튼 */
         .btn-active { border: 1px solid rgba(59, 130, 246, 0.5); }
         .btn-done { 
-            background: rgba(15, 23, 42, 0.5); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-            color: #64748b; 
+            background: rgba(0, 0, 0, 0.05); /* 투명도 조절로 양쪽 테마 대응 */
+            border: 1px solid var(--card-border); 
+            color: var(--text-sub); 
             cursor: default;
+            box-shadow: none;
         }
-        .btn-done:hover { transform: none; box-shadow: none; background: rgba(15, 23, 42, 0.5); }
+        [data-theme="dark"] .btn-done { background: rgba(15, 23, 42, 0.5); }
+        
+        .btn-done:hover { transform: none; box-shadow: none; }
         .btn-done:active { transform: none; }
         .btn-done .icon { filter: grayscale(100%); opacity: 0.5; }
 
@@ -146,7 +177,7 @@
         .card-admin { 
             grid-column: span 2; 
             background: rgba(99, 102, 241, 0.1); 
-            border: 1px dashed rgba(99, 102, 241, 0.4);
+            border: 1px dashed rgba(99, 102, 241, 0.5);
             color: #818cf8;
             min-height: 70px;
             flex-direction: row;
@@ -157,14 +188,14 @@
             margin-top: 40px; 
             padding: 12px 25px;
             background: transparent; 
-            color: #64748b; 
-            border: 1px solid #334155; 
+            color: var(--text-sub); 
+            border: 1px solid var(--text-sub); 
             border-radius: 50px;
             font-weight: 600; 
             font-size: 0.9rem;
             cursor: pointer; 
             transition: all 0.2s;
-            animation: fadeInUp 1s forwards; /* 천천히 등장 */
+            animation: fadeInUp 1s forwards;
             animation-delay: 0.5s;
             opacity: 0;
         }
@@ -178,22 +209,25 @@
         /* 로딩 레이어 */
         #loading-layer { 
             display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(15, 23, 42, 0.95); z-index: 9999; 
+            background: var(--bg-color); /* 배경색도 테마 따라감 */
+            z-index: 9999; 
             justify-content: center; align-items: center; flex-direction: column; 
-            backdrop-filter: blur(10px);
-            transition: opacity 0.4s ease; /* 사라질 때 부드럽게 */
+            transition: opacity 0.4s ease;
         }
-        .spinner { width: 45px; height: 45px; border: 4px solid #1e293b; border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { width: 45px; height: 45px; border: 4px solid var(--card-border); border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="loading-layer"><div class="spinner"></div><p style="margin-top:20px; font-weight:bold; color:#94a3b8;">SYSTEM SYNC...</p></div>
+    <div id="loading-layer"><div class="spinner"></div><p style="margin-top:20px; font-weight:bold; color:var(--text-sub);">SYSTEM SYNC...</p></div>
 
-    <div class="header">
-        <p style="font-size:0.9rem; font-weight:600; color:#64748b; margin-bottom:5px;">FACTORY OS v2.0</p>
-        <h1>HELLO, <span id="user-display" style="color:white;">User</span>.</h1>
-        <p>오늘도 안전 작업 하세요!</p>
+    <div class="header-wrapper">
+        <div class="header-content">
+            <p style="font-size:0.9rem; font-weight:600; color:var(--text-sub); margin-bottom:5px;">FACTORY OS v2.0</p>
+            <h1>HELLO, <span id="user-display" style="color:var(--text-main);">User</span>.</h1>
+            <p>오늘도 안전 작업 하세요!</p>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
     </div>
 
     <div class="menu-grid">
@@ -226,7 +260,33 @@
         const currentUser = localStorage.getItem('username');
         const currentNick = localStorage.getItem('nickname');
 
+        // [테마 관리 로직]
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark'; // 기본값 다크
+            document.body.setAttribute('data-theme', savedTheme);
+            updateThemeBtn(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeBtn(newTheme);
+        }
+
+        function updateThemeBtn(theme) {
+            const btn = document.getElementById('theme-btn');
+            if(theme === 'dark') {
+                btn.innerHTML = '🌙'; // 다크모드일 때 달 아이콘
+            } else {
+                btn.innerHTML = '☀️'; // 라이트모드일 때 해 아이콘
+            }
+        }
+
         window.onload = async () => {
+            initTheme(); // 테마 초기화
+
             if (!currentUser) { location.href = '/'; return; }
             document.getElementById('user-display').innerText = currentNick || currentUser;
             
@@ -234,7 +294,6 @@
                 await Promise.all([checkAdminStatus(), checkAttendanceStatus()]);
             } catch (err) { console.error(err); }
             finally { 
-                // 로딩 레이어를 부드럽게 사라지게 함
                 const loader = document.getElementById('loading-layer');
                 loader.style.opacity = '0';
                 setTimeout(() => loader.style.display = 'none', 400); 
@@ -265,8 +324,8 @@
             btn.className = 'menu-card btn-done';
             btn.innerHTML = `
                 <div class="icon">${isBtnIn ? '✅' : '🏠'}</div>
-                <span style="color:#94a3b8;">${isBtnIn ? '출근' : '퇴근'} 완료</span>
-                <small style="font-weight:bold; color:#cbd5e1;">${time}</small>
+                <span style="color:var(--text-sub);">${isBtnIn ? '출근' : '퇴근'} 완료</span>
+                <small style="font-weight:bold; color:var(--text-sub); opacity:0.8;">${time}</small>
             `;
         }
 
@@ -282,7 +341,21 @@
             if (res.ok) location.reload();
         }
 
-        function logout() { localStorage.clear(); location.href = '/'; }
+        function logout() { 
+            // 1. 현재 설정된 테마를 변수에 잠시 저장해둡니다.
+            const currentTheme = localStorage.getItem('theme');
+            
+            // 2. 저장소 전체를 비웁니다. (로그인 정보 삭제됨)
+            localStorage.clear(); 
+            
+            // 3. 아까 저장해둔 테마 설정만 다시 복구합니다.
+            if(currentTheme) {
+                localStorage.setItem('theme', currentTheme);
+            }
+            
+            // 4. 로그인 페이지로 이동
+            location.href = '/'; 
+        }
     </script>
 </body>
 </html>

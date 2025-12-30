@@ -5,106 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>시스템 접근</title>
     <style>
+        /* [테마 변수] */
+        :root {
+            /* ☀️ 라이트 */
+            --bg-color: #f3f4f6;
+            --text-main: #1f2937;
+            --text-sub: #666666;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --card-border: #ddd;
+            --input-bg: #ffffff;
+            --input-border: #ccc;
+            --btn-bg: #333;
+            --btn-text: #fff;
+        }
+        [data-theme="dark"] {
+            /* 🌙 다크 */
+            --bg-color: #0f172a;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(15, 23, 42, 0.6);
+            --input-border: #334155;
+            --btn-bg: linear-gradient(135deg, #3b82f6, #2563eb);
+            --btn-text: #fff;
+        }
 
-        /* 애니메이션 정의 */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translate3d(0, 20px, 0); }
-    to { opacity: 1; transform: translate3d(0, 0, 0); }
-}
-
-/* body 태그나 메인 컨테이너에 적용 */
-body {
-    animation: fadeInUp 0.5s ease-out forwards;
-}
-
-/* 버튼들에 쫀득한 느낌 추가 */
-button {
-    transition: transform 0.1s;
-}
-button:active {
-    transform: scale(0.95);
-}
-        /* [UI 컨셉] Smart Factory Dark Mode */
         body { 
             margin: 0; padding: 0;
-            background-color: #0f172a; /* Deep Navy */
+            background-color: var(--bg-color);
             font-family: 'Pretendard', -apple-system, sans-serif;
-            color: #f1f5f9;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            color: var(--text-main);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        /* 유리 질감 카드 */
-        .container {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 40px 30px;
-            border-radius: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-        }
-
-        h1 { font-size: 1.8rem; margin-bottom: 40px; font-weight: 800; letter-spacing: -1px; }
-        h1 span { color: #3b82f6; } /* 포인트 컬러 */
-        
-        h3 { margin-top: 0; color: #94a3b8; font-weight: 500; font-size: 1.1rem; margin-bottom: 20px; }
-
-        input { 
-            width: 100%;
-            padding: 15px;
-            margin: 8px 0;
-            box-sizing: border-box;
-            background-color: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            color: white;
-            font-size: 16px;
+        /* 테마 버튼 (우측 상단 고정) */
+        .theme-toggle {
+            position: absolute; top: 20px; right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: 0.3s;
         }
-        input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+
+        .container {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--card-border);
+            padding: 40px 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            max-width: 400px; width: 90%; text-align: center;
         }
 
+        h1 { font-size: 1.8rem; margin-bottom: 40px; font-weight: 800; letter-spacing: -1px; color: var(--text-main); }
+        h1 span { color: #3b82f6; }
+        h3 { margin-top: 0; color: var(--text-sub); font-weight: 500; font-size: 1.1rem; margin-bottom: 20px; }
+
+        input { 
+            width: 100%; padding: 15px; margin: 8px 0; box-sizing: border-box;
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px; color: var(--text-main); font-size: 16px; transition: 0.3s;
+        }
+        input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+
         button.action-btn { 
-            padding: 16px;
-            width: 100%;
-            cursor: pointer;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            margin-top: 20px;
-            transition: 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            padding: 16px; width: 100%; cursor: pointer;
+            background: var(--btn-bg); color: var(--btn-text);
+            border: none; border-radius: 12px; font-size: 16px; font-weight: bold; margin-top: 20px;
+            transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         button.action-btn:active { transform: scale(0.98); }
 
-        .toggle-btn {
-            background: none;
-            color: #60a5fa;
-            border: none;
-            padding: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 0;
-            text-decoration: underline;
-        }
-
+        .toggle-btn { background: none; color: #3b82f6; border: none; padding: 5px; font-size: 14px; cursor: pointer; text-decoration: underline; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
+
     <h1>🔒 <span>SMART</span> FACTORY</h1>
 
     <div id="login-box" class="container">
@@ -112,7 +98,7 @@ button:active {
         <input type="text" id="login-id" placeholder="아이디">
         <input type="password" id="login-pw" placeholder="비밀번호">
         <button class="action-btn" onclick="login()">로그인</button>
-        <p style="font-size: 14px; color: #64748b; margin-top: 25px;">
+        <p style="font-size: 14px; color: var(--text-sub); margin-top: 25px;">
             계정이 없으신가요? <button class="toggle-btn" onclick="toggleView()">회원가입 신청</button>
         </p>
     </div>
@@ -123,13 +109,28 @@ button:active {
         <input type="password" id="reg-pw" placeholder="비밀번호">
         <input type="text" id="reg-nick" placeholder="닉네임 (작업자명)">
         <button class="action-btn" onclick="register()">신청하기</button>
-        <p style="font-size: 14px; color: #64748b; margin-top: 25px;">
+        <p style="font-size: 14px; color: var(--text-sub); margin-top: 25px;">
             이미 계정이 있으신가요? <button class="toggle-btn" onclick="toggleView()">로그인 하러가기</button>
         </p>
     </div>
 
     <script>
-        // 로직은 기존 유지
+        // [테마 로직]
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.setAttribute('data-theme', savedTheme);
+            document.getElementById('theme-btn').innerText = savedTheme === 'dark' ? '🌙' : '☀️';
+        }
+        function toggleTheme() {
+            const current = document.body.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            document.getElementById('theme-btn').innerText = next === 'dark' ? '🌙' : '☀️';
+        }
+        // 초기화 실행
+        initTheme();
+
         function toggleView() {
             document.getElementById('login-box').classList.toggle('hidden');
             document.getElementById('register-box').classList.toggle('hidden');
@@ -139,11 +140,7 @@ button:active {
             const username = document.getElementById('reg-id').value;
             const password = document.getElementById('reg-pw').value;
             const nickname = document.getElementById('reg-nick').value;
-            const res = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, nickname })
-            });
+            const res = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password, nickname }) });
             const data = await res.json();
             alert(data.message);
             if (res.ok) toggleView();
@@ -152,21 +149,14 @@ button:active {
         async function login() {
             const username = document.getElementById('login-id').value;
             const password = document.getElementById('login-pw').value;
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
+            const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
             const data = await res.json();
-            
             if (res.ok) {
                 localStorage.setItem('username', data.user.username);
                 localStorage.setItem('nickname', data.user.nickname); 
                 alert("로그인 성공! " + data.user.nickname + "님 환영합니다.");
                 location.href = '/main.html';
-            } else {
-                alert(data.message);
-            }
+            } else { alert(data.message); }
         }
     </script>
 </body>

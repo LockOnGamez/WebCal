@@ -5,61 +5,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>📦 재고 관리</title>
     <style>
+        /* [테마 변수 정의 - 눈이 편한 소프트 모드 적용] */
+        :root {
+            /* ☀️ 라이트 모드 (수정됨: 너무 쨍하지 않게 조정) */
+            --bg-color: #f3f4f6; /* 약간 더 차분한 그레이 */
+            --text-main: #1f2937; /* 완전 블랙 대신 짙은 다크 그레이 */
+            --text-sub: #6b7280;
+            --card-bg: #ffffff;
+            --card-border: #e5e7eb;
+            --input-bg: #f9fafb;
+            --input-border: #d1d5db;
+            --table-head-bg: #f3f4f6;
+            --table-row-even-bg: #e5e7eb; /* [부활] 짝수 행 배경색 */
+            --table-row-hover: #dbeafe;    /* 호버 시 연한 파랑 */
+            --btn-text: #374151;
+        }
 
-        /* 애니메이션 정의 */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translate3d(0, 20px, 0); }
-    to { opacity: 1; transform: translate3d(0, 0, 0); }
-}
+        [data-theme="dark"] {
+            /* 🌙 다크 모드 */
+            --bg-color: #0f172a;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(15, 23, 42, 0.8);
+            --input-border: #334155;
+            --table-head-bg: #1e293b;
+            --table-row-even-bg: rgba(255, 255, 255, 0.07); /* [부활] 다크모드 짝수 행 */
+            --table-row-hover: rgba(59, 130, 246, 0.2);
+            --btn-text: #cbd5e1;
+        }
 
-/* body 태그나 메인 컨테이너에 적용 */
-body {
-    animation: fadeInUp 0.5s ease-out forwards;
-}
-
-/* 버튼들에 쫀득한 느낌 추가 */
-button {
-    transition: transform 0.1s;
-}
-button:active {
-    transform: scale(0.95);
-}
-        /* Dark Theme Base */
+        /* 기본 설정 */
         body { 
             padding: 15px; 
             font-family: 'Pretendard', sans-serif; 
-            background-color: #0f172a; 
-            color: #f1f5f9;
+            background-color: var(--bg-color); 
+            color: var(--text-main);
             margin: 0; 
+            transition: background-color 0.3s, color 0.3s;
         }
         
+        /* 헤더 */
         .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .header-box h1 { margin: 0; font-size: 1.5rem; background: linear-gradient(to right, #a78bfa, #3b82f6); background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-box h1 { 
+            margin: 0; font-size: 1.5rem; 
+            background: linear-gradient(to right, #818cf8, #3b82f6); 
+            -webkit-background-clip: text; 
+            background-clip: text;
+            -webkit-text-fill-color: transparent; 
+        }
         
-        /* Glass Input Card */
+        /* 카드 스타일 */
         .card { 
-            background: rgba(30, 41, 59, 0.7);
+            background: var(--card-bg);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--card-border);
             padding: 20px; 
             border-radius: 20px; 
             margin-bottom: 25px; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
         .input-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
         @media (min-width: 768px) { .input-grid { grid-template-columns: repeat(3, 1fr) 100px 120px 100px; } }
 
+        /* 입력창 스타일 */
         select, input { 
             width: 100%; height: 50px; 
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid #334155;
-            color: white;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-main);
             border-radius: 12px; 
             padding: 0 15px; 
             font-size: 15px; 
             box-sizing: border-box; 
         }
-        select:focus, input:focus { outline: none; border-color: #3b82f6; }
+        select:focus, input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
 
         .btn-submit { 
             background: #3b82f6; color: white; border: none; 
@@ -68,71 +90,79 @@ button:active {
         }
         .btn-submit:active { transform: scale(0.98); }
 
-        /* Filter Buttons */
+        /* 필터 버튼 */
         .filter-container { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
         .filter-btn { 
-            padding: 8px 16px; border-radius: 50px; border: 1px solid #334155; 
-            background: rgba(30, 41, 59, 0.5); color: #94a3b8; 
+            padding: 8px 16px; border-radius: 50px; 
+            border: 1px solid var(--input-border); 
+            background: var(--card-bg); 
+            color: var(--text-sub); 
             cursor: pointer; font-weight: 600; white-space: nowrap; transition: 0.2s;
         }
         .filter-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
         
-        /* PC Table Dark */
-        .pc-table { width: 100%; border-collapse: separate; border-spacing: 0; display: none; margin-bottom: 30px; }
+        /* PC 테이블 (지그재그 적용) */
+        .pc-table { width: 100%; border-collapse: separate; border-spacing: 0; display: none; margin-bottom: 30px; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border); }
         @media (min-width: 768px) { .pc-table { display: table; } }
 
         .pc-table th { 
-            background: #1e293b; color: #94a3b8; padding: 15px; 
-            font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #334155; 
+            background: var(--table-head-bg); color: var(--text-sub); padding: 15px; 
+            font-size: 13px; text-transform: uppercase; border-bottom: 1px solid var(--card-border); 
         }
         .pc-table td { 
             padding: 15px; text-align: center; 
-            border-bottom: 1px solid #1e293b; background: rgba(30, 41, 59, 0.4); 
+            border-bottom: 1px solid var(--card-border); 
+            background: var(--card-bg); /* 기본 배경 */
+            color: var(--text-main);
         }
-        .pc-table tbody tr:hover td { background: rgba(59, 130, 246, 0.1); }
+        /* [중요] 지그재그 효과 부활 (짝수 행 배경색) */
+        .pc-table tbody tr:nth-child(even) td { background-color: var(--table-row-even-bg); }
+        .pc-table tbody tr:hover td { background-color: var(--table-row-hover); }
 
-        /* Mobile Card Dark */
+        /* 모바일 카드 */
         .mobile-only-section { display: block; }
         @media (min-width: 768px) { .mobile-only-section { display: none; } }
 
         .mobile-card { 
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: 16px; 
             padding: 18px; 
-            margin-bottom: 12px; 
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
         }
 
-        /* Qty Control */
-        .qty-control { display: inline-flex; align-items: center; background: #0f172a; padding: 4px; border-radius: 10px; gap: 8px; border: 1px solid #334155; }
-        .qty-text { font-size: 1.1rem; font-weight: 800; min-width: 40px; text-align: center; color: white; }
+        /* 수량 컨트롤 */
+        .qty-control { display: inline-flex; align-items: center; background: var(--input-bg); padding: 4px; border-radius: 10px; gap: 8px; border: 1px solid var(--input-border); }
+        .qty-text { font-size: 1.1rem; font-weight: 800; min-width: 40px; text-align: center; color: var(--text-main); }
         .qty-text.zero { color: #ef4444; }
         .qty-control button { 
             width: 32px; height: 32px; border: none; border-radius: 8px; 
-            background: #334155; color: white; font-weight: bold; cursor: pointer; 
+            background: var(--card-bg); color: var(--text-main); font-weight: bold; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
-        /* Badges */
+        /* 뱃지 */
         .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: white; }
-        .badge-finished { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
-        .badge-raw { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
-        .badge-stock-out { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); margin-left: 5px; }
+        .badge-finished { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .badge-raw { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.4); }
+        .badge-stock-out { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); margin-left: 5px; }
 
-        /* Loading */
-        #loading-layer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+        /* 로딩 */
+        #loading-layer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; opacity: 0.95; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--input-border); border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Nav Button */
-        .nav-btn { padding:10px 15px; background:rgba(30,41,59,0.8); color:#cbd5e1; border:1px solid #334155; border-radius:10px; cursor:pointer; font-weight:600; font-size:13px; display: flex; align-items: center; gap: 5px; text-decoration: none;}
-        .nav-btn:hover { background:#334155; color:white; }
-        .nav-btn-primary { background: #2563eb; color: white; border: none; }
+        /* 네비게이션 버튼 */
+        .nav-btn { padding:10px 15px; background:var(--card-bg); color:var(--btn-text); border:1px solid var(--card-border); border-radius:10px; cursor:pointer; font-weight:600; font-size:13px; display: flex; align-items: center; gap: 5px; text-decoration: none; transition: 0.2s; }
+        .nav-btn:hover { background:var(--input-bg); }
+        .nav-btn-primary { background: #3b82f6; color: white; border: none; }
+        .nav-btn-primary:hover { background: #2563eb; }
     </style>
 </head>
 <body>
     <div id="loading-layer">
         <div class="spinner"></div>
-        <p style="margin-top: 15px; font-weight: bold; color: #94a3b8;">데이터 동기화...</p>
+        <p style="margin-top: 15px; font-weight: bold; color: var(--text-sub);">데이터 동기화...</p>
     </div>
 
     <div class="header-box">
@@ -161,13 +191,13 @@ button:active {
         <button class="filter-btn active" onclick="filterItems('전체', this)">전체</button>
         <button class="filter-btn" onclick="filterItems('완제품', this)">완제품</button>
         <button class="filter-btn" onclick="filterItems('원자재', this)">원자재</button>
-        <button class="filter-btn" onclick="filterItems('품절', this)" style="color:#f87171;">🚨 품절</button>
-        <input type="text" id="search-input" placeholder="검색..." onkeyup="searchItems()" style="height:34px; width:120px; background:#1e293b; border:1px solid #334155;">
+        <button class="filter-btn" onclick="filterItems('품절', this)" style="color:#ef4444;">🚨 품절</button>
+        <input type="text" id="search-input" placeholder="검색..." onkeyup="searchItems()" style="height:34px; width:120px; background:var(--card-bg); border:1px solid var(--input-border);">
     </div>
 
     <div id="inventory-content">
         <div id="finished-section">
-            <h2 style="color:#34d399; font-size: 1.1rem; border-bottom:1px solid #334155; padding-bottom:10px;">🟢 완제품 <span id="count-finished" style="font-size:0.8rem; color:#64748b;"></span></h2>
+            <h2 style="color:#10b981; font-size: 1.1rem; border-bottom:1px solid var(--card-border); padding-bottom:10px;">🟢 완제품 <span id="count-finished" style="font-size:0.8rem; color:var(--text-sub);"></span></h2>
             <table class="pc-table">
                 <thead><tr><th>상태</th><th>품목 정보</th><th>사이즈</th><th>길이</th><th>수량 제어</th><th>관리</th></tr></thead>
                 <tbody id="pc-list-finished"></tbody>
@@ -176,7 +206,7 @@ button:active {
         </div>
         
         <div id="raw-section" style="margin-top:40px;">
-            <h2 style="color:#60a5fa; font-size: 1.1rem; border-bottom:1px solid #334155; padding-bottom:10px;">🔵 원자재 <span id="count-raw" style="font-size:0.8rem; color:#64748b;"></span></h2>
+            <h2 style="color:#3b82f6; font-size: 1.1rem; border-bottom:1px solid var(--card-border); padding-bottom:10px;">🔵 원자재 <span id="count-raw" style="font-size:0.8rem; color:var(--text-sub);"></span></h2>
             <table class="pc-table">
                 <thead><tr><th>상태</th><th>품목 정보</th><th>사이즈</th><th>길이</th><th>수량 제어</th><th>관리</th></tr></thead>
                 <tbody id="pc-list-raw"></tbody>
@@ -186,12 +216,16 @@ button:active {
     </div>
 
     <script>
-        // 로직 100% 보존
         const API_URL = '/api/inventory';
         const API_OPT = '/api/options';
         const currentUser = localStorage.getItem('username');
         const currentNick = localStorage.getItem('nickname');
         let allItemsData = [];
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.setAttribute('data-theme', savedTheme);
+        }
 
         async function prefetchHolidays() {
             const currentYear = new Date().getFullYear();
@@ -209,6 +243,7 @@ button:active {
         }
 
         window.onload = () => {
+            initTheme();
             if (!currentUser) { location.href = '/'; return; }
             initPage();
             prefetchHolidays();
@@ -274,9 +309,9 @@ button:active {
                 const row = `
                     <tr>
                         <td><span class="badge ${badgeClass}">${item.category}</span>${stockOut}</td>
-                        <td style="text-align:left; font-weight:600; color:#f8fafc; padding-left:20px;">${item.name}</td>
-                        <td><span style="color:#cbd5e1;">${item.size}</span></td>
-                        <td><span style="color:#cbd5e1;">${item.length}</span></td>
+                        <td style="text-align:left; font-weight:600; color:var(--text-main); padding-left:20px;">${item.name}</td>
+                        <td><span style="color:var(--text-sub);">${item.size}</span></td>
+                        <td><span style="color:var(--text-sub);">${item.length}</span></td>
                         <td>
                             <div class="qty-control">
                                 <button onclick="updateStock('${item._id}', ${item.quantity - 1})">－</button>
@@ -284,7 +319,7 @@ button:active {
                                 <button onclick="updateStock('${item._id}', ${item.quantity + 1})">＋</button>
                             </div>
                         </td>
-                        <td><button onclick="deleteItem('${item._id}')" style="color:#64748b; background:none; border:none; cursor:pointer; font-size:12px;">삭제</button></td>
+                        <td><button onclick="deleteItem('${item._id}')" style="color:var(--text-sub); background:none; border:none; cursor:pointer; font-size:12px;">삭제</button></td>
                     </tr>`;
                 
                 const card = `
@@ -293,8 +328,8 @@ button:active {
                             <span class="badge ${badgeClass}">${item.category}</span>
                             ${stockOut}
                         </div>
-                        <div style="font-weight:700; font-size:1.1rem; margin-bottom:5px; color:#f8fafc;">${item.name}</div>
-                        <div style="color:#94a3b8; font-size:0.9rem; margin-bottom:15px;">규격: ${item.size} / ${item.length}</div>
+                        <div style="font-weight:700; font-size:1.1rem; margin-bottom:5px; color:var(--text-main);">${item.name}</div>
+                        <div style="color:var(--text-sub); font-size:0.9rem; margin-bottom:15px;">규격: ${item.size} / ${item.length}</div>
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div class="qty-control">
                                 <button onclick="updateStock('${item._id}', ${item.quantity - 1})">－</button>

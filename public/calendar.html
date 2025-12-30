@@ -6,78 +6,66 @@
     <title>📅 작업 달력</title>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <style>
-        /* Dark Theme Base */
-        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: #0f172a; color: #f1f5f9; margin: 0; }
+        /* [테마 변수] */
+        :root {
+            /* ☀️ 라이트 */
+            --bg-color: #f3f4f6;
+            --text-main: #1f2937;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --modal-bg: #fff;
+            --btn-hover: #eee;
+        }
+        [data-theme="dark"] {
+            /* 🌙 다크 */
+            --bg-color: #0f172a;
+            --text-main: #f1f5f9;
+            --card-bg: rgba(30, 41, 59, 0.5);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --modal-bg: #1e293b;
+            --btn-hover: #334155;
+        }
+
+        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; transition: 0.3s; }
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .header h1 { margin: 0; font-size: 1.6rem; background: linear-gradient(to right, #3b82f6, #06b6d4); background-clip: text; -webkit-text-fill-color: transparent; }
+        .header h1 { margin: 0; font-size: 1.6rem; background: linear-gradient(to right, #3b82f6, #06b6d4); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 
-        /* [수정됨] FullCalendar Dark Mode Overrides */
+        /* 달력 컨테이너 */
         #calendar { 
-            background: rgba(30, 41, 59, 0.5); 
+            background: var(--card-bg); 
             padding: 15px; 
             border-radius: 20px; 
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            color: #e2e8f0;
+            border: 1px solid var(--border-color);
+            transition: 0.3s;
         }
 
-        /* 1. 달력 헤더 (일, 월, 화...) 스타일 수정 */
-        .fc-theme-standard th { 
-            background-color: #1e293b !important; /* 배경 어둡게 */
-            border-color: #334155 !important; 
-        }
-        .fc-col-header-cell-cushion { 
-            color: #f1f5f9 !important; /* 글씨 하얗게 */
-            text-decoration: none !important; 
-            padding: 10px 0 !important;
-        }
-
-        /* 2. 리스트 뷰 날짜 구분 바 (2025년 12월...) 스타일 수정 */
-        .fc .fc-list-day-cushion {
-            background-color: #1e293b !important; /* 배경 어둡게 */
-        }
-        .fc-list-day-text, .fc-list-day-side-text {
-            color: #f1f5f9 !important; /* 글씨 하얗게 */
-            font-weight: bold;
-            text-decoration: none !important;
-        }
+        /* [Dark Mode Only] FullCalendar 오버라이드 */
+        [data-theme="dark"] .fc-theme-standard th { background-color: #1e293b !important; border-color: #334155 !important; }
+        [data-theme="dark"] .fc-col-header-cell-cushion { color: #f1f5f9 !important; text-decoration: none !important; }
+        [data-theme="dark"] .fc-list-day-cushion { background-color: #1e293b !important; }
+        [data-theme="dark"] .fc-list-day-text, [data-theme="dark"] .fc-list-day-side-text { color: #f1f5f9 !important; text-decoration: none !important; }
+        [data-theme="dark"] .fc-theme-standard td, [data-theme="dark"] .fc-theme-standard th { border-color: #334155 !important; }
+        [data-theme="dark"] .fc-daygrid-day-number { color: #cbd5e1 !important; text-decoration: none !important; }
+        [data-theme="dark"] .fc .fc-button-primary { background-color: #334155; border-color: #334155; }
+        [data-theme="dark"] .fc-day-today { background-color: rgba(59, 130, 246, 0.1) !important; }
         
-        /* 리스트 뷰 테두리 및 배경 */
-        .fc-theme-standard .fc-list { border: 1px solid #334155; }
-        .fc-list-event:hover td { background-color: #334155 !important; }
-
-        /* 그리드(칸) 테두리 색상 */
-        .fc-theme-standard td, .fc-theme-standard th { border-color: #334155 !important; }
-        .fc-daygrid-day-number { color: #cbd5e1 !important; text-decoration: none !important; }
-
-        /* 버튼 스타일 */
-        .fc .fc-button-primary { background-color: #334155; border-color: #334155; }
-        .fc .fc-button-primary:hover { background-color: #475569; border-color: #475569; }
-        .fc .fc-button-primary:not(:disabled).fc-button-active { background-color: #2563eb; border-color: #2563eb; }
-        
-        /* 오늘 날짜 표시 */
-        .fc-day-today { background-color: rgba(59, 130, 246, 0.1) !important; }
-        
-        /* 주말 색상 처리 */
+        /* 공통 캘린더 스타일 */
         .fc-day-sun .fc-daygrid-day-number { color: #f87171 !important; }
         .fc-day-sat .fc-daygrid-day-number { color: #60a5fa !important; }
         .holiday-name { font-size: 0.7rem; color: #f87171; margin-top: -2px; display: block; }
         .fc-event-time { display: none; }
 
-        /* Control Buttons */
-        .mode-toggles { background: #1e293b; padding: 5px; border-radius: 12px; display: flex; gap: 5px; }
-        .mode-btn { border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; background: transparent; color: #94a3b8; }
+        /* 모드 토글 버튼 */
+        .mode-toggles { background: var(--border-color); padding: 5px; border-radius: 12px; display: flex; gap: 5px; }
+        .mode-btn { border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; background: transparent; color: var(--text-main); }
         .active-work { background: #3b82f6; color: white; }
         .active-att { background: #10b981; color: white; }
         
-        .nav-home { padding:8px 15px; border-radius:10px; border:none; background:#334155; color:white; font-weight:bold; cursor: pointer;}
-
-        /* Search Bar */
-        .search-bar { background: #1e293b; padding: 15px; border-radius: 15px; margin-bottom: 15px; display: none; align-items: center; gap: 10px; }
-        .search-bar input { flex: 1; padding: 10px; border: 1px solid #334155; background: #0f172a; color: white; border-radius: 10px; }
-        .summary-badge { background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 15px; border-radius: 12px; font-weight: bold; margin-bottom: 15px; display: none; border: 1px solid rgba(56, 189, 248, 0.3); }
-
-        /* Floating Button */
+        /* 홈/테마 버튼 */
+        .nav-btn { padding:8px 12px; border-radius:10px; border:1px solid var(--border-color); background: var(--card-bg); color:var(--text-main); font-weight:bold; cursor: pointer; }
+        
+        /* 플로팅 버튼 */
         .floating-btn {
             position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
             border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb);
@@ -86,60 +74,53 @@
             cursor: pointer; z-index: 900; display: flex; justify-content: center; align-items: center;
         }
 
-        /* Modal Dark */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto; backdrop-filter: blur(5px); }
+        /* 모달 스타일 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; backdrop-filter: blur(3px); }
         .modal-content { 
-            background: #1e293b; color: white;
+            background: var(--modal-bg); color: var(--text-main);
             width: 95%; max-width: 600px; padding: 25px; margin: 40px auto; 
-            border-radius: 20px; border: 1px solid #334155;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            border-radius: 20px; border: 1px solid var(--border-color);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
         }
         
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 0.9rem; }
         .form-group input, .form-group select { 
             width: 100%; height: 45px; padding: 0 10px; 
-            border: 1px solid #334155; background: #0f172a; color: white; 
+            border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main); 
             border-radius: 10px; box-sizing: border-box; 
         }
 
-        /* Item Table in Modal */
-        .item-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .item-table th { background: #334155; color: #cbd5e1; padding: 10px; font-size: 13px; text-align: center; }
-        .item-table td { padding: 8px; border-bottom: 1px solid #334155; text-align: center; }
-        .item-table select, .item-table input { background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; height: 35px; }
-
-        /* Buttons */
+        /* 버튼 */
         .btn-blue { background: #3b82f6; color: white; }
         .btn-green { background: #10b981; color: white; }
         .btn-red { background: #ef4444; color: white; }
-        .btn-gray { background: #475569; color: white; }
+        .btn-gray { background: var(--border-color); color: var(--text-main); }
         button[class^="btn-"] { padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
-        /* Loading */
-        #loading-layer { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+        /* 로딩 */
+        #loading-layer { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); opacity: 0.9; z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--border-color); border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
     </style>
 </head>
 <body>
-    <div id="loading-layer"><div class="spinner"></div><p style="margin-top: 15px; font-weight: bold; color:#94a3b8;">데이터 동기화...</p></div>
+    <div id="loading-layer"><div class="spinner"></div></div>
 
     <div class="header">
         <h1 id="cal-title">📅 작업 달력</h1>
         <div class="nav-btns" style="display:flex; gap:10px;">
             <div class="mode-toggles">
-                <button id="m-work" class="mode-btn active-work" onclick="setMode('work')">📦 작업</button>
-                <button id="m-att" class="mode-btn" onclick="setMode('att')">🕒 근무</button>
+                <button id="m-work" class="mode-btn active-work" onclick="setMode('work')">📦</button>
+                <button id="m-att" class="mode-btn" onclick="setMode('att')">🕒</button>
             </div>
-            <button onclick="location.href='/main.html'" class="nav-home">🏠 홈</button>
+            <button onclick="toggleTheme()" class="nav-btn" id="theme-btn">🌙</button>
+            <button onclick="location.href='/main.html'" class="nav-btn">🏠 홈</button>
         </div>
     </div>
 
-    <div class="search-bar" id="att-search-bar">
-        <input type="text" id="search-nickname" placeholder="직원 검색 (공백 시 전체)..." onkeyup="if(window.event.keyCode==13){searchAttendance()}">
-        <button onclick="searchAttendance()" class="btn-blue" style="padding: 10px 20px;">검색</button>
+    <div class="search-bar" id="att-search-bar" style="display:none; margin-bottom:15px; gap:10px;">
+        <input type="text" id="search-nickname" placeholder="검색..." style="padding:10px; border-radius:10px; border:1px solid var(--border-color); flex:1; background:var(--bg-color); color:var(--text-main);">
+        <button onclick="searchAttendance()" class="btn-blue">검색</button>
     </div>
-    <div id="att-summary" class="summary-badge"></div>
+    <div id="att-summary" style="display:none; padding:15px; background:rgba(59,130,246,0.1); border-radius:10px; margin-bottom:15px; color:#3b82f6; font-weight:bold;"></div>
 
     <div id="calendar"></div>
 
@@ -147,11 +128,11 @@
 
     <div id="eventModal" class="modal">
         <div class="modal-content">
-            <h3 id="modal-title" style="margin-top:0; border-bottom:1px solid #334155; padding-bottom:10px;">📝 작업 관리</h3>
+            <h3 id="modal-title" style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:10px;">📝 작업 관리</h3>
             <input type="hidden" id="edit-event-id">
-            <div class="form-group"><label>날짜</label><input type="date" id="modal-date"></div>
-            <div class="form-group">
-                <label>작업 구분</label>
+            <div class="form-group" style="margin-bottom:10px;"><label>날짜</label><br><input type="date" id="modal-date"></div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>작업 구분</label><br>
                 <select id="modal-type" onchange="toggleProductionMode()">
                     <option value="입고">🟢 입고</option>
                     <option value="출고">🔴 출고</option>
@@ -159,23 +140,21 @@
                 </select>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-                <label style="font-weight:bold; color:#cbd5e1;">📦 품목 리스트</label>
+                <label style="font-weight:bold;">📦 품목 리스트</label>
                 <button class="btn-green" onclick="addRow('product-tbody')" style="padding:6px 12px; font-size:12px;">+ 추가</button>
             </div>
             <div style="overflow-x:auto;">
-                <table class="item-table">
-                    <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
+                <table style="width:100%; border-collapse:collapse; margin-top:5px;">
                     <tbody id="product-tbody"></tbody>
                 </table>
             </div>
-            <div id="material-section" style="display:none; margin-top:20px; border-top:1px dashed #334155; padding-top:10px;">
+            <div id="material-section" style="display:none; margin-top:20px; border-top:1px dashed var(--border-color); padding-top:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <label style="font-weight:bold; color:#f87171;">🔨 소모 원자재</label>
+                    <label style="font-weight:bold; color:#ef4444;">🔨 소모 원자재</label>
                     <button class="btn-red" onclick="addRow('material-tbody')" style="padding:6px 12px; font-size:12px;">+ 추가</button>
                 </div>
                 <div style="overflow-x:auto;">
-                    <table class="item-table">
-                        <thead><tr><th>품목</th><th>사이즈</th><th>길이</th><th>수량</th><th>삭제</th></tr></thead>
+                    <table style="width:100%; border-collapse:collapse; margin-top:5px;">
                         <tbody id="material-tbody"></tbody>
                     </table>
                 </div>
@@ -192,11 +171,11 @@
 
     <div id="attendanceModal" class="modal">
         <div class="modal-content">
-            <h3>🕒 근무 기록 수정</h3>
+            <h3>🕒 근무 수정</h3>
             <input type="hidden" id="att-id">
-            <div class="form-group"><label>이름</label><input type="text" id="att-name"></div>
-            <div class="form-group"><label>출근</label><input type="datetime-local" id="att-in"></div>
-            <div class="form-group"><label>퇴근</label><input type="datetime-local" id="att-out"></div>
+            <div class="form-group" style="margin-bottom:10px;"><label>이름</label><br><input type="text" id="att-name"></div>
+            <div class="form-group" style="margin-bottom:10px;"><label>출근</label><br><input type="datetime-local" id="att-in"></div>
+            <div class="form-group" style="margin-bottom:10px;"><label>퇴근</label><br><input type="datetime-local" id="att-out"></div>
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button class="btn-blue" onclick="saveAttendanceEdit()" style="flex:2;">💾 저장</button>
                 <button class="btn-gray" onclick="closeAttModal()" style="flex:1;">취소</button>
@@ -205,6 +184,21 @@
     </div>
 
     <script>
+        // [테마]
+        function initTheme() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.body.setAttribute('data-theme', saved);
+            document.getElementById('theme-btn').innerText = saved === 'dark' ? '🌙' : '☀️';
+        }
+        function toggleTheme() {
+            const cur = document.body.getAttribute('data-theme');
+            const nxt = cur === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', nxt);
+            localStorage.setItem('theme', nxt);
+            document.getElementById('theme-btn').innerText = nxt === 'dark' ? '🌙' : '☀️';
+        }
+        initTheme();
+
         const API_URL = '/api/calendar';
         const API_OPT = '/api/options';
         let currentMode = 'work';
@@ -329,12 +323,7 @@
                             }
                         });
                         success(evts);
-                    } catch (e) { 
-                        console.error("매핑 에러:", e);
-                        failure(e); 
-                    } finally { 
-                        setTimeout(() => toggleLoading(false), 200); 
-                    }
+                    } catch (e) { failure(e); } finally { setTimeout(() => toggleLoading(false), 200); }
                 },
                 eventClick: (info) => {
                     if (currentMode === 'att') openAttModal(info.event.extendedProps);
@@ -394,11 +383,11 @@
             const tr = document.createElement('tr');
             const createOpts = (list, selVal) => `<option value="">선택</option>` + list.map(v => `<option value="${v}" ${String(v)===String(selVal)?'selected':''}>${v}</option>`).join('');
             tr.innerHTML = `
-                <td><select class="input-name">${createOpts(dropdownOptions.items, data?.name)}</select></td>
-                <td><select class="input-size">${createOpts(dropdownOptions.sizes, data?.size)}</select></td>
-                <td><select class="input-length">${createOpts(dropdownOptions.lengths, data?.length)}</select></td>
-                <td><input type="number" class="input-qty" step="0.1" value="${data?.quantity || 1}" style="width:60px; height:35px; text-align:center;"></td>
-                <td><button onclick="this.closest('tr').remove()" style="background:none; border:none; cursor:pointer; color:#f87171;">❌</button></td>`;
+                <td><select class="input-name" style="width:100%; height:35px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-main);">${createOpts(dropdownOptions.items, data?.name)}</select></td>
+                <td><select class="input-size" style="width:100%; height:35px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-main);">${createOpts(dropdownOptions.sizes, data?.size)}</select></td>
+                <td><select class="input-length" style="width:100%; height:35px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-main);">${createOpts(dropdownOptions.lengths, data?.length)}</select></td>
+                <td><input type="number" class="input-qty" step="0.1" value="${data?.quantity || 1}" style="width:60px; height:35px; text-align:center; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-main);"></td>
+                <td><button onclick="this.closest('tr').remove()" style="background:none; border:none; cursor:pointer; color:#ef4444;">❌</button></td>`;
             tbody.appendChild(tr);
         }
         async function saveEvent() {

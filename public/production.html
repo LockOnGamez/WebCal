@@ -5,238 +5,123 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🔨 생산 기록 등록</title>
     <style>
-
-        /* 애니메이션 정의 */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translate3d(0, 20px, 0); }
-    to { opacity: 1; transform: translate3d(0, 0, 0); }
-}
-
-/* body 태그나 메인 컨테이너에 적용 */
-body {
-    animation: fadeInUp 0.5s ease-out forwards;
-}
-
-/* 버튼들에 쫀득한 느낌 추가 */
-button {
-    transition: transform 0.1s;
-}
-button:active {
-    transform: scale(0.95);
-}
-        /* [UI 컨셉] Smart Factory Dark Mode */
-        body { 
-            background-color: #0f172a; /* Deep Navy */
-            color: #f1f5f9;
-            padding: 20px; 
-            font-family: 'Pretendard', -apple-system, sans-serif; 
-            margin: 0; 
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
+        /* [테마 변수] */
+        :root {
+            --bg-color: #f3f4f6;
+            --text-main: #1f2937;
+            --text-sub: #666;
+            --card-bg: rgba(255,255,255,0.9);
+            --card-border: #ddd;
+            --input-bg: #fff;
+            --input-border: #ccc;
+            --modal-bg: #fff;
+        }
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --input-bg: #0f172a;
+            --input-border: #334155;
+            --modal-bg: #1e293b;
         }
 
-        /* 메인 컨테이너 (Glass Card) */
+        body { 
+            background-color: var(--bg-color); color: var(--text-main);
+            padding: 20px; font-family: 'Pretendard', -apple-system, sans-serif; 
+            margin: 0; display: flex; justify-content: center; min-height: 100vh;
+            transition: 0.3s;
+        }
+
+        /* 메인 컨테이너 */
         .prod-container { 
-            width: 100%; 
-            max-width: 500px; 
-            background: rgba(30, 41, 59, 0.7); /* 반투명 네이비 */
+            width: 100%; max-width: 500px; 
+            background: var(--card-bg);
             backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 30px; 
-            border-radius: 24px; 
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); 
-            box-sizing: border-box; 
-            height: fit-content;
-            margin-top: 20px;
+            border: 1px solid var(--card-border);
+            padding: 30px; border-radius: 24px; 
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); 
+            box-sizing: border-box; height: fit-content; margin-top: 20px;
         }
 
         h1 { 
-            font-size: 1.6rem; 
-            text-align: center; 
-            margin: 0 0 25px 0; 
-            font-weight: 800;
-            background: linear-gradient(to right, #4ade80, #3b82f6);
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 1.6rem; text-align: center; margin: 0 0 25px 0; font-weight: 800;
+            background: linear-gradient(to right, #4ade80, #3b82f6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
         }
         
-        /* 마지막 업데이트 정보 배지 */
         #last-update-info {
-            text-align: center; 
-            color: #94a3b8; 
-            font-size: 0.9rem; 
-            margin-bottom: 25px; 
-            background: rgba(15, 23, 42, 0.6); 
-            padding: 12px; 
-            border-radius: 12px;
-            border: 1px solid #334155;
+            text-align: center; color: var(--text-sub); font-size: 0.9rem; margin-bottom: 25px; 
+            background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--card-border);
         }
 
         .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 10px; font-weight: 600; color: var(--text-sub); font-size: 0.95rem; }
         
-        label { 
-            display: block; 
-            margin-bottom: 10px; 
-            font-weight: 600; 
-            color: #cbd5e1; 
-            font-size: 0.95rem; 
-        }
-        
-        /* 다크 모드 입력창 스타일 */
         select, input[type="number"], input[type="text"] { 
-            width: 100%; 
-            height: 55px; 
-            padding: 0 15px; 
-            font-size: 16px; 
-            border-radius: 12px; 
-            border: 1px solid #334155; 
-            background-color: #0f172a; 
-            color: white;
-            box-sizing: border-box; 
-            transition: 0.2s;
-            appearance: none; /* 기본 화살표 제거 (필요 시 커스텀) */
+            width: 100%; height: 55px; padding: 0 15px; font-size: 16px; 
+            border-radius: 12px; border: 1px solid var(--input-border); 
+            background-color: var(--input-bg); color: var(--text-main);
+            box-sizing: border-box; transition: 0.2s;
         }
-        
-        select:focus, input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
+        select:focus, input:focus { outline: none; border-color: #3b82f6; }
 
-        /* 라디오 버튼 그룹 스타일 */
-        .tube-selection { 
-            display: flex; 
-            gap: 15px; 
-            padding: 5px 0; 
-        }
+        /* 라디오 */
+        .tube-selection { display: flex; gap: 15px; padding: 5px 0; }
         .tube-selection label { 
-            font-weight: normal; 
-            font-size: 1rem; 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-            cursor: pointer;
-            background: rgba(30, 41, 59, 0.5);
-            padding: 10px 15px;
-            border-radius: 10px;
-            border: 1px solid #334155;
-            transition: 0.2s;
+            font-weight: normal; font-size: 1rem; display: flex; align-items: center; gap: 8px; 
+            cursor: pointer; background: var(--input-bg); padding: 10px 15px; border-radius: 10px; border: 1px solid var(--input-border);
         }
-        .tube-selection label:hover { background: #334155; }
-        .tube-selection input { 
-            width: 20px; 
-            height: 20px; 
-            accent-color: #3b82f6; 
-            margin: 0;
-        }
+        .tube-selection label:hover { border-color: #3b82f6; }
+        .tube-selection input { width: 20px; height: 20px; accent-color: #3b82f6; margin: 0; }
 
-        /* 메인 액션 버튼 (생산 등록) */
         .submit-btn { 
-            width: 100%; 
-            height: 60px; 
-            font-size: 1.1rem; 
+            width: 100%; height: 60px; font-size: 1.1rem; 
             background: linear-gradient(135deg, #10b981, #059669); 
-            color: white; 
-            border: none; 
-            border-radius: 16px; 
-            cursor: pointer; 
-            font-weight: 800; 
-            margin-top: 10px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            transition: 0.2s;
+            color: white; border: none; border-radius: 16px; 
+            cursor: pointer; font-weight: 800; margin-top: 10px; 
         }
-        .submit-btn:active { transform: scale(0.98); }
-
-        /* 뒤로가기 링크 */
-        .back-link { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            margin-top: 20px; 
-            color: #64748b; 
-            text-decoration: none; 
-            font-weight: 600;
-            padding: 10px;
-            border-radius: 10px;
-            transition: 0.2s;
-        }
-        .back-link:hover { background: rgba(255,255,255,0.05); color: #94a3b8; }
-
-        /* [모달] 다크 테마 */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center;
-            backdrop-filter: blur(5px);
-        }
-        .modal-box {
-            background: #1e293b; /* 다크 그레이 */
-            width: 90%; max-width: 400px; padding: 30px; 
-            border-radius: 24px; 
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); 
-            text-align: center;
-            border: 1px solid #334155;
-            color: #f1f5f9;
-        }
-        .modal-box h3 { margin: 0 0 20px 0; color: #f1f5f9; font-size: 1.4rem; }
         
-        .modal-info { 
-            text-align: left; 
-            background: #0f172a; 
-            padding: 20px; 
-            border-radius: 16px; 
-            margin-bottom: 25px; 
-            border: 1px solid #334155;
+        /* 모달 */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-box {
+            background: var(--modal-bg); width: 90%; max-width: 400px; padding: 30px; 
+            border-radius: 24px; text-align: center; border: 1px solid var(--card-border); color: var(--text-main);
         }
-        .modal-info p { 
-            margin: 10px 0; 
-            font-size: 1rem; 
-            color: #cbd5e1; 
-            display: flex; 
-            justify-content: space-between; 
-        }
-        .modal-info b { color: white; }
+        .modal-info { text-align: left; background: var(--bg-color); padding: 20px; border-radius: 16px; margin-bottom: 25px; border: 1px solid var(--card-border); }
+        .modal-info p { margin: 10px 0; font-size: 1rem; color: var(--text-sub); display: flex; justify-content: space-between; }
+        .modal-info b { color: var(--text-main); }
         
         .modal-btns { display: flex; gap: 12px; }
-        .modal-btn { 
-            flex: 1; padding: 15px; border: none; border-radius: 12px; 
-            font-size: 1rem; font-weight: bold; cursor: pointer; 
-        }
-        .btn-cancel { background: #334155; color: #94a3b8; }
+        .modal-btn { flex: 1; padding: 15px; border: none; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+        .btn-cancel { background: var(--input-bg); color: var(--text-sub); border:1px solid var(--input-border); }
         .btn-confirm { background: #3b82f6; color: white; }
 
-        /* [로딩] 다크 테마 */
-        #loading-layer { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(15, 23, 42, 0.9); z-index: 2000; 
-            justify-content: center; align-items: center; flex-direction: column; 
-        }
-        .spinner { 
-            width: 50px; height: 50px; 
-            border: 4px solid #334155; 
-            border-top: 4px solid #10b981; 
-            border-radius: 50%; 
-            animation: spin 1s linear infinite; 
-        }
+        /* 로딩 */
+        #loading-layer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); opacity:0.9; z-index: 2000; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 50px; height: 50px; border: 4px solid var(--card-border); border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 홈버튼 & 테마버튼 */
+        .nav-actions { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
+        .nav-link { text-decoration: none; color: var(--text-sub); font-weight: 600; padding: 10px; border-radius: 10px; cursor: pointer; background: var(--input-bg); border: 1px solid var(--input-border); }
     </style>
 </head>
 <body>
     <div id="loading-layer">
         <div class="spinner"></div>
-        <p style="margin-top: 20px; font-weight: bold; color: #94a3b8;">저장 중입니다...</p>
+        <p style="margin-top: 20px; font-weight: bold; color: var(--text-sub);">저장 중입니다...</p>
     </div>
 
     <div id="confirm-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3>📋 기록 확인</h3>
+            <h3 style="margin-top:0;">📋 기록 확인</h3>
             <div class="modal-info">
                 <p>품명: <b id="conf-name"></b></p>
                 <p>폭: <b id="conf-width"></b></p>
                 <p>길이: <b id="conf-length"></b></p>
                 <p>지관: <b id="conf-tube"></b></p>
-                <p style="font-size: 1.2rem; margin-top: 15px; border-top: 1px dashed #334155; padding-top: 15px;">생산 수량: <b id="conf-qty" style="color:#4ade80;"></b></p>
+                <p style="font-size: 1.2rem; margin-top: 15px; border-top: 1px dashed var(--card-border); padding-top: 15px;">생산 수량: <b id="conf-qty" style="color:#4ade80;"></b></p>
             </div>
             <div class="modal-btns">
                 <button class="modal-btn btn-cancel" onclick="closeModal()">취소</button>
@@ -249,7 +134,7 @@ button:active {
         <h1>🔨 생산 기록 등록</h1>
         
         <div id="last-update-info">
-            마지막 반영: <span id="last-update-time" style="font-weight: bold; color: #cbd5e1;">로딩 중...</span>
+            마지막 반영: <span id="last-update-time" style="font-weight: bold;">로딩 중...</span>
         </div>
 
         <div class="input-group">
@@ -281,14 +166,31 @@ button:active {
         </div>
 
         <button class="submit-btn" onclick="openConfirmation()">기록 저장</button>
-        <a href="main.html" class="back-link">🏠 메인 화면으로</a>
+        
+        <div class="nav-actions">
+            <button class="nav-link" onclick="toggleTheme()" id="theme-btn">🌙</button>
+            <a href="main.html" class="nav-link">🏠 홈으로</a>
+        </div>
     </div>
 
     <script>
-        // 기존 로직 100% 유지 (스크립트 부분은 수정 없음)
+        function initTheme() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.body.setAttribute('data-theme', saved);
+            document.getElementById('theme-btn').innerText = saved === 'dark' ? '🌙' : '☀️';
+        }
+        function toggleTheme() {
+            const nxt = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', nxt);
+            localStorage.setItem('theme', nxt);
+            document.getElementById('theme-btn').innerText = nxt === 'dark' ? '🌙' : '☀️';
+        }
+        initTheme();
+
         let pendingData = null; 
 
         window.onload = async () => {
+            initTheme();
             try {
                 const [invRes, optRes] = await Promise.all([fetch('/api/inventory'), fetch('/api/options')]);
                 const inventory = await invRes.json();
@@ -318,29 +220,19 @@ button:active {
                     }
                 });
 
-                // 3. 마지막 반영 시간 표시
+                // 3. 마지막 반영 시간
                 if (inventory && inventory.length > 0) {
                     const sorted = inventory.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
                     const lastItem = sorted[0];
                     if (lastItem && lastItem.updatedAt) {
-                        const timeStr = new Date(lastItem.updatedAt).toLocaleString('ko-KR', {
-                            month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                        });
+                        const timeStr = new Date(lastItem.updatedAt).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                         document.getElementById('last-update-time').innerText = timeStr + " (" + lastItem.name + ")";
-                    } else {
-                        document.getElementById('last-update-time').innerText = "기록 없음";
-                    }
-                } else {
-                    document.getElementById('last-update-time').innerText = "기록 없음";
-                }
+                    } else { document.getElementById('last-update-time').innerText = "기록 없음"; }
+                } else { document.getElementById('last-update-time').innerText = "기록 없음"; }
 
-            } catch (err) { 
-                alert("데이터 로드 실패"); 
-                document.getElementById('last-update-time').innerText = "통신 오류";
-            }
+            } catch (err) { alert("데이터 로드 실패"); document.getElementById('last-update-time').innerText = "통신 오류"; }
         };
 
-        // 1단계: 팝업 띄우기
         function openConfirmation() {
             const materialEl = document.getElementById('select-material');
             if (!materialEl.value) return alert("원단을 선택하세요.");
@@ -352,60 +244,32 @@ button:active {
 
             if(!width || !size || !quantity) return alert("모든 항목을 입력하세요.");
 
-            // 데이터 임시 저장
             pendingData = {
-                materialId: materialEl.value,
-                materialName: materialEl.options[materialEl.selectedIndex].text,
+                materialId: materialEl.value, materialName: materialEl.options[materialEl.selectedIndex].text,
                 category: materialEl.options[materialEl.selectedIndex].dataset.rawName,
-                width: width,
-                size: size.replace('m', ''),
-                quantity: parseInt(quantity),
-                tubeName: tubeName
+                width: width, size: size.replace('m', ''), quantity: parseInt(quantity), tubeName: tubeName
             };
 
-            // 팝업 텍스트 채우기
             document.getElementById('conf-name').innerText = pendingData.category;
             document.getElementById('conf-width').innerText = pendingData.width;
             document.getElementById('conf-length').innerText = pendingData.size + "m";
             document.getElementById('conf-tube').innerText = pendingData.tubeName;
             document.getElementById('conf-qty').innerText = pendingData.quantity + "개";
-
-            // 팝업 표시
             document.getElementById('confirm-modal').style.display = 'flex';
         }
 
-        function closeModal() {
-            document.getElementById('confirm-modal').style.display = 'none';
-            pendingData = null;
-        }
+        function closeModal() { document.getElementById('confirm-modal').style.display = 'none'; pendingData = null; }
 
-        // 2단계: 실제 저장 (로딩 포함)
         async function finalSubmit() {
             if (!pendingData) return;
-
-            // 로딩 표시
-            document.getElementById('confirm-modal').style.display = 'none'; // 팝업 닫고
-            document.getElementById('loading-layer').style.display = 'flex'; // 로딩 열고
+            document.getElementById('confirm-modal').style.display = 'none';
+            document.getElementById('loading-layer').style.display = 'flex';
 
             try {
-                const res = await fetch('/api/inventory/produce', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(pendingData)
-                });
-
-                if(res.ok) {
-                    alert("✅ 성공적으로 기록되었습니다!");
-                    location.reload();
-                } else {
-                    const err = await res.json();
-                    alert("❌ 오류: " + err.error);
-                    document.getElementById('loading-layer').style.display = 'none';
-                }
-            } catch (err) {
-                alert("서버 연결 실패");
-                document.getElementById('loading-layer').style.display = 'none';
-            }
+                const res = await fetch('/api/inventory/produce', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pendingData) });
+                if(res.ok) { alert("✅ 기록 완료!"); location.reload(); } 
+                else { const err = await res.json(); alert("❌ 오류: " + err.error); document.getElementById('loading-layer').style.display = 'none'; }
+            } catch (err) { alert("서버 연결 실패"); document.getElementById('loading-layer').style.display = 'none'; }
         }
     </script>
 </body>

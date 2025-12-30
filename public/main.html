@@ -5,7 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🔥 Smart Factory</title>
     <style>
-        /* 1. 배경: 깊은 다크 네이비 색상 */
+        /* [애니메이션 정의] */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translate3d(0, 20px, 0); }
+            to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.9); }
+            70% { opacity: 1; transform: scale(1.02); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* 1. 기본 설정 및 배경 */
         body { 
             background-color: #0f172a; 
             margin: 0; 
@@ -16,22 +28,26 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            /* 페이지 로드 시 전체 페이드인 */
+            animation: fadeInUp 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
-        /* 2. 헤더: 그라데이션 텍스트 효과 */
+        /* 2. 헤더 */
         .header { 
             width: 100%; max-width: 500px; margin: 30px 0; text-align: left; 
+            /* 헤더는 약간 늦게 등장 */
+            animation: fadeInUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
         .header h1 { 
             font-size: 1.8rem; margin: 0; font-weight: 900; 
             background: linear-gradient(to right, #4ade80, #3b82f6); 
-            -webkit-background-clip: text; 
+            background-clip: text; 
             -webkit-text-fill-color: transparent;
             letter-spacing: -0.5px;
         }
         .header p { color: #94a3b8; font-size: 0.95rem; margin-top: 5px; }
 
-        /* 3. 그리드: 벤토(Bento) 도시락 스타일 배치 */
+        /* 3. 메뉴 그리드 */
         .menu-grid { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
@@ -40,7 +56,7 @@
             max-width: 500px; 
         }
 
-        /* 4. 카드 공통 스타일: 반투명 유리 느낌 (Glassmorphism) */
+        /* 4. 카드 디자인 (Glassmorphism + Animation) */
         .menu-card {
             background: rgba(30, 41, 59, 0.7); 
             backdrop-filter: blur(10px);
@@ -55,19 +71,51 @@
             align-items: center; 
             justify-content: center;
             gap: 12px;
-            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
             color: #e2e8f0;
             min-height: 140px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            
+            /* 기본 상태 트랜지션 (부드럽게) */
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            
+            /* 순차적 등장 애니메이션 초기값 */
+            opacity: 0; 
+            animation: fadeInUp 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
-        /* 눌렀을 때 쫀득한 느낌 */
-        .menu-card:active { transform: scale(0.96); background: rgba(30, 41, 59, 0.9); }
+        /* [순차 등장] 각 카드가 0.1초씩 늦게 나타나도록 설정 */
+        .menu-card:nth-child(1) { animation-delay: 0.1s; }
+        .menu-card:nth-child(2) { animation-delay: 0.15s; }
+        .menu-card:nth-child(3) { animation-delay: 0.2s; }
+        .menu-card:nth-child(4) { animation-delay: 0.25s; }
+        .menu-card:nth-child(5) { animation-delay: 0.3s; }
+        .menu-card:nth-child(6) { animation-delay: 0.35s; }
 
-        .menu-card .icon { font-size: 2.8rem; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+        /* [호버 효과] 마우스 올리면 붕 뜸 */
+        .menu-card:hover { 
+            transform: translateY(-5px) scale(1.02); 
+            background: rgba(40, 55, 80, 0.8);
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* [클릭 효과] 누르면 쫀득하게 들어감 */
+        .menu-card:active { 
+            transform: scale(0.95); 
+            background: rgba(30, 41, 59, 0.9); 
+        }
+
+        .menu-card .icon { 
+            font-size: 2.8rem; 
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); 
+            transition: transform 0.3s ease;
+        }
+        /* 호버 시 아이콘도 살짝 움직임 */
+        .menu-card:hover .icon { transform: scale(1.1) rotate(5deg); }
+
         .menu-card span { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.5px; }
 
-        /* 5. 생산 기록 버튼: 주인공처럼 화려하게 (가로 2칸 차지) */
+        /* 5. 생산 기록 버튼 (강조) */
         .card-prod { 
             grid-column: span 2; 
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -77,12 +125,21 @@
             min-height: 100px;
             box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
         }
-        .card-prod .icon { margin-right: 15px; font-size: 2.5rem; }
-        .card-prod span { font-size: 1.4rem; }
+        .card-prod:hover {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            box-shadow: 0 15px 35px -5px rgba(16, 185, 129, 0.6);
+        }
 
-        /* 6. 출퇴근 버튼 상태별 스타일 */
+        /* 6. 완료 상태 버튼 */
         .btn-active { border: 1px solid rgba(59, 130, 246, 0.5); }
-        .btn-done { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); color: #64748b; }
+        .btn-done { 
+            background: rgba(15, 23, 42, 0.5); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            color: #64748b; 
+            cursor: default;
+        }
+        .btn-done:hover { transform: none; box-shadow: none; background: rgba(15, 23, 42, 0.5); }
+        .btn-done:active { transform: none; }
         .btn-done .icon { filter: grayscale(100%); opacity: 0.5; }
 
         /* 관리자 버튼 */
@@ -106,16 +163,25 @@
             font-weight: 600; 
             font-size: 0.9rem;
             cursor: pointer; 
-            transition: 0.2s;
+            transition: all 0.2s;
+            animation: fadeInUp 1s forwards; /* 천천히 등장 */
+            animation-delay: 0.5s;
+            opacity: 0;
         }
-        .logout-btn:active { background: #334155; color: white; }
+        .logout-btn:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .logout-btn:active { transform: scale(0.95); }
 
-        /* 로딩 레이어 (다크 모드) */
+        /* 로딩 레이어 */
         #loading-layer { 
             display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(15, 23, 42, 0.9); z-index: 9999; 
+            background: rgba(15, 23, 42, 0.95); z-index: 9999; 
             justify-content: center; align-items: center; flex-direction: column; 
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(10px);
+            transition: opacity 0.4s ease; /* 사라질 때 부드럽게 */
         }
         .spinner { width: 45px; height: 45px; border: 4px solid #1e293b; border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -168,7 +234,10 @@
                 await Promise.all([checkAdminStatus(), checkAttendanceStatus()]);
             } catch (err) { console.error(err); }
             finally { 
-                setTimeout(() => document.getElementById('loading-layer').style.display = 'none', 300); 
+                // 로딩 레이어를 부드럽게 사라지게 함
+                const loader = document.getElementById('loading-layer');
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 400); 
             }
         };
 
@@ -192,7 +261,6 @@
             const isBtnIn = type === 'check-in';
             const btn = document.getElementById(isBtnIn ? 'btn-check-in' : 'btn-check-out');
             
-            // 완료된 버튼 스타일 변경 (어둡게 처리)
             btn.onclick = null;
             btn.className = 'menu-card btn-done';
             btn.innerHTML = `

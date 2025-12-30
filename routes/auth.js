@@ -2,89 +2,77 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
 
-// 1. 회원가입 신청
-router.post("/register", async (req, res) => {
-  console.log("1. 요청 받음! 데이터:", req.body); // 여기는 뜰 것임
+// [보안 추가] 관리자 권한 확인 미들웨어 (이 파일 내부에서만 씀)
+const isAdmin = (req, res, next) => {
+  // 1. 로그인 했는지 확인
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ message: "로그인이 필요합니다." });
+  }
+  // 2. 관리자 권한인지 확인
+  if (req.session.user.role !== "admin") {
+    return res.status(403).json({ message: "관리자 권한이 없습니다." });
+  }
+  next();
+};
 
+// 1. 회원가입 신청 (공개)
+router.post("/register", async (req, res) => {
   try {
     const { username, password, nickname } = req.body;
-
-    console.log("2. 중복 검사 시작...");
-    // 여기서 멈출 확률이 높음 (DB 조회)
     const existingUser = await User.findOne({ username });
-    console.log("3. 중복 검사 통과 (결과):", existingUser);
-
     if (existingUser) {
-      console.log("❌ 중복된 유저임");
       return res.status(400).json({ message: "이미 존재하는 아이디입니다." });
     }
-
-    console.log("4. 유저 객체 생성 중...");
     const newUser = new User({ username, password, nickname });
-
-    console.log("5. DB 저장 시도...");
-    // 또는 여기서 멈출 수 있음 (DB 쓰기)
     await newUser.save();
-    console.log("6. DB 저장 완료!");
-
     res.status(201).json({ message: "가입 신청 완료!" });
   } catch (err) {
-    console.error("🔥 에러 발생:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 2. 로그인
+// 2. 로그인 (공개)
 router.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
 
-    // 1. 계정 확인
     if (!user || user.password !== password) {
       return res
         .status(400)
         .json({ message: "아이디 또는 비밀번호가 틀렸습니다." });
     }
 
-    // 2. 승인 여부 확인
     if (user.isApproved === false) {
       return res
         .status(403)
         .json({ message: "아직 승인되지 않은 계정입니다." });
     }
 
-    // ★ 3. [복구 및 수정] 세션 저장 (Redis에 저장됩니다)
     req.session.user = {
       id: user._id,
       username: user.username,
       nickname: user.nickname,
-      role: user.role, // "admin" 혹은 "user"
+      role: user.role,
     };
 
-    // ★ 세션을 명시적으로 저장 후 응답을 보냅니다.
-    req.session.save((err) => {
-      if (err) {
-        console.error("세션 저장 실패:", err);
-        return res.status(500).json({ message: "세션 저장 오류" });
-      }
-
-      console.log(`✅ ${user.username} 로그인 및 세션 저장 완료`);
-
-      // 4. 응답 보내기
+    req.session.save(() => {
       res.status(200).json({
         message: "로그인 성공",
         user: req.session.user,
       });
     });
   } catch (err) {
-    console.error("로그인 에러:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
+// ============================================================
+// 🚨 [보안 패치] 아래 관리자 기능들은 이제 isAdmin 검사를 통과해야만 실행됨
+// ============================================================
+
 // 3. (관리자용) 대기 목록 조회
-router.get("/admin/pending", async (req, res) => {
+router.get("/admin/pending", isAdmin, async (req, res) => {
   try {
     const users = await User.find({ isApproved: false });
     res.json(users);
@@ -93,35 +81,49 @@ router.get("/admin/pending", async (req, res) => {
   }
 });
 
-// 4. (관리자용) 승인 처리 - ID 기반으로 수정 및 권한 부여
-router.post("/admin/approve", async (req, res) => {
+// [추가] (관리자용) 전체 회원 조회
+router.get("/admin/users", isAdmin, async (req, res) => {
   try {
-    const { userId } = req.body; // 프론트엔드에서 보낸 ID
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    // findByIdAndUpdate를 사용하여 상태와 권한을 동시에 변경
+// [추가] (관리자용) 비밀번호 초기화
+router.post("/admin/reset-password", isAdmin, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    await User.findByIdAndUpdate(userId, { password: "1234" }); // 암호화 없이 1234로 초기화 (임시)
+    res.json({ message: "비밀번호가 1234로 초기화되었습니다." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. (관리자용) 승인 처리
+router.post("/admin/approve", isAdmin, async (req, res) => {
+  try {
+    const { userId } = req.body;
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { isApproved: true, role: "user" }, // 승인 완료 및 일반 유저 권한 부여
+      { isApproved: true, role: "user" },
       { new: true }
     );
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: "유저를 찾을 수 없습니다." });
-    }
-
+    if (!updatedUser) return res.status(404).json({ message: "유저 없음" });
     res.json({ message: `${updatedUser.username} 승인 완료` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 5. (관리자용) 가입 거절 (유저 삭제)
-router.post("/admin/reject", async (req, res) => {
+// 5. (관리자용) 가입 거절/강퇴
+router.post("/admin/reject", isAdmin, async (req, res) => {
   try {
-    const { username } = req.body;
-    // 유저 찾아서 삭제
-    await User.findOneAndDelete({ username });
-    res.json({ message: `${username} 님의 가입을 거절(삭제)했습니다.` });
+    const { userId } = req.body;
+    await User.findByIdAndDelete(userId);
+    res.json({ message: "삭제되었습니다." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

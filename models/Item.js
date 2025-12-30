@@ -13,4 +13,7 @@ const itemSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
+// 조회 및 필터링 성능 최적화
+itemSchema.index({ name: 1, category: 1 });
+
 module.exports = mongoose.model("Item", itemSchema);

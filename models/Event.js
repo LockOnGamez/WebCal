@@ -22,4 +22,7 @@ const eventSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+// 날짜 및 타입별 필터링 최적화
+eventSchema.index({ start: -1, type: 1 });
+
 module.exports = mongoose.model("Event", eventSchema);

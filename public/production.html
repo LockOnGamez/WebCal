@@ -408,6 +408,7 @@
         </div>
     </div>
 
+    <script src="js/ui.js"></script>
     <script src="js/nav.js"></script>
     <script>
         const themes = ['light', 'dark', 'glass', 'street'];
@@ -484,7 +485,7 @@
                 } else { document.getElementById('last-update-time').innerText = "기록 없음"; }
 
             } catch (err) {
-                alert("데이터 로드 실패");
+                UI.showToast("데이터 로드 실패", "error");
                 document.getElementById('last-update-time').innerText = "통신 오류";
             } finally {
                 document.getElementById('loading-layer').style.opacity = '0';
@@ -496,14 +497,14 @@
 
         function openConfirmation() {
             const materialEl = document.getElementById('select-material');
-            if (!materialEl.value) return alert("원단을 선택하세요.");
+            if (!materialEl.value) return UI.showToast("원단을 선택하세요.", "warning");
 
             const tubeName = document.querySelector('input[name="tubeType"]:checked').value;
             const width = document.getElementById('width').value;
             const size = document.getElementById('size').value;
             const quantity = document.getElementById('quantity').value;
 
-            if (!width || !size || !quantity) return alert("모든 항목을 입력하세요.");
+            if (!width || !size || !quantity) return UI.showToast("모든 항목을 입력하세요.", "warning");
 
             pendingData = {
                 materialId: materialEl.value, materialName: materialEl.options[materialEl.selectedIndex].text,
@@ -524,13 +525,32 @@
         async function finalSubmit() {
             if (!pendingData) return;
             document.getElementById('confirm-modal').style.display = 'none';
-            document.getElementById('loading-layer').style.display = 'flex';
+
+            // 로딩 레이어 표시 및 불투명도 조절
+            const loader = document.getElementById('loading-layer');
+            const loaderText = loader.querySelector('p');
+            if (loaderText) loaderText.innerText = "Saving Production Record...";
+
+            loader.style.display = 'flex';
+            void loader.offsetWidth; // 리플로우 강제 (트랜지션 트리거)
+            loader.style.opacity = '1';
 
             try {
                 const res = await fetch('/api/inventory/produce', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pendingData) });
-                if (res.ok) { alert("✅ 기록 완료!"); location.reload(); }
-                else { const err = await res.json(); alert("❌ 오류: " + err.error); document.getElementById('loading-layer').style.display = 'none'; }
-            } catch (err) { alert("서버 연결 실패"); document.getElementById('loading-layer').style.display = 'none'; }
+                if (res.ok) {
+                    UI.showToast("✅ 기록 완료!", "success");
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    const err = await res.json();
+                    UI.alert("기록 실패", (err.message || err.error || "권한이 없습니다."), "error");
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                }
+            } catch (err) {
+                UI.alert("연결 오류", "서버와 통신할 수 없습니다.", "error");
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
+            }
         }
     </script>
 </body>

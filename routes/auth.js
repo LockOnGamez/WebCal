@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
+const Log = require("../models/Log");
 
 // [보안 추가] 관리자 권한 확인 미들웨어 (이 파일 내부에서만 씀)
 const isAdmin = (req, res, next) => {
@@ -56,7 +57,16 @@ router.post("/login", async (req, res) => {
       role: user.role,
     };
 
-    req.session.save(() => {
+    req.session.save(async () => {
+      // [로그 기록] 로그인
+      const log = new Log({
+          user: user.nickname || user.username,
+          action: "로그인",
+          category: "Auth",
+          details: "시스템 접속"
+      });
+      await log.save();
+
       res.status(200).json({
         message: "로그인 성공",
         user: req.session.user,
@@ -112,6 +122,17 @@ router.post("/admin/approve", isAdmin, async (req, res) => {
       { new: true }
     );
     if (!updatedUser) return res.status(404).json({ message: "유저 없음" });
+
+    // [로그 기록] 계정 승인
+    const log = new Log({
+        user: "Admin",
+        action: "계정 승인",
+        category: "Auth",
+        targetId: updatedUser._id,
+        details: `${updatedUser.username} (${updatedUser.nickname}) 승인됨`
+    });
+    await log.save();
+
     res.json({ message: `${updatedUser.username} 승인 완료` });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -136,6 +157,31 @@ router.get("/admin/check", (req, res) => {
   } else {
     res.json({ isAdmin: false });
   }
+});
+
+// [추가] (관리자용) 활동 로그 조회 (필터링 지원)
+router.get("/admin/logs", isAdmin, async (req, res) => {
+    try {
+        const { category } = req.query;
+        const query = {};
+        if (category && category !== 'ALL') {
+            query.category = category;
+        }
+
+        const logs = await Log.find(query).sort({ timestamp: -1 }).limit(100);
+        res.json(logs);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 6. 로그아웃 (세션 파괴)
+router.post("/logout", (req, res) => {
+    req.session.destroy((err) => {
+        if (err) return res.status(500).json({ error: "Logout failed" });
+        res.clearCookie("connect.sid");
+        res.json({ message: "로그아웃 성공" });
+    });
 });
 
 module.exports = router;

@@ -34,10 +34,12 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { type, value } = req.body;
-    const exists = await Option.findOne({ type, value });
+    if (!type || !value || value.trim() === "") return res.status(400).json({ message: "타입과 값을 모두 입력해주세요." });
+    
+    const exists = await Option.findOne({ type, value: value.trim() });
     if (exists) return res.status(400).json({ message: "이미 존재함" });
 
-    const newOption = new Option({ type, value });
+    const newOption = new Option({ type, value: value.trim() });
     await newOption.save();
 
     // ★ 관리자가 추가하면 즉시 캐시 삭제 (다음 조회 때 갱신되도록)

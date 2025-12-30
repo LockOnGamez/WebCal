@@ -285,81 +285,6 @@
         }
 
         /* 로딩 레이어 */
-        #loading-layer {
-            display: flex;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--loading-bg);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            transition: opacity 0.5s ease;
-        }
-
-        .flashy-loader {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: 6px solid transparent;
-            border-top-color: var(--highlight);
-            border-bottom-color: var(--highlight);
-            animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite,
-                pulse-border 1.5s ease-in-out infinite;
-            box-shadow: 0 0 20px var(--highlight-glow);
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        @keyframes pulse-border {
-
-            0%,
-            100% {
-                border-width: 6px;
-                opacity: 1;
-            }
-
-            50% {
-                border-width: 10px;
-                opacity: 0.7;
-            }
-        }
-
-        .loader-text {
-            margin-top: 30px;
-            font-size: 1.2rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            color: var(--text-main);
-            text-transform: uppercase;
-            animation: pulse-text 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse-text {
-
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 0.5;
-                transform: scale(0.95);
-            }
-        }
-
         /* 배경 장식 */
         .bg-blob {
             position: fixed;
@@ -431,6 +356,7 @@
                 --</div>
         </div>
     </div>
+    <script src="js/ui.js"></script>
     <script src="js/nav.js"></script>
 
     <div class="menu-grid">
@@ -610,19 +536,22 @@
             if (res.ok) location.reload();
         }
 
-        function logout() {
-            // 1. 현재 설정된 테마를 변수에 잠시 저장해둡니다.
-            const currentTheme = localStorage.getItem('theme');
+        async function logout() {
+            if (!confirm("로그아웃 하시겠습니까?")) return;
 
-            // 2. 저장소 전체를 비웁니다. (로그인 정보 삭제됨)
-            localStorage.clear();
-
-            // 3. 아까 저장해둔 테마 설정만 다시 복구합니다.
-            if (currentTheme) {
-                localStorage.setItem('theme', currentTheme);
+            try {
+                // 1. 서버 세션 먼저 삭제
+                await fetch('/api/logout', { method: 'POST' });
+            } catch (err) {
+                console.error("Logout Err:", err);
             }
 
-            // 4. 로그인 페이지로 이동
+            // 2. 로컬 스토리지 정리 (테마 제외)
+            const currentTheme = localStorage.getItem('theme');
+            localStorage.clear();
+            if (currentTheme) localStorage.setItem('theme', currentTheme);
+
+            // 3. 로그인 페이지로 이동
             location.href = '/';
         }
     </script>

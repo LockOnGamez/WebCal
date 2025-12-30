@@ -11,4 +11,7 @@ const attendanceSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+// 특정 유저의 날짜별 기록 조회 최적화
+attendanceSchema.index({ userId: 1, date: -1 });
+
 module.exports = mongoose.model("Attendance", attendanceSchema);

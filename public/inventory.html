@@ -453,6 +453,7 @@
         </div>
     </div>
 
+    <script src="js/ui.js"></script>
     <script src="js/nav.js"></script>
     <script>
         const API_URL = '/api/inventory';
@@ -635,8 +636,11 @@
                 body: JSON.stringify({ quantity: newQty, username: currentNick || currentUser })
             });
             if (res.ok) {
-                showToast("✅ 수량이 변경되었습니다.", "success");
+                UI.showToast("✅ 수량이 변경되었습니다.", "success");
                 loadItems();
+            } else {
+                const err = await res.json();
+                UI.showToast(`실패: ${err.message || '권한 없음'}`, "error");
             }
         }
 
@@ -657,10 +661,11 @@
                 body: JSON.stringify(data)
             });
             if (res.ok) {
-                showToast("✨ 새로운 품목이 등록되었습니다.", "success");
+                UI.showToast("✨ 새로운 품목이 등록되었습니다.", "success");
                 loadItems();
             } else {
-                showToast("❌ 등록 실패", "error");
+                const err = await res.json();
+                UI.alert("등록 실패", (err.message || '체크 필요'), "error");
             }
             showLoading(false);
         }
@@ -669,21 +674,12 @@
             if (!confirm("삭제하시겠습니까?")) return;
             const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
             if (res.ok) {
-                showToast("🗑 품목이 삭제되었습니다.", "success");
+                UI.showToast("🗑 품목이 삭제되었습니다.", "success");
                 loadItems();
+            } else {
+                const err = await res.json();
+                UI.alert("삭제 실패", (err.message || '권한이 없습니다.'), "error");
             }
-        }
-
-        function showToast(msg, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerText = msg;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'fadeOut 0.5s forwards';
-                setTimeout(() => toast.remove(), 500);
-            }, 3000);
         }
 
         function filterItems(type, btn) {
@@ -699,7 +695,18 @@
             renderItems(allItemsData.filter(i => i.name.toLowerCase().includes(term) || i.size.toLowerCase().includes(term)));
         }
 
-        function showLoading(show) { document.getElementById('loading-layer').style.display = show ? 'flex' : 'none'; }
+        function showLoading(show) {
+            const layer = document.getElementById('loading-layer');
+            if (!layer) return;
+            if (show) {
+                layer.style.display = 'flex';
+                void layer.offsetWidth;
+                layer.style.opacity = '1';
+            } else {
+                layer.style.opacity = '0';
+                setTimeout(() => layer.style.display = 'none', 500);
+            }
+        }
     </script>
 </body>
 

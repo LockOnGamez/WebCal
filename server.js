@@ -7,6 +7,7 @@ const authRoutes = require("./routes/auth");
 const inventoryRoutes = require("./routes/inventory");
 const calendarRoutes = require("./routes/caleandar");
 const optionRoutes = require("./routes/options");
+const backupRoutes = require("./routes/backup");
 
 const session = require("express-session");
 const { RedisStore } = require("connect-redis");
@@ -15,6 +16,9 @@ const redisClient = require("./config/redis");
 const holidayRoutes = require(`./routes/holidays`);
 
 const attendanceRoutes = require(`./routes/attendance`);
+
+// 미들웨어
+const { checkLogin, checkAdmin } = require("./middleware/auth");
 
 dotenv.config();
 
@@ -28,15 +32,13 @@ app.set("trust proxy", 1);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public"));
-
 // 3. 몽고DB 연결
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB 연결 성공!"))
   .catch((err) => console.error("❌ MongoDB 연결 실패:", err));
 
-// 4. 세션 설정 (라우터 연결보다 먼저 와야 함)
+// 4. 세션 설정
 app.use(
   session({
     store: new RedisStore({
@@ -55,62 +57,51 @@ app.use(
   })
 );
 
-// --- 권한 체크 미들웨어 분리 ---
+// [추가] 정적 페이지 보호 (HTML 파일 및 루트 접근 제어)
+app.use((req, res, next) => {
+    const path = req.path;
+    // .html 파일이거나 루트(/) 요청인 경우만 체크
+    if (path === "/" || path.endsWith(".html")) {
+        const isPublic = (path === "/" || path === "/index.html" || path === "/register.html");
+        
+        if (isPublic) {
+            // 로그인된 사용자가 로그인 페이지 접근 시 메인으로
+            if (req.session && req.session.user) {
+                return res.redirect('/main.html');
+            }
+            return next();
+        }
+        
+        // 그 외 HTML 페이지는 로그인 체크
+        return checkLogin(req, res, next);
+    }
+    next();
+});
 
-// [A] 로그인 여부만 체크 (일반 유저/관리자 모두 통과)
-const checkLogin = (req, res, next) => {
-  if (!req.session || !req.session.user) {
-    console.log(">> 탈락: 로그인 안됨");
-    return res.send(
-      '<script>alert("로그인하세요"); location.href="/login";</script>'
-    );
-  }
-  next();
-};
-
-// [B] 관리자 권한까지 체크 (관리자만 통과)
-const checkAdmin = (req, res, next) => {
-  // 먼저 로그인이 되어있는지 확인
-  if (!req.session || !req.session.user) {
-    return res.send(
-      '<script>alert("로그인하세요"); location.href="/login";</script>'
-    );
-  }
-  // 관리자인지 확인
-  if (req.session.user.role !== "admin") {
-    console.log(`>> 탈락: 관리자 아님 (현재 역할: ${req.session.user.role})`);
-    return res
-      .status(403)
-      .send(
-        '<script>alert("관리자만 접근 가능합니다."); location.href="/";</script>'
-      );
-  }
-  next();
-};
+app.use(express.static("public"));
 
 app.get("/ping", (req, res) => {
   res.status(200).send("pong");
 });
 
-// 5. 라우터 연결 (권한 미들웨어 적용)
-app.use("/api", authRoutes); // 로그인/회원가입은 체크 안함
-app.use("/api/inventory", checkLogin, inventoryRoutes); // 재고는 로그인해야 함
-app.use("/api/calendar", checkLogin, calendarRoutes); // 달력은 로그인만 하면 됨
-app.use(
-  "/api/options",
-  (req, res, next) => {
-    // GET(조회)은 누구나 가능, POST/DELETE(수정)는 관리자만 가능하게 분리
-    if (req.method === "GET") {
-      return next(); // 조회는 checkAdmin 건너뜀
-    }
-    checkAdmin(req, res, next); // 그 외엔 관리자 체크
-  },
-  optionRoutes
-); // 옵션은 관리자만!
+// 5. 라우터 연결
+app.use("/api", authRoutes); 
+
+// 재고 관리: 조회는 누구나, 수정/삭제는 관리자만 (세부 제어는 라우터 내부에서 하거나 여기서 분리)
+app.use("/api/inventory", checkLogin, (req, res, next) => {
+    if (req.method === "GET") return next();
+    checkAdmin(req, res, next);
+}, inventoryRoutes);
+
+app.use("/api/calendar", checkLogin, calendarRoutes); 
+app.use("/api/options", checkLogin, (req, res, next) => {
+    if (req.method === "GET") return next();
+    checkAdmin(req, res, next);
+}, optionRoutes); 
 
 app.use(`/api/holidays`, holidayRoutes);
-
 app.use("/api/attendance", checkLogin, attendanceRoutes);
+app.use("/api/admin", checkLogin, checkAdmin, backupRoutes);
 
 const Item = require("./models/Item");
 

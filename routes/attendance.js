@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const Attendance = require("../models/Attendance");
 const User = require("../models/User");
+const redisClient = require("../config/redis");
+const Log = require("../models/Log");
 
 //한국시간 기준 문자열반환
 function getKSTDateString(customDate = new Date()) {
@@ -10,12 +12,34 @@ function getKSTDateString(customDate = new Date()) {
   return kstDate.toISOString().split("T")[0];
 }
 
-// 0. 특정 날짜 기록 조회 (대시보드용)
+// 0. 특정 날짜 기록 조회 (대시보드용 - 캐시 적용)
 router.get("/", async (req, res) => {
   try {
     const { date } = req.query; // YYYY-MM-DD
-    const query = date ? { date } : {};
-    const records = await Attendance.find(query);
+    if (!date) return res.json([]);
+
+    // 1. 레디스 캐시 확인
+    const cacheKey = `cache:attendance:${date}`;
+    try {
+      const cached = await redisClient.get(cacheKey);
+      if (cached) {
+        console.log(`⚡ Redis 캐시 히트: ${cacheKey}`);
+        return res.json(JSON.parse(cached));
+      }
+    } catch (cacheErr) {
+      console.error("Redis Read Error:", cacheErr);
+    }
+
+    // 2. DB 조회
+    const records = await Attendance.find({ date });
+    
+    // 3. 캐시 저장 (5분 TTL)
+    try {
+      await redisClient.setEx(cacheKey, 300, JSON.stringify(records));
+    } catch (cacheErr) {
+      console.error("Redis Write Error:", cacheErr);
+    }
+
     res.json(records);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -43,19 +67,43 @@ router.post("/check-in", async (req, res) => {
     const today = getKSTDateString(); // KST 기준 날짜
     const user = await User.findOne({ username });
 
-    // 이미 오늘 날짜(KST)로 기록이 있는지 확인
-    const exists = await Attendance.findOne({ userId: user._id, date: today });
-    if (exists) return res.status(400).json({ message: "이미 출근했습니다." });
+    // [Atomic Lock] 레디스를 이용한 중복 요청 방지 (10초간 잠금)
+    const lockKey = `lock:attendance:${user._id}:${today}`;
+    const acquired = await redisClient.set(lockKey, "locked", { NX: true, EX: 10 });
+    if (!acquired) return res.status(429).json({ message: "이미 요청이 진행 중입니다. 잠시 후 다시 시도해주세요." });
 
-    const newIn = new Attendance({
-      userId: user._id,
-      username,
-      nickname,
-      date: today,
-      clockIn: new Date(), // 시간 자체는 타임스탬프로 저장 (프론트에서 변환)
-    });
-    await newIn.save();
-    res.json({ time: newIn.clockIn });
+    try {
+        // 이미 오늘 날짜(KST)로 기록이 있는지 확인
+        const exists = await Attendance.findOne({ userId: user._id, date: today });
+        if (exists) return res.status(400).json({ message: "이미 출근했습니다." });
+
+        const newIn = new Attendance({
+            userId: user._id,
+            username,
+            nickname,
+            date: today,
+            clockIn: new Date(), // 시간 자체는 타임스탬프로 저장 (프론트에서 변환)
+        });
+        await newIn.save();
+
+        // [로그 기록] 출근
+        const log = new Log({
+            user: nickname || username,
+            action: "출근",
+            category: "Attendance",
+            targetId: newIn._id,
+            details: `${nickname} (${username}) 작업자가 출근했습니다.`
+        });
+        await log.save();
+
+        // 캐시 삭제 (최신 상태 유도)
+        await redisClient.del(`cache:attendance:${today}`);
+
+        res.json({ time: newIn.clockIn });
+    } finally {
+        // 성공하든 실패하든 락 해제 (또는 TTL에 의해 자동 해제)
+        await redisClient.del(lockKey);
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -68,17 +116,30 @@ router.post("/check-out", async (req, res) => {
     const today = getKSTDateString(); // KST 기준 날짜
     const user = await User.findOne({ username });
 
-    const record = await Attendance.findOne({ userId: user._id, date: today });
-    if (!record)
-      return res.status(400).json({ message: "출근 기록이 없습니다." });
-    if (record.clockOut)
-      return res.status(400).json({ message: "이미 퇴근했습니다." });
+    // [Atomic Lock] 레디스를 이용한 중복 요청 방지
+    const lockKey = `lock:attendance:out:${user._id}:${today}`;
+    const acquired = await redisClient.set(lockKey, "locked", { NX: true, EX: 10 });
+    if (!acquired) return res.status(429).json({ message: "이미 요청이 진행 중입니다." });
 
-    record.clockOut = new Date();
-    // 근무 시간 계산 (초 단위)
-    record.duration = Math.floor((record.clockOut - record.clockIn) / 1000);
-    await record.save();
-    res.json({ time: record.clockOut });
+    try {
+        const record = await Attendance.findOne({ userId: user._id, date: today });
+        if (!record)
+            return res.status(400).json({ message: "출근 기록이 없습니다." });
+        if (record.clockOut)
+            return res.status(400).json({ message: "이미 퇴근했습니다." });
+
+        record.clockOut = new Date();
+        // 근무 시간 계산 (초 단위)
+        record.duration = Math.floor((record.clockOut - record.clockIn) / 1000);
+        await record.save();
+
+        // 캐시 삭제
+        await redisClient.del(`cache:attendance:${today}`);
+
+        res.json({ time: record.clockOut });
+    } finally {
+        await redisClient.del(lockKey);
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

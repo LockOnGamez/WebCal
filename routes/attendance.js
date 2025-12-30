@@ -4,12 +4,23 @@ const Attendance = require("../models/Attendance");
 const User = require("../models/User");
 
 //한국시간 기준 문자열반환
-function getKSTDateString() {
-  const now = new Date();
-  //UTC시간에 9시간을 더함
-  const kstDate = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+function getKSTDateString(customDate = new Date()) {
+  const d = new Date(customDate);
+  const kstDate = new Date(d.getTime() + 9 * 60 * 60 * 1000);
   return kstDate.toISOString().split("T")[0];
 }
+
+// 0. 특정 날짜 기록 조회 (대시보드용)
+router.get("/", async (req, res) => {
+  try {
+    const { date } = req.query; // YYYY-MM-DD
+    const query = date ? { date } : {};
+    const records = await Attendance.find(query);
+    res.json(records);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 // 1. 상태 확인
 router.get("/status/:username", async (req, res) => {

@@ -1,145 +1,282 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>시스템 접근</title>
+    <link rel="stylesheet" href="css/themes.css">
     <style>
-        /* [테마 변수] */
-        :root {
-            /* ☀️ 라이트 */
-            --bg-color: #f3f4f6;
-            --text-main: #1f2937;
-            --text-sub: #666666;
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --card-border: #ddd;
-            --input-bg: #ffffff;
-            --input-border: #ccc;
-            --btn-bg: #333;
-            --btn-text: #fff;
-        }
-        [data-theme="dark"] {
-            /* 🌙 다크 */
-            --bg-color: #0f172a;
-            --text-main: #f1f5f9;
-            --text-sub: #94a3b8;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --card-border: rgba(255, 255, 255, 0.1);
-            --input-bg: rgba(15, 23, 42, 0.6);
-            --input-border: #334155;
-            --btn-bg: linear-gradient(135deg, #3b82f6, #2563eb);
-            --btn-text: #fff;
-        }
-
-        body { 
-            margin: 0; padding: 0;
+        body {
+            margin: 0;
+            padding: 0;
             background-color: var(--bg-color);
+            background-image: var(--bg-image, none);
             font-family: 'Pretendard', -apple-system, sans-serif;
             color: var(--text-main);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             min-height: 100vh;
-            transition: background-color 0.3s, color 0.3s;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
         }
 
         /* 테마 버튼 (우측 상단 고정) */
         .theme-toggle {
-            position: absolute; top: 20px; right: 20px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
             background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--card-border);
             color: var(--text-main);
-            width: 40px; height: 40px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem; cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: 0.3s;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 100;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1) rotate(15deg);
         }
 
         .container {
             background: var(--card-bg);
-            backdrop-filter: blur(10px);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--card-border);
             padding: 40px 30px;
-            border-radius: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            max-width: 400px; width: 90%; text-align: center;
+            border-radius: 32px;
+            box-shadow: var(--card-shadow);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            z-index: 10;
         }
 
-        h1 { font-size: 1.8rem; margin-bottom: 40px; font-weight: 800; letter-spacing: -1px; color: var(--text-main); }
-        h1 span { color: #3b82f6; }
-        h3 { margin-top: 0; color: var(--text-sub); font-weight: 500; font-size: 1.1rem; margin-bottom: 20px; }
-
-        input { 
-            width: 100%; padding: 15px; margin: 8px 0; box-sizing: border-box;
-            background-color: var(--input-bg);
-            border: 1px solid var(--input-border);
-            border-radius: 12px; color: var(--text-main); font-size: 16px; transition: 0.3s;
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 40px;
+            font-weight: 900;
+            letter-spacing: -1.5px;
+            color: var(--text-main);
+            text-shadow: 0 0 20px var(--highlight-glow);
         }
-        input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
 
-        button.action-btn { 
-            padding: 16px; width: 100%; cursor: pointer;
-            background: var(--btn-bg); color: var(--btn-text);
-            border: none; border-radius: 12px; font-size: 16px; font-weight: bold; margin-top: 20px;
-            transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        h1 span {
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        button.action-btn:active { transform: scale(0.98); }
 
-        .toggle-btn { background: none; color: #3b82f6; border: none; padding: 5px; font-size: 14px; cursor: pointer; text-decoration: underline; }
-        .hidden { display: none; }
+        h3 {
+            margin-top: 0;
+            color: var(--text-sub);
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 16px 20px;
+            box-sizing: border-box;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            color: var(--text-main);
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--highlight);
+            box-shadow: 0 0 0 4px var(--highlight-glow);
+            transform: translateY(-2px);
+        }
+
+        button.action-btn {
+            padding: 18px;
+            width: 100%;
+            cursor: pointer;
+            background: var(--accent-gradient);
+            color: #fff;
+            border: none;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 800;
+            margin-top: 20px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 15px var(--highlight-glow);
+            letter-spacing: 1px;
+        }
+
+        button.action-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px var(--highlight-glow);
+        }
+
+        button.action-btn:active {
+            transform: scale(0.97);
+        }
+
+        .toggle-btn {
+            background: none;
+            color: var(--highlight);
+            border: none;
+            padding: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .toggle-btn:hover {
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* 배경 장식 (Glass 테마용) */
+        .bg-blob {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            background: var(--highlight-glow);
+            filter: blur(80px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.5;
+            display: none;
+        }
+
+        [data-theme="glass"] .bg-blob {
+            display: block;
+        }
+
+        .blob-1 {
+            top: -100px;
+            left: -100px;
+        }
+
+        .blob-2 {
+            bottom: -100px;
+            right: -100px;
+        }
     </style>
 </head>
-<body>
+
+<body class="animate-fade">
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+
     <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
 
-    <h1>🔒 <span>SMART</span> FACTORY</h1>
+    <h1 class="animate-slide">🔒 <span>SMART</span> FACTORY</h1>
 
-    <div id="login-box" class="container">
+    <div id="login-box" class="container animate-slide" style="animation-delay: 0.1s;">
         <h3>사용자 로그인</h3>
-        <input type="text" id="login-id" placeholder="아이디">
-        <input type="password" id="login-pw" placeholder="비밀번호">
-        <button class="action-btn" onclick="login()">로그인</button>
+        <div class="input-group">
+            <input type="text" id="login-id" placeholder="아이디">
+        </div>
+        <div class="input-group">
+            <input type="password" id="login-pw" placeholder="비밀번호">
+        </div>
+        <button class="action-btn" onclick="login()">로그인 시스템 접속</button>
         <p style="font-size: 14px; color: var(--text-sub); margin-top: 25px;">
             계정이 없으신가요? <button class="toggle-btn" onclick="toggleView()">회원가입 신청</button>
         </p>
     </div>
 
-    <div id="register-box" class="container hidden">
-        <h3>신규 회원가입</h3>
-        <input type="text" id="reg-id" placeholder="아이디">
-        <input type="password" id="reg-pw" placeholder="비밀번호">
-        <input type="text" id="reg-nick" placeholder="닉네임 (작업자명)">
-        <button class="action-btn" onclick="register()">신청하기</button>
+    <div id="register-box" class="container hidden animate-slide">
+        <h3>신규 회원가입 신청</h3>
+        <div class="input-group">
+            <input type="text" id="reg-id" placeholder="아이디">
+        </div>
+        <div class="input-group">
+            <input type="password" id="reg-pw" placeholder="비밀번호">
+        </div>
+        <div class="input-group">
+            <input type="text" id="reg-nick" placeholder="닉네임 (작업자명)">
+        </div>
+        <button class="action-btn" onclick="register()">회원 등록 신청</button>
         <p style="font-size: 14px; color: var(--text-sub); margin-top: 25px;">
             이미 계정이 있으신가요? <button class="toggle-btn" onclick="toggleView()">로그인 하러가기</button>
         </p>
     </div>
 
     <script>
+        const themes = ['light', 'dark', 'glass', 'street'];
+        const themeIcons = {
+            'light': '☀️',
+            'dark': '🌙',
+            'glass': '💎',
+            'street': '🎤'
+        };
+
         // [테마 로직]
         function initTheme() {
             const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.body.setAttribute('data-theme', savedTheme);
-            document.getElementById('theme-btn').innerText = savedTheme === 'dark' ? '🌙' : '☀️';
+            applyTheme(savedTheme);
         }
+
         function toggleTheme() {
-            const current = document.body.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', next);
+            const current = document.body.getAttribute('data-theme') || 'dark';
+            let index = themes.indexOf(current);
+            index = (index + 1) % themes.length;
+            const next = themes[index];
+            applyTheme(next);
             localStorage.setItem('theme', next);
-            document.getElementById('theme-btn').innerText = next === 'dark' ? '🌙' : '☀️';
         }
+
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            document.getElementById('theme-btn').innerText = themeIcons[theme] || '🌙';
+
+            // 테마 변경 시 애니메이션 효과를 위해 잠깐 클래스 제거 후 추가
+            document.body.classList.remove('animate-fade');
+            void document.body.offsetWidth; // reflow
+            document.body.classList.add('animate-fade');
+        }
+
         // 초기화 실행
         initTheme();
 
         function toggleView() {
-            document.getElementById('login-box').classList.toggle('hidden');
-            document.getElementById('register-box').classList.toggle('hidden');
+            const loginBox = document.getElementById('login-box');
+            const regBox = document.getElementById('register-box');
+
+            loginBox.classList.add('animate-fade');
+            regBox.classList.add('animate-fade');
+
+            loginBox.classList.toggle('hidden');
+            regBox.classList.toggle('hidden');
         }
 
         async function register() {
             const username = document.getElementById('reg-id').value;
             const password = document.getElementById('reg-pw').value;
             const nickname = document.getElementById('reg-nick').value;
+            if (!username || !password || !nickname) { alert("모든 항목을 입력해주세요."); return; }
+
             const res = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password, nickname }) });
             const data = await res.json();
             alert(data.message);
@@ -149,15 +286,18 @@
         async function login() {
             const username = document.getElementById('login-id').value;
             const password = document.getElementById('login-pw').value;
+            if (!username || !password) { alert("아이디와 비밀번호를 입력해주세요."); return; }
+
             const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
             const data = await res.json();
             if (res.ok) {
                 localStorage.setItem('username', data.user.username);
-                localStorage.setItem('nickname', data.user.nickname); 
+                localStorage.setItem('nickname', data.user.nickname);
                 alert("로그인 성공! " + data.user.nickname + "님 환영합니다.");
                 location.href = '/main.html';
             } else { alert(data.message); }
         }
     </script>
 </body>
+
 </html>

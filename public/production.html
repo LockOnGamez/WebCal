@@ -1,117 +1,344 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🔨 생산 기록 등록</title>
+    <link rel="stylesheet" href="css/themes.css">
     <style>
-        /* [테마 변수] */
-        :root {
-            --bg-color: #f3f4f6;
-            --text-main: #1f2937;
-            --text-sub: #666;
-            --card-bg: rgba(255,255,255,0.9);
-            --card-border: #ddd;
-            --input-bg: #fff;
-            --input-border: #ccc;
-            --modal-bg: #fff;
-        }
-        [data-theme="dark"] {
-            --bg-color: #0f172a;
-            --text-main: #f1f5f9;
-            --text-sub: #94a3b8;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --card-border: rgba(255, 255, 255, 0.1);
-            --input-bg: #0f172a;
-            --input-border: #334155;
-            --modal-bg: #1e293b;
-        }
-
-        body { 
-            background-color: var(--bg-color); color: var(--text-main);
-            padding: 20px; font-family: 'Pretendard', -apple-system, sans-serif; 
-            margin: 0; display: flex; justify-content: center; min-height: 100vh;
-            transition: 0.3s;
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
+            align-items: center;
         }
 
         /* 메인 컨테이너 */
-        .prod-container { 
-            width: 100%; max-width: 500px; 
+        .prod-container {
+            width: 100%;
+            max-width: 520px;
             background: var(--card-bg);
-            backdrop-filter: blur(10px);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--card-border);
-            padding: 30px; border-radius: 24px; 
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); 
-            box-sizing: border-box; height: fit-content; margin-top: 20px;
+            padding: 40px;
+            border-radius: 32px;
+            box-shadow: var(--card-shadow);
+            box-sizing: border-box;
+            height: fit-content;
+            position: relative;
+            z-index: 10;
+            animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        h1 { 
-            font-size: 1.6rem; text-align: center; margin: 0 0 25px 0; font-weight: 800;
-            background: linear-gradient(to right, #4ade80, #3b82f6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        h1 {
+            font-size: 1.8rem;
+            text-align: center;
+            margin: 0 0 30px 0;
+            font-weight: 900;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            filter: drop-shadow(0 0 10px var(--highlight-glow));
         }
-        
+
         #last-update-info {
-            text-align: center; color: var(--text-sub); font-size: 0.9rem; margin-bottom: 25px; 
-            background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--card-border);
+            text-align: center;
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+            background: var(--highlight-glow);
+            padding: 15px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            font-weight: 700;
         }
 
-        .input-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 10px; font-weight: 600; color: var(--text-sub); font-size: 0.95rem; }
-        
-        select, input[type="number"], input[type="text"] { 
-            width: 100%; height: 55px; padding: 0 15px; font-size: 16px; 
-            border-radius: 12px; border: 1px solid var(--input-border); 
-            background-color: var(--input-bg); color: var(--text-main);
-            box-sizing: border-box; transition: 0.2s;
+        .input-group {
+            margin-bottom: 25px;
         }
-        select:focus, input:focus { outline: none; border-color: #3b82f6; }
+
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 800;
+            color: var(--text-sub);
+            font-size: 0.95rem;
+        }
+
+        select,
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            height: 60px;
+            padding: 0 20px;
+            font-size: 17px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--highlight);
+            box-shadow: 0 0 0 4px var(--highlight-glow);
+            transform: translateY(-2px);
+        }
 
         /* 라디오 */
-        .tube-selection { display: flex; gap: 15px; padding: 5px 0; }
-        .tube-selection label { 
-            font-weight: normal; font-size: 1rem; display: flex; align-items: center; gap: 8px; 
-            cursor: pointer; background: var(--input-bg); padding: 10px 15px; border-radius: 10px; border: 1px solid var(--input-border);
+        .tube-selection {
+            display: flex;
+            gap: 15px;
+            padding: 5px 0;
         }
-        .tube-selection label:hover { border-color: #3b82f6; }
-        .tube-selection input { width: 20px; height: 20px; accent-color: #3b82f6; margin: 0; }
 
-        .submit-btn { 
-            width: 100%; height: 60px; font-size: 1.1rem; 
-            background: linear-gradient(135deg, #10b981, #059669); 
-            color: white; border: none; border-radius: 16px; 
-            cursor: pointer; font-weight: 800; margin-top: 10px; 
+        .tube-selection label {
+            flex: 1;
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            transition: all 0.3s ease;
         }
-        
+
+        .tube-selection label:hover {
+            border-color: var(--highlight);
+            transform: translateY(-2px);
+        }
+
+        .tube-selection input {
+            width: 22px;
+            height: 22px;
+            accent-color: var(--highlight);
+            margin: 0;
+        }
+
+        .submit-btn {
+            width: 100%;
+            height: 65px;
+            font-size: 1.2rem;
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 900;
+            margin-top: 15px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 8px 20px var(--highlight-glow);
+            letter-spacing: 1.5px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px var(--highlight-glow);
+            filter: brightness(1.1);
+        }
+
+        .submit-btn:active {
+            transform: scale(0.96);
+        }
+
         /* 모달 */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal-box {
-            background: var(--modal-bg); width: 90%; max-width: 400px; padding: 30px; 
-            border-radius: 24px; text-align: center; border: 1px solid var(--card-border); color: var(--text-main);
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
-        .modal-info { text-align: left; background: var(--bg-color); padding: 20px; border-radius: 16px; margin-bottom: 25px; border: 1px solid var(--card-border); }
-        .modal-info p { margin: 10px 0; font-size: 1rem; color: var(--text-sub); display: flex; justify-content: space-between; }
-        .modal-info b { color: var(--text-main); }
-        
-        .modal-btns { display: flex; gap: 12px; }
-        .modal-btn { flex: 1; padding: 15px; border: none; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; }
-        .btn-cancel { background: var(--input-bg); color: var(--text-sub); border:1px solid var(--input-border); }
-        .btn-confirm { background: #3b82f6; color: white; }
+
+        .modal-box {
+            background: var(--card-bg);
+            width: 95%;
+            max-width: 420px;
+            padding: 40px;
+            border-radius: 32px;
+            text-align: center;
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            box-shadow: var(--card-shadow);
+            animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .modal-info {
+            text-align: left;
+            background: var(--highlight-glow);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border: 1px solid var(--card-border);
+        }
+
+        .modal-info p {
+            margin: 12px 0;
+            font-size: 1.05rem;
+            color: var(--text-sub);
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+        }
+
+        .modal-info b {
+            color: var(--text-main);
+            font-weight: 900;
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 15px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 18px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-cancel {
+            background: var(--btn-hover);
+            color: var(--text-sub);
+            border: 1px solid var(--card-border);
+        }
+
+        .btn-confirm {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 4px 15px var(--highlight-glow);
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.1);
+        }
+
+        /* 배경 장식 */
+        .bg-blob {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: var(--highlight-glow);
+            filter: blur(120px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.2;
+            display: none;
+        }
+
+        [data-theme="glass"] .bg-blob {
+            display: block;
+        }
+
+        .blob-1 {
+            top: -200px;
+            left: -200px;
+        }
+
+        .blob-2 {
+            bottom: -200px;
+            right: -200px;
+        }
 
         /* 로딩 */
-        #loading-layer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); opacity:0.9; z-index: 2000; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { width: 50px; height: 50px; border: 4px solid var(--card-border); border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #loading-layer {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--loading-bg);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
 
-        /* 홈버튼 & 테마버튼 */
-        .nav-actions { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
-        .nav-link { text-decoration: none; color: var(--text-sub); font-weight: 600; padding: 10px; border-radius: 10px; cursor: pointer; background: var(--input-bg); border: 1px solid var(--input-border); }
+        /* 네비게이션 */
+        .nav-actions {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-sub);
+            font-weight: 800;
+            padding: 12px 24px;
+            border-radius: 14px;
+            cursor: pointer;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: var(--card-shadow);
+        }
+
+        .nav-link:hover {
+            transform: translateY(-3px);
+            border-color: var(--highlight);
+            color: var(--highlight);
+        }
+
+        .theme-toggle {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            padding: 0;
+        }
     </style>
 </head>
-<body>
+
+<body class="animate-fade">
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
     <div id="loading-layer">
-        <div class="spinner"></div>
-        <p style="margin-top: 20px; font-weight: bold; color: var(--text-sub);">저장 중입니다...</p>
+        <div class="flashy-loader"></div>
+        <p
+            style="margin-top: 25px; font-weight: 900; letter-spacing: 2px; color: var(--text-main); text-transform: uppercase; animation: pulse-glow 1.5s infinite;">
+            Processing Record...</p>
     </div>
+
 
     <div id="confirm-modal" class="modal-overlay">
         <div class="modal-box">
@@ -121,7 +348,9 @@
                 <p>폭: <b id="conf-width"></b></p>
                 <p>길이: <b id="conf-length"></b></p>
                 <p>지관: <b id="conf-tube"></b></p>
-                <p style="font-size: 1.2rem; margin-top: 15px; border-top: 1px dashed var(--card-border); padding-top: 15px;">생산 수량: <b id="conf-qty" style="color:#4ade80;"></b></p>
+                <p
+                    style="font-size: 1.2rem; margin-top: 15px; border-top: 1px dashed var(--card-border); padding-top: 15px;">
+                    생산 수량: <b id="conf-qty" style="color:#4ade80;"></b></p>
             </div>
             <div class="modal-btns">
                 <button class="modal-btn btn-cancel" onclick="closeModal()">취소</button>
@@ -132,7 +361,7 @@
 
     <div class="prod-container">
         <h1>🔨 생산 기록 등록</h1>
-        
+
         <div id="last-update-info">
             마지막 반영: <span id="last-update-time" style="font-weight: bold;">로딩 중...</span>
         </div>
@@ -144,20 +373,26 @@
                 <label><input type="radio" name="tubeType" value="pp지관(6)"> PP(6)</label>
             </div>
         </div>
-        
+
         <div class="input-group">
             <label>사용한 원단</label>
-            <select id="select-material"><option value="">원단 선택</option></select>
+            <select id="select-material">
+                <option value="">원단 선택</option>
+            </select>
         </div>
 
         <div class="input-group">
             <label>폭 (Width)</label>
-            <select id="width"><option value="">폭 선택</option></select>
+            <select id="width">
+                <option value="">폭 선택</option>
+            </select>
         </div>
 
         <div class="input-group">
             <label>사이즈 (길이)</label>
-            <select id="size"><option value="">사이즈 선택</option></select>
+            <select id="size">
+                <option value="">사이즈 선택</option>
+            </select>
         </div>
 
         <div class="input-group">
@@ -166,28 +401,46 @@
         </div>
 
         <button class="submit-btn" onclick="openConfirmation()">기록 저장</button>
-        
+
         <div class="nav-actions">
             <button class="nav-link" onclick="toggleTheme()" id="theme-btn">🌙</button>
             <a href="main.html" class="nav-link">🏠 홈으로</a>
         </div>
     </div>
 
+    <script src="js/nav.js"></script>
     <script>
+        const themes = ['light', 'dark', 'glass', 'street'];
+        const themeIcons = {
+            'light': '☀️', 'dark': '🌙', 'glass': '💎', 'street': '🎤'
+        };
+
         function initTheme() {
-            const saved = localStorage.getItem('theme') || 'dark';
-            document.body.setAttribute('data-theme', saved);
-            document.getElementById('theme-btn').innerText = saved === 'dark' ? '🌙' : '☀️';
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
         }
+
         function toggleTheme() {
-            const nxt = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', nxt);
-            localStorage.setItem('theme', nxt);
-            document.getElementById('theme-btn').innerText = nxt === 'dark' ? '🌙' : '☀️';
+            const current = document.body.getAttribute('data-theme') || 'dark';
+            let index = themes.indexOf(current);
+            index = (index + 1) % themes.length;
+            const next = themes[index];
+            applyTheme(next);
+            localStorage.setItem('theme', next);
+        }
+
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            const btn = document.getElementById('theme-btn');
+            if (btn) btn.innerHTML = themeIcons[theme] || '🌙';
+
+            document.body.classList.remove('animate-fade');
+            void document.body.offsetWidth;
+            document.body.classList.add('animate-fade');
         }
         initTheme();
 
-        let pendingData = null; 
+        let pendingData = null;
 
         window.onload = async () => {
             initTheme();
@@ -230,19 +483,27 @@
                     } else { document.getElementById('last-update-time').innerText = "기록 없음"; }
                 } else { document.getElementById('last-update-time').innerText = "기록 없음"; }
 
-            } catch (err) { alert("데이터 로드 실패"); document.getElementById('last-update-time').innerText = "통신 오류"; }
+            } catch (err) {
+                alert("데이터 로드 실패");
+                document.getElementById('last-update-time').innerText = "통신 오류";
+            } finally {
+                document.getElementById('loading-layer').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loading-layer').style.display = 'none';
+                }, 500);
+            }
         };
 
         function openConfirmation() {
             const materialEl = document.getElementById('select-material');
             if (!materialEl.value) return alert("원단을 선택하세요.");
-            
+
             const tubeName = document.querySelector('input[name="tubeType"]:checked').value;
             const width = document.getElementById('width').value;
             const size = document.getElementById('size').value;
             const quantity = document.getElementById('quantity').value;
 
-            if(!width || !size || !quantity) return alert("모든 항목을 입력하세요.");
+            if (!width || !size || !quantity) return alert("모든 항목을 입력하세요.");
 
             pendingData = {
                 materialId: materialEl.value, materialName: materialEl.options[materialEl.selectedIndex].text,
@@ -267,10 +528,11 @@
 
             try {
                 const res = await fetch('/api/inventory/produce', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pendingData) });
-                if(res.ok) { alert("✅ 기록 완료!"); location.reload(); } 
+                if (res.ok) { alert("✅ 기록 완료!"); location.reload(); }
                 else { const err = await res.json(); alert("❌ 오류: " + err.error); document.getElementById('loading-layer').style.display = 'none'; }
             } catch (err) { alert("서버 연결 실패"); document.getElementById('loading-layer').style.display = 'none'; }
         }
     </script>
 </body>
+
 </html>

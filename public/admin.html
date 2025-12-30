@@ -1,91 +1,331 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>관리자 설정</title>
+    <link rel="stylesheet" href="css/themes.css">
     <style>
-        /* [테마 변수] */
-        :root {
-            --bg-color: #f3f4f6;
-            --text-main: #1f2937;
-            --text-sub: #666;
-            --card-bg: #fff;
-            --border-color: #ddd;
-            --input-bg: #fff;
-            --table-head: #f8f9fa;
-        }
-        [data-theme="dark"] {
-            --bg-color: #0f172a;
-            --text-main: #f1f5f9;
-            --text-sub: #94a3b8;
-            --card-bg: rgba(30, 41, 59, 0.5);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --input-bg: #1e293b;
-            --table-head: #0f172a;
+        body {
+            padding: 20px;
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            max-width: 1200px;
+            margin: 0 auto;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
         }
 
-        body { 
-            padding: 20px; font-family: 'Pretendard', sans-serif; 
-            background-color: var(--bg-color); color: var(--text-main);
-            max-width: 1200px; margin: 0 auto; transition: 0.3s;
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 30px;
+            font-weight: 900;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1.5px;
+            border-bottom: 2px solid var(--card-border);
+            padding-bottom: 15px;
+            filter: drop-shadow(0 0 10px var(--highlight-glow));
         }
 
-        h1 { font-size: 1.8rem; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
-        
-        .nav-links { margin-bottom: 30px; font-size: 14px; display: flex; align-items: center; gap: 15px; }
-        .nav-links a { color: var(--text-sub); text-decoration: none; transition: 0.2s; }
-        .nav-links a:hover { color: #3b82f6; }
-        .nav-btn { cursor: pointer; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 5px 10px; border-radius: 8px; }
-
-        .section { 
-            background: var(--card-bg); border: 1px solid var(--border-color);
-            margin-bottom: 30px; padding: 25px; border-radius: 20px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+        .nav-links {
+            margin-bottom: 30px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
-        h2 { margin-top: 0; color: #3b82f6; font-size: 1.3rem; margin-bottom: 20px; }
-        h3 { font-size: 1rem; margin-bottom: 10px; color: var(--text-sub); }
-        
+
+        .nav-links a {
+            color: var(--text-sub);
+            text-decoration: none;
+            transition: 0.3s;
+            font-weight: 600;
+            padding: 8px 15px;
+            border-radius: 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+        }
+
+        .nav-links a:hover {
+            color: var(--highlight);
+            border-color: var(--highlight);
+            transform: translateY(-2px);
+        }
+
+        .theme-toggle {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1) rotate(15deg);
+        }
+
+        .section {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border);
+            margin-bottom: 30px;
+            padding: 30px;
+            border-radius: 28px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--highlight);
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            font-weight: 800;
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
         /* Grid */
-        .option-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media (min-width: 768px) { .option-grid { grid-template-columns: repeat(3, 1fr); } }
+        .option-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
 
-        .input-group { display: flex; gap: 5px; margin-bottom: 15px; }
-        input { 
-            flex: 1; padding: 12px; 
-            background: var(--input-bg); border: 1px solid var(--border-color); 
-            color: var(--text-main); border-radius: 8px; font-size: 14px; 
+        @media (min-width: 768px) {
+            .option-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
-        input:focus { outline: none; border-color: #3b82f6; }
-        
-        button { 
-            padding: 10px 15px; cursor: pointer; border-radius: 8px; border: none; 
-            background: #334155; color: white; font-weight: bold; transition: 0.2s; 
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
         }
-        button:hover { background: #475569; }
-        
-        .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .tag { 
-            background: var(--input-bg); padding: 6px 12px; border-radius: 20px; 
-            display: flex; align-items: center; gap: 8px; font-size: 13px; border: 1px solid var(--border-color); 
+
+        input {
+            flex: 1;
+            padding: 14px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
         }
-        .tag button { background: #ef4444; color: white; width: 20px; height: 20px; padding: 0; line-height: 20px; font-size: 10px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+
+        input:focus {
+            outline: none;
+            border-color: var(--highlight);
+            box-shadow: 0 0 0 4px var(--highlight-glow);
+        }
+
+        button {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 12px;
+            border: none;
+            background: var(--accent-gradient);
+            color: white;
+            font-weight: 800;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 10px var(--highlight-glow);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px var(--highlight-glow);
+        }
+
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .tag {
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--card-shadow);
+        }
+
+        .tag button {
+            background: #ef4444;
+            color: white;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: none;
+        }
 
         /* Table */
-        .table-wrapper { overflow-x: auto; margin-top: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; background: var(--input-bg); }
-        th, td { border-bottom: 1px solid var(--border-color); padding: 15px; text-align: center; font-size: 14px; color: var(--text-sub); }
-        th { background: var(--table-head); color: var(--text-sub); font-weight: 600; }
-        
-        .btn-approve { background: #10b981; color: white; }
-        .btn-ban { background: #ef4444; color: white; }
-        .btn-refresh { background: #3b82f6; color: white; margin-bottom: 15px; }
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--card-shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+            background: var(--card-bg);
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid var(--card-border);
+            padding: 18px;
+            text-align: center;
+            font-size: 15px;
+            color: var(--text-main);
+        }
+
+        th {
+            background: var(--highlight-glow);
+            color: var(--text-main);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-approve {
+            background: #10b981;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-ban {
+            background: #ef4444;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-refresh {
+            background: var(--highlight);
+            box-shadow: 0 4px 10px var(--highlight-glow);
+            margin-bottom: 20px;
+        }
+
+        /* 배경 장식 */
+        .bg-blob {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: var(--highlight-glow);
+            filter: blur(120px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.2;
+            display: none;
+        }
+
+        [data-theme="glass"] .bg-blob {
+            display: block;
+        }
+
+        .blob-1 {
+            top: -200px;
+            left: -200px;
+        }
+
+        .blob-2 {
+            bottom: -200px;
+            right: -200px;
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--highlight);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
     </style>
 </head>
-<body>
+
+<body class="animate-fade">
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
     <h1>🛡️ 관리자 대시보드</h1>
     <div class="nav-links">
-        <button class="nav-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+        <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
         <a href="/inventory.html">📦 재고관리</a>
         <a href="/calendar.html">📅 달력</a>
         <a href="/main.html">🏠 메인</a>
@@ -96,17 +336,20 @@
         <div class="option-grid">
             <div>
                 <h3>품목명</h3>
-                <div class="input-group"><input type="text" id="new-item" placeholder="예: 투명"><button onclick="addOption('itemName', 'new-item')">추가</button></div>
+                <div class="input-group"><input type="text" id="new-item" placeholder="예: 투명"><button
+                        onclick="addOption('itemName', 'new-item')">추가</button></div>
                 <div id="list-itemName" class="tag-container"></div>
             </div>
             <div>
                 <h3>사이즈</h3>
-                <div class="input-group"><input type="text" id="new-size" placeholder="예: 38"><button onclick="addOption('size', 'new-size')">추가</button></div>
+                <div class="input-group"><input type="text" id="new-size" placeholder="예: 38"><button
+                        onclick="addOption('size', 'new-size')">추가</button></div>
                 <div id="list-size" class="tag-container"></div>
             </div>
             <div>
                 <h3>길이</h3>
-                <div class="input-group"><input type="text" id="new-length" placeholder="예: 500"><button onclick="addOption('length', 'new-length')">추가</button></div>
+                <div class="input-group"><input type="text" id="new-length" placeholder="예: 500"><button
+                        onclick="addOption('length', 'new-length')">추가</button></div>
                 <div id="list-length" class="tag-container"></div>
             </div>
         </div>
@@ -116,46 +359,200 @@
         <h2>👋 가입 승인 대기</h2>
         <button onclick="loadPendingUsers()" class="btn-refresh">새로고침</button>
         <div class="table-wrapper">
-            <table><thead><tr><th>ID</th><th>닉네임</th><th>신청일</th><th>관리</th></tr></thead><tbody id="user-list"></tbody></table>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>닉네임</th>
+                        <th>신청일</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody id="user-list"></tbody>
+            </table>
         </div>
     </div>
 
     <div class="section">
         <h2>👥 전체 회원</h2>
         <div class="table-wrapper">
-            <table><thead><tr><th>ID</th><th>닉네임</th><th>권한</th><th>관리</th></tr></thead><tbody id="full-user-list"></tbody></table>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>닉네임</th>
+                        <th>권한</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody id="full-user-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔔 재고 부족 알림 설정</h2>
+        <p style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 20px;">품목별 알림 활성화 여부와 임계값을 설정할 수 있습니다.</p>
+
+        <h3 style="color:var(--highlight); margin-bottom:10px;">📦 완제품 (Finished Goods)</h3>
+        <div class="table-wrapper" style="margin-bottom:30px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>카테고리</th>
+                        <th>품목명</th>
+                        <th>규격</th>
+                        <th>알림 On/Off</th>
+                        <th>임계값(미만)</th>
+                        <th>상태</th>
+                    </tr>
+                </thead>
+                <tbody id="item-alert-list-finished"></tbody>
+            </table>
+        </div>
+
+        <h3 style="color:#10b981; margin-bottom:10px;">🏗️ 원자재 (Raw Materials)</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>카테고리</th>
+                        <th>품목명</th>
+                        <th>규격</th>
+                        <th>알림 On/Off</th>
+                        <th>임계값(미만)</th>
+                        <th>상태</th>
+                    </tr>
+                </thead>
+                <tbody id="item-alert-list-raw"></tbody>
+            </table>
         </div>
     </div>
 
     <script>
+        const themes = ['light', 'dark', 'glass', 'street'];
+        const themeIcons = { 'light': '☀️', 'dark': '🌙', 'glass': '💎', 'street': '🎤' };
+
         function initTheme() {
-            const saved = localStorage.getItem('theme') || 'dark';
-            document.body.setAttribute('data-theme', saved);
-            document.getElementById('theme-btn').innerText = saved === 'dark' ? '🌙' : '☀️';
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
         }
+
         function toggleTheme() {
-            const nxt = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', nxt);
-            localStorage.setItem('theme', nxt);
-            document.getElementById('theme-btn').innerText = nxt === 'dark' ? '🌙' : '☀️';
+            const current = document.body.getAttribute('data-theme') || 'dark';
+            let index = themes.indexOf(current);
+            index = (index + 1) % themes.length;
+            const next = themes[index];
+            applyTheme(next);
+            localStorage.setItem('theme', next);
+        }
+
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            const btn = document.getElementById('theme-btn');
+            if (btn) btn.innerHTML = themeIcons[theme] || '🌙';
+
+            document.body.classList.remove('animate-fade');
+            void document.body.offsetWidth;
+            document.body.classList.add('animate-fade');
         }
         initTheme();
-
+    </script>
+    <script src="js/nav.js"></script>
+    <script>
         const API_OPT = '/api/options';
         const API_ADMIN = '/api/admin';
+        const API_INV = '/api/inventory';
 
-        window.onload = function() { initTheme(); loadOptions(); loadPendingUsers(); loadFullUsers();};
+        window.onload = function () {
+            initTheme();
+            loadOptions();
+            loadPendingUsers();
+            loadFullUsers();
+            loadItemAlertSettings();
+        };
+
+        async function loadItemAlertSettings() {
+            try {
+                const res = await fetch(API_INV);
+                const items = await res.json();
+                const listF = document.getElementById('item-alert-list-finished');
+                const listR = document.getElementById('item-alert-list-raw');
+                listF.innerHTML = '';
+                listR.innerHTML = '';
+
+                items.forEach(item => {
+                    const isRaw = item.category === '원자재';
+                    const list = isRaw ? listR : listF;
+                    const badgeColor = isRaw ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)';
+                    const badgeTextColor = isRaw ? '#10b981' : '#3b82f6';
+
+                    list.innerHTML += `
+                        <tr>
+                            <td><span style="font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:10px; background:${badgeColor}; color:${badgeTextColor}; border:1px solid ${badgeTextColor}55;">${item.category}</span></td>
+                            <td style="font-weight:700;">${item.name}</td>
+                            <td style="color:var(--text-sub);">${item.size} / ${item.length}</td>
+                            <td>
+                                <label class="switch">
+                                    <input type="checkbox" ${item.alertEnabled ? 'checked' : ''} onchange="updateAlertSetting('${item._id}', 'alertEnabled', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <input type="number" value="${item.alertThreshold || 10}" 
+                                    style="width:70px; padding:6px; text-align:center;"
+                                    onchange="updateAlertSetting('${item._id}', 'alertThreshold', this.value)">
+                            </td>
+                            <td id="status-${item._id}" style="font-size:0.8rem; color:var(--text-sub);">대기중</td>
+                        </tr>
+                    `;
+                });
+
+                if (listF.innerHTML === '') listF.innerHTML = '<tr><td colspan="6" style="padding:30px; color:var(--text-sub);">등록된 완제품이 없습니다.</td></tr>';
+                if (listR.innerHTML === '') listR.innerHTML = '<tr><td colspan="6" style="padding:30px; color:var(--text-sub);">등록된 원자재가 없습니다.</td></tr>';
+
+            } catch (err) { console.error(err); }
+        }
+
+        async function updateAlertSetting(id, field, value) {
+            const statusEl = document.getElementById(`status-${id}`);
+            statusEl.innerText = '저장 중...';
+            statusEl.style.color = 'var(--highlight)';
+
+            try {
+                const body = { username: localStorage.getItem('nickname') || 'admin' };
+                body[field] = field === 'alertThreshold' ? Number(value) : value;
+
+                const res = await fetch(`${API_INV}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (res.ok) {
+                    statusEl.innerText = '✅ 저장됨';
+                    statusEl.style.color = '#10b981';
+                    setTimeout(() => { statusEl.innerText = '대기중'; statusEl.style.color = 'var(--text-sub)'; }, 2000);
+                } else {
+                    statusEl.innerText = '❌ 실패';
+                    statusEl.style.color = '#ef4444';
+                }
+            } catch (err) {
+                statusEl.innerText = '❌ 에러';
+                statusEl.style.color = '#ef4444';
+            }
+        }
 
         async function loadFullUsers() {
             try {
                 const res = await fetch('/api/admin/users');
-                if(res.status === 404) return;
+                if (res.status === 404) return;
                 const users = await res.json();
                 const list = document.getElementById('full-user-list');
                 list.innerHTML = '';
                 if (!users || users.length === 0) { list.innerHTML = '<tr><td colspan="4">회원 없음</td></tr>'; return; }
                 users.forEach(user => {
-                    list.innerHTML += `<tr><td>${user.username}</td><td>${user.nickname}</td><td>${user.role==='admin'?'<b style="color:#f59e0b">관리자</b>':'일반'}</td><td><button onclick="resetPassword('${user._id}')" style="background:#f59e0b;">PW초기화</button><button class="btn-ban" onclick="banUser('${user._id}')">강퇴</button></td></tr>`;
+                    list.innerHTML += `<tr><td>${user.username}</td><td>${user.nickname}</td><td>${user.role === 'admin' ? '<b style="color:#f59e0b">관리자</b>' : '일반'}</td><td><button onclick="resetPassword('${user._id}')" style="background:#f59e0b;">PW초기화</button><button class="btn-ban" onclick="banUser('${user._id}')">강퇴</button></td></tr>`;
                 });
             } catch (err) { console.error(err); }
         }
@@ -184,13 +581,13 @@
         async function addOption(type, inputId) {
             const input = document.getElementById(inputId);
             const value = input.value.trim();
-            if(!value) return;
-            const res = await fetch(API_OPT, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ type, value }) });
-            if(res.ok) { input.value = ''; loadOptions(); }
+            if (!value) return;
+            const res = await fetch(API_OPT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, value }) });
+            if (res.ok) { input.value = ''; loadOptions(); }
         }
 
         async function deleteOption(id) {
-            if(!confirm('삭제?')) return;
+            if (!confirm('삭제?')) return;
             await fetch(`${API_OPT}/${id}`, { method: 'DELETE' });
             loadOptions();
         }
@@ -205,22 +602,23 @@
                 list.innerHTML += `<tr><td>${user.username}</td><td>${user.nickname}</td><td>${new Date(user.createdAt).toLocaleDateString()}</td><td><button class="btn-approve" onclick="approveUser('${user._id}')">승인</button><button class="btn-ban" onclick="banUser('${user._id}')">거절</button></td></tr>`;
             });
         }
-        
-        async function approveUser(id) { 
+
+        async function approveUser(id) {
             if (!confirm("승인합니까?")) return;
             try {
                 const res = await fetch('/api/admin/approve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: id }) });
-                const data = await res.json(); alert(data.message); loadPendingUsers(); 
+                const data = await res.json(); alert(data.message); loadPendingUsers();
             } catch (err) { alert(err.message); }
         }
 
         async function banUser(id) {
-            if(!confirm('삭제합니까?')) return;
+            if (!confirm('삭제합니까?')) return;
             try {
                 const res = await fetch(`/api/admin/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: id }) });
-                if(res.ok) { alert('삭제됨'); loadPendingUsers(); loadFullUsers(); }
+                if (res.ok) { alert('삭제됨'); loadPendingUsers(); loadFullUsers(); }
             } catch (err) { console.error(err); }
         }
     </script>
 </body>
+
 </html>

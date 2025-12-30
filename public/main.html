@@ -1,234 +1,437 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🔥 Smart Factory</title>
+    <link rel="stylesheet" href="css/themes.css">
     <style>
-        /* [테마 변수 정의] */
-        :root {
-            /* ☀️ 기본: 화이트 테마 (수정 전 깔끔한 스타일) */
-            --bg-color: #f3f4f6;
-            --text-main: #1f2937;
-            --text-sub: #666666;
-            --card-bg: #ffffff;
-            --card-border: rgba(0, 0, 0, 0.08);
-            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            --highlight: #3b82f6;
-            --btn-hover: #f8f9fa;
-        }
-
-        [data-theme="dark"] {
-            /* 🌙 다크 테마 (딥 네이비 & 글래스모피즘) */
-            --bg-color: #0f172a;
-            --text-main: #f1f5f9;
-            --text-sub: #94a3b8;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --card-border: rgba(255, 255, 255, 0.1);
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-            --highlight: #60a5fa;
-            --btn-hover: rgba(30, 41, 59, 0.9);
-        }
-
         /* [애니메이션 정의] */
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translate3d(0, 20px, 0); }
-            to { opacity: 1; transform: translate3d(0, 0, 0); }
+            from {
+                opacity: 0;
+                transform: translate3d(0, 20px, 0);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
         }
 
         /* 1. 기본 설정 */
-        body { 
-            background-color: var(--bg-color); 
+        body {
+            background-color: var(--bg-color);
             color: var(--text-main);
-            margin: 0; 
-            padding: 20px; 
-            font-family: 'Pretendard', -apple-system, sans-serif; 
+            margin: 0;
+            padding: 20px;
+            font-family: 'Pretendard', -apple-system, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            transition: background-color 0.3s ease, color 0.3s ease; /* 테마 전환 부드럽게 */
-            animation: fadeInUp 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
         }
 
         /* 2. 헤더 영역 */
         .header-wrapper {
-            width: 100%; max-width: 500px; 
-            display: flex; justify-content: space-between; align-items: flex-start;
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             margin: 30px 0;
-            animation: fadeInUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            position: relative;
+            z-index: 10;
         }
-        .header-content { text-align: left; }
-        
-        .header h1 { 
-            font-size: 1.8rem; margin: 0; font-weight: 900; 
-            background: linear-gradient(to right, #4ade80, #3b82f6); 
-            -webkit-background-clip: text; 
+
+        .header-content {
+            text-align: left;
+        }
+
+        .header-content h1 {
+            font-size: 2rem;
+            margin: 0;
+            font-weight: 900;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
+            letter-spacing: -1px;
+            filter: drop-shadow(0 0 10px var(--highlight-glow));
         }
-        .header p { color: var(--text-sub); font-size: 0.95rem; margin-top: 5px; }
+
+        .header-content p {
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            margin-top: 5px;
+            font-weight: 500;
+        }
 
         /* 테마 토글 버튼 */
         .theme-toggle {
             background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--card-border);
             color: var(--text-main);
-            width: 45px; height: 45px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
             cursor: pointer;
             box-shadow: var(--card-shadow);
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .theme-toggle:hover { transform: rotate(15deg) scale(1.1); }
+
+        .theme-toggle:hover {
+            transform: rotate(15deg) scale(1.1);
+            box-shadow: 0 0 20px var(--highlight-glow);
+        }
 
         /* 3. 메뉴 그리드 */
-        .menu-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 15px; 
-            width: 100%; 
-            max-width: 500px; 
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            z-index: 10;
         }
 
         /* 4. 카드 공통 스타일 */
         .menu-card {
             background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--card-border);
-            border-radius: 24px; 
-            padding: 20px; 
-            text-align: center; 
+            border-radius: 28px;
+            padding: 24px;
+            text-align: center;
             cursor: pointer;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 15px;
             color: var(--text-main);
-            min-height: 140px;
+            min-height: 150px;
             box-shadow: var(--card-shadow);
-            
-            backdrop-filter: blur(10px); /* 다크모드일 때 유리 효과 */
-            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
 
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            
-            opacity: 0; 
+            opacity: 0;
             animation: fadeInUp 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
+        .menu-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
         /* 순차 등장 */
-        .menu-card:nth-child(1) { animation-delay: 0.1s; }
-        .menu-card:nth-child(2) { animation-delay: 0.15s; }
-        .menu-card:nth-child(3) { animation-delay: 0.2s; }
-        .menu-card:nth-child(4) { animation-delay: 0.25s; }
-        .menu-card:nth-child(5) { animation-delay: 0.3s; }
-        .menu-card:nth-child(6) { animation-delay: 0.35s; }
+        .menu-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
 
-        .menu-card:hover { 
-            transform: translateY(-5px) scale(1.02); 
-            background: var(--btn-hover);
+        .menu-card:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .menu-card:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .menu-card:nth-child(4) {
+            animation-delay: 0.25s;
+        }
+
+        .menu-card:nth-child(5) {
+            animation-delay: 0.3s;
+        }
+
+        .menu-card:nth-child(6) {
+            animation-delay: 0.35s;
+        }
+
+        .menu-card:hover {
+            transform: translateY(-8px) scale(1.03);
             border-color: var(--highlight);
+            box-shadow: 0 15px 30px var(--highlight-glow);
         }
-        .menu-card:active { transform: scale(0.95); }
 
-        .menu-card .icon { 
-            font-size: 2.8rem; 
-            transition: transform 0.3s ease;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        .menu-card:active {
+            transform: scale(0.95);
         }
-        .menu-card:hover .icon { transform: scale(1.1) rotate(5deg); }
-        .menu-card span { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.5px; }
+
+        .menu-card .icon {
+            font-size: 3rem;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+
+        .menu-card:hover .icon {
+            transform: scale(1.2) rotate(8deg);
+        }
+
+        .menu-card span {
+            font-weight: 800;
+            font-size: 1.15rem;
+            letter-spacing: -0.5px;
+        }
 
         /* 5. 생산 기록 버튼 (강조) */
-        .card-prod { 
-            grid-column: span 2; 
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        .card-prod {
+            grid-column: span 2;
+            background: var(--accent-gradient);
             border: none;
-            color: white !important; /* 항상 흰색 글씨 */
-            flex-direction: row; 
-            min-height: 100px;
-            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
+            color: white !important;
+            flex-direction: row;
+            min-height: 110px;
+            box-shadow: 0 10px 25px var(--highlight-glow);
         }
+
         .card-prod:hover {
-            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-            box-shadow: 0 15px 35px -5px rgba(16, 185, 129, 0.6);
+            box-shadow: 0 15px 35px var(--highlight-glow);
+            filter: brightness(1.1);
+        }
+
+        .card-prod .icon {
+            font-size: 3.5rem;
+            margin-right: 15px;
         }
 
         /* 6. 완료 상태 버튼 */
-        .btn-active { border: 1px solid rgba(59, 130, 246, 0.5); }
-        .btn-done { 
-            background: rgba(0, 0, 0, 0.05); /* 투명도 조절로 양쪽 테마 대응 */
-            border: 1px solid var(--card-border); 
-            color: var(--text-sub); 
+        .btn-done {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-sub) !important;
             cursor: default;
             box-shadow: none;
+            opacity: 0.7;
         }
-        [data-theme="dark"] .btn-done { background: rgba(15, 23, 42, 0.5); }
-        
-        .btn-done:hover { transform: none; box-shadow: none; }
-        .btn-done:active { transform: none; }
-        .btn-done .icon { filter: grayscale(100%); opacity: 0.5; }
+
+        [data-theme="dark"] .btn-done {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-done:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-done:active {
+            transform: none;
+        }
+
+        .btn-done .icon {
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
 
         /* 관리자 버튼 */
-        .card-admin { 
-            grid-column: span 2; 
-            background: rgba(99, 102, 241, 0.1); 
-            border: 1px dashed rgba(99, 102, 241, 0.5);
-            color: #818cf8;
-            min-height: 70px;
+        .card-admin {
+            grid-column: span 2;
+            background: rgba(99, 102, 241, 0.05);
+            border: 1px dashed var(--highlight);
+            color: var(--highlight);
+            min-height: 80px;
             flex-direction: row;
         }
 
         /* 7. 로그아웃 버튼 */
         .logout-btn {
-            margin-top: 40px; 
-            padding: 12px 25px;
-            background: transparent; 
-            color: var(--text-sub); 
-            border: 1px solid var(--text-sub); 
+            margin-top: 50px;
+            padding: 14px 35px;
+            background: transparent;
+            color: var(--text-sub);
+            border: 2px solid var(--card-border);
             border-radius: 50px;
-            font-weight: 600; 
-            font-size: 0.9rem;
-            cursor: pointer; 
-            transition: all 0.2s;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            letter-spacing: 1px;
+            z-index: 10;
             animation: fadeInUp 1s forwards;
             animation-delay: 0.5s;
             opacity: 0;
         }
+
         .logout-btn:hover {
             border-color: #ef4444;
             color: #ef4444;
             background: rgba(239, 68, 68, 0.1);
+            transform: translateY(-3px);
         }
-        .logout-btn:active { transform: scale(0.95); }
+
+        .logout-btn:active {
+            transform: scale(0.95);
+        }
 
         /* 로딩 레이어 */
-        #loading-layer { 
-            display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: var(--bg-color); /* 배경색도 테마 따라감 */
-            z-index: 9999; 
-            justify-content: center; align-items: center; flex-direction: column; 
-            transition: opacity 0.4s ease;
+        #loading-layer {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--loading-bg);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease;
         }
-        .spinner { width: 45px; height: 45px; border: 4px solid var(--card-border); border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .flashy-loader {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 6px solid transparent;
+            border-top-color: var(--highlight);
+            border-bottom-color: var(--highlight);
+            animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite,
+                pulse-border 1.5s ease-in-out infinite;
+            box-shadow: 0 0 20px var(--highlight-glow);
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse-border {
+
+            0%,
+            100% {
+                border-width: 6px;
+                opacity: 1;
+            }
+
+            50% {
+                border-width: 10px;
+                opacity: 0.7;
+            }
+        }
+
+        .loader-text {
+            margin-top: 30px;
+            font-size: 1.2rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--text-main);
+            text-transform: uppercase;
+            animation: pulse-text 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-text {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.95);
+            }
+        }
+
+        /* 배경 장식 */
+        .bg-blob {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: var(--highlight-glow);
+            filter: blur(100px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.3;
+            display: none;
+        }
+
+        [data-theme="glass"] .bg-blob {
+            display: block;
+        }
+
+        .blob-1 {
+            top: -150px;
+            left: -150px;
+        }
+
+        .blob-2 {
+            bottom: -150px;
+            right: -150px;
+        }
     </style>
 </head>
-<body>
-    <div id="loading-layer"><div class="spinner"></div><p style="margin-top:20px; font-weight:bold; color:var(--text-sub);">SYSTEM SYNC...</p></div>
+
+<body class="animate-fade">
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+
+    <div id="loading-layer">
+        <div class="flashy-loader"></div>
+        <p class="loader-text">Initializing Factory OS...</p>
+    </div>
 
     <div class="header-wrapper">
         <div class="header-content">
             <p style="font-size:0.9rem; font-weight:600; color:var(--text-sub); margin-bottom:5px;">FACTORY OS v2.0</p>
-            <h1>HELLO, <span id="user-display" style="color:var(--text-main);">User</span>.</h1>
+            <h1>HELLO, <span id="user-display">User</span>.</h1>
             <p>오늘도 안전 작업 하세요!</p>
         </div>
         <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
     </div>
+
+    <!-- [대시보드 요약 섹션] -->
+    <div class="dashboard-summary"
+        style="width: 100%; max-width: 500px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; z-index: 10; position: relative;">
+        <div class="summary-item"
+            style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 15px; text-align: center; backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); box-shadow: var(--card-shadow); animation: fadeInUp 0.6s forwards; animation-delay: 0.1s; opacity: 0;">
+            <div style="font-size: 1.5rem; margin-bottom: 5px;">👥</div>
+            <div style="font-size: 0.75rem; color: var(--text-sub); font-weight: 700; margin-bottom: 3px;">출근 현황</div>
+            <div id="dash-att-count" style="font-size: 1.1rem; font-weight: 900; color: var(--highlight);">--</div>
+        </div>
+        <div class="summary-item"
+            style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 15px; text-align: center; backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); box-shadow: var(--card-shadow); animation: fadeInUp 0.6s forwards; animation-delay: 0.15s; opacity: 0;">
+            <div style="font-size: 1.5rem; margin-bottom: 5px;">⚠️</div>
+            <div style="font-size: 0.75rem; color: var(--text-sub); font-weight: 700; margin-bottom: 3px;">재고 부족</div>
+            <div id="dash-low-stock" style="font-size: 1.1rem; font-weight: 900; color: #ef4444;">--</div>
+        </div>
+        <div class="summary-item"
+            style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 15px; text-align: center; backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); box-shadow: var(--card-shadow); animation: fadeInUp 0.6s forwards; animation-delay: 0.2s; opacity: 0;">
+            <div style="font-size: 1.5rem; margin-bottom: 5px;">🚀</div>
+            <div style="font-size: 0.75rem; color: var(--text-sub); font-weight: 700; margin-bottom: 3px;">최근 작업</div>
+            <div id="dash-latest-item"
+                style="font-size: 0.8rem; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 5px;">
+                --</div>
+        </div>
+    </div>
+    <script src="js/nav.js"></script>
 
     <div class="menu-grid">
         <button class="menu-card btn-active" id="btn-check-in" onclick="handleAttendance('check-in')">
@@ -249,7 +452,8 @@
             <div class="icon">🔨</div><span>생산 등록</span>
         </button>
 
-        <button id="admin-menu" class="menu-card card-admin" style="display:none;" onclick="location.href='/admin.html'">
+        <button id="admin-menu" class="menu-card card-admin" style="display:none;"
+            onclick="location.href='/admin.html'">
             <div class="icon">🛡️</div><span>관리자 설정</span>
         </button>
     </div>
@@ -260,45 +464,104 @@
         const currentUser = localStorage.getItem('username');
         const currentNick = localStorage.getItem('nickname');
 
+        // KST 기준 날짜 문자열 도출 (YYYY-MM-DD)
+        function getKSTDateString() {
+            const now = new Date();
+            const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+            return kst.toISOString().split('T')[0];
+        }
+
+        const themes = ['light', 'dark', 'glass', 'street'];
+        const themeIcons = {
+            'light': '☀️',
+            'dark': '🌙',
+            'glass': '💎',
+            'street': '🎤'
+        };
+
         // [테마 관리 로직]
         function initTheme() {
             const savedTheme = localStorage.getItem('theme') || 'dark'; // 기본값 다크
-            document.body.setAttribute('data-theme', savedTheme);
-            updateThemeBtn(savedTheme);
+            applyTheme(savedTheme);
         }
 
         function toggleTheme() {
-            const currentTheme = document.body.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeBtn(newTheme);
+            const current = document.body.getAttribute('data-theme') || 'dark';
+            let index = themes.indexOf(current);
+            index = (index + 1) % themes.length;
+            const next = themes[index];
+            applyTheme(next);
+            localStorage.setItem('theme', next);
         }
 
-        function updateThemeBtn(theme) {
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
             const btn = document.getElementById('theme-btn');
-            if(theme === 'dark') {
-                btn.innerHTML = '🌙'; // 다크모드일 때 달 아이콘
-            } else {
-                btn.innerHTML = '☀️'; // 라이트모드일 때 해 아이콘
-            }
+            if (btn) btn.innerHTML = themeIcons[theme] || '🌙';
+
+            // 테마 변경 시 애니메이션 효과를 위해 잠깐 클래스 제거 후 추가
+            document.body.classList.remove('animate-fade');
+            void document.body.offsetWidth; // reflow
+            document.body.classList.add('animate-fade');
         }
 
         window.onload = async () => {
-            initTheme(); // 테마 초기화
-
-            if (!currentUser) { location.href = '/'; return; }
-            document.getElementById('user-display').innerText = currentNick || currentUser;
-            
-            try {
-                await Promise.all([checkAdminStatus(), checkAttendanceStatus()]);
-            } catch (err) { console.error(err); }
-            finally { 
-                const loader = document.getElementById('loading-layer');
-                loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 400); 
+            initTheme();
+            const role = localStorage.getItem('role');
+            if (role === 'admin') {
+                document.getElementById('admin-menu').style.display = 'flex';
+            } else {
+                checkAdminStatus(); // Double check with server
             }
+
+            document.getElementById('user-display').innerText = currentNick || 'User';
+
+            // 출퇴근 상태 즉시 로드
+            if (currentUser) {
+                checkAttendanceStatus();
+            }
+
+            // 대시보드 데이터 로드
+            loadDashboardData();
+
+            setTimeout(() => {
+                const layer = document.getElementById('loading-layer');
+                layer.style.opacity = '0';
+                setTimeout(() => layer.style.display = 'none', 500);
+            }, 800);
         };
+
+        async function loadDashboardData() {
+            try {
+                const todayKST = getKSTDateString();
+                const [invRes, attRes] = await Promise.all([
+                    fetch('/api/inventory'),
+                    fetch('/api/attendance?date=' + todayKST)
+                ]);
+
+                if (invRes.ok) {
+                    const inventory = await invRes.json();
+                    // 1. 재고 부족 (품목별 설정 기준)
+                    const lowStock = inventory.filter(item => item.alertEnabled !== false && item.quantity < (item.alertThreshold || 10)).length;
+                    document.getElementById('dash-low-stock').innerText = lowStock + '건';
+
+                    // 2. 최근 작업 품목
+                    const sorted = inventory.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                    if (sorted.length > 0) {
+                        document.getElementById('dash-latest-item').innerText = sorted[0].name;
+                    }
+                }
+
+                if (attRes.ok) {
+                    const attendance = await attRes.json();
+                    // 3. 오늘 출근 인원
+                    const todayAtt = attendance.filter(a => !a.outTime).length;
+                    document.getElementById('dash-att-count').innerText = todayAtt + '명';
+                }
+            } catch (err) {
+                console.error("Dash Load Fail:", err);
+            }
+        }
 
         async function checkAdminStatus() {
             const res = await fetch(`/api/admin/check`);
@@ -307,32 +570,38 @@
         }
 
         async function checkAttendanceStatus() {
-            const res = await fetch(`/api/attendance/status/${currentUser}`);
-            const data = await res.json();
-            if (data) {
-                if (data.clockIn) updateButtonUI('check-in', data.clockIn);
-                if (data.clockOut) updateButtonUI('check-out', data.clockOut);
-            }
+            try {
+                const res = await fetch(`/api/attendance/status/${currentUser}`);
+                const data = await res.json();
+                if (data) {
+                    if (data.clockIn) updateButtonUI('check-in', data.clockIn);
+                    if (data.clockOut) updateButtonUI('check-out', data.clockOut);
+                }
+            } catch (err) { console.error(err); }
         }
 
         function updateButtonUI(type, isoTime) {
-            const time = new Date(isoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            // 서버에서 받은 시간은 ISO 지만, 화면에 뿌릴 때는 KST 기준으로 변환
+            const d = new Date(isoTime);
+            const timeStr = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+
             const isBtnIn = type === 'check-in';
             const btn = document.getElementById(isBtnIn ? 'btn-check-in' : 'btn-check-out');
-            
+
             btn.onclick = null;
+            btn.disabled = true;
             btn.className = 'menu-card btn-done';
             btn.innerHTML = `
                 <div class="icon">${isBtnIn ? '✅' : '🏠'}</div>
                 <span style="color:var(--text-sub);">${isBtnIn ? '출근' : '퇴근'} 완료</span>
-                <small style="font-weight:bold; color:var(--text-sub); opacity:0.8;">${time}</small>
+                <small style="font-weight:bold; color:var(--highlight); opacity:0.9;">${timeStr}</small>
             `;
         }
 
         async function handleAttendance(type) {
             const msg = type === 'check-in' ? '오늘 하루도 파이팅입니다! 출근 찍을까요?' : '고생하셨습니다! 퇴근 찍을까요?';
             if (!confirm(msg)) return;
-            
+
             const res = await fetch(`/api/attendance/${type}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -341,21 +610,22 @@
             if (res.ok) location.reload();
         }
 
-        function logout() { 
+        function logout() {
             // 1. 현재 설정된 테마를 변수에 잠시 저장해둡니다.
             const currentTheme = localStorage.getItem('theme');
-            
+
             // 2. 저장소 전체를 비웁니다. (로그인 정보 삭제됨)
-            localStorage.clear(); 
-            
+            localStorage.clear();
+
             // 3. 아까 저장해둔 테마 설정만 다시 복구합니다.
-            if(currentTheme) {
+            if (currentTheme) {
                 localStorage.setItem('theme', currentTheme);
             }
-            
+
             // 4. 로그인 페이지로 이동
-            location.href = '/'; 
+            location.href = '/';
         }
     </script>
 </body>
+
 </html>

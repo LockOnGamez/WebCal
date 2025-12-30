@@ -47,13 +47,19 @@ router.post("/", async (req, res) => {
   }
 });
 
-// 3. 수정 (수량 업데이트)
+// 3. 수정 (수량 및 알림 설정 업데이트)
 router.put("/:id", async (req, res) => {
   try {
-    const { quantity, username } = req.body;
+    const { quantity, alertEnabled, alertThreshold, username } = req.body;
+    const updateData = { lastUpdatedBy: username, updatedAt: Date.now() };
+
+    if (quantity !== undefined) updateData.quantity = quantity;
+    if (alertEnabled !== undefined) updateData.alertEnabled = alertEnabled;
+    if (alertThreshold !== undefined) updateData.alertThreshold = alertThreshold;
+
     const updatedItem = await Item.findByIdAndUpdate(
       req.params.id,
-      { quantity, lastUpdatedBy: username, updatedAt: Date.now() },
+      updateData,
       { new: true }
     );
     await redisClient.del(CACHE_KEY);

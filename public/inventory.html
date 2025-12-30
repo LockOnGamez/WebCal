@@ -1,173 +1,387 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>📦 재고 관리</title>
+    <link rel="stylesheet" href="css/themes.css">
     <style>
-        /* [테마 변수 정의 - 눈이 편한 소프트 모드 적용] */
-        :root {
-            /* ☀️ 라이트 모드 (수정됨: 너무 쨍하지 않게 조정) */
-            --bg-color: #f3f4f6; /* 약간 더 차분한 그레이 */
-            --text-main: #1f2937; /* 완전 블랙 대신 짙은 다크 그레이 */
-            --text-sub: #6b7280;
-            --card-bg: #ffffff;
-            --card-border: #e5e7eb;
-            --input-bg: #f9fafb;
-            --input-border: #d1d5db;
-            --table-head-bg: #f3f4f6;
-            --table-row-even-bg: #e5e7eb; /* [부활] 짝수 행 배경색 */
-            --table-row-hover: #dbeafe;    /* 호버 시 연한 파랑 */
-            --btn-text: #374151;
-        }
-
-        [data-theme="dark"] {
-            /* 🌙 다크 모드 */
-            --bg-color: #0f172a;
-            --text-main: #f1f5f9;
-            --text-sub: #94a3b8;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --card-border: rgba(255, 255, 255, 0.1);
-            --input-bg: rgba(15, 23, 42, 0.8);
-            --input-border: #334155;
-            --table-head-bg: #1e293b;
-            --table-row-even-bg: rgba(255, 255, 255, 0.07); /* [부활] 다크모드 짝수 행 */
-            --table-row-hover: rgba(59, 130, 246, 0.2);
-            --btn-text: #cbd5e1;
-        }
-
         /* 기본 설정 */
-        body { 
-            padding: 15px; 
-            font-family: 'Pretendard', sans-serif; 
-            background-color: var(--bg-color); 
+        body {
+            padding: 20px;
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg-color);
             color: var(--text-main);
-            margin: 0; 
-            transition: background-color 0.3s, color 0.3s;
-        }
-        
-        /* 헤더 */
-        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .header-box h1 { 
-            margin: 0; font-size: 1.5rem; 
-            background: linear-gradient(to right, #818cf8, #3b82f6); 
-            -webkit-background-clip: text; 
-            background-clip: text;
-            -webkit-text-fill-color: transparent; 
-        }
-        
-        /* 카드 스타일 */
-        .card { 
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--card-border);
-            padding: 20px; 
-            border-radius: 20px; 
-            margin-bottom: 25px; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin: 0;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
+            min-height: 100vh;
         }
 
-        .input-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        @media (min-width: 768px) { .input-grid { grid-template-columns: repeat(3, 1fr) 100px 120px 100px; } }
+        /* 헤더 */
+        .header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-box h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1.5px;
+            filter: drop-shadow(0 0 10px var(--highlight-glow));
+        }
+
+        /* 카드 스타일 */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border);
+            padding: 30px;
+            border-radius: 28px;
+            margin-bottom: 30px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            z-index: 10;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        @media (min-width: 768px) {
+            .input-grid {
+                grid-template-columns: repeat(3, 1fr) 100px 120px 100px;
+            }
+        }
 
         /* 입력창 스타일 */
-        select, input { 
-            width: 100%; height: 50px; 
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
-            color: var(--text-main);
-            border-radius: 12px; 
-            padding: 0 15px; 
-            font-size: 15px; 
-            box-sizing: border-box; 
-        }
-        select:focus, input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-
-        .btn-submit { 
-            background: #3b82f6; color: white; border: none; 
-            cursor: pointer; font-weight: bold; border-radius: 12px; height: 50px; 
-            transition: 0.2s;
-        }
-        .btn-submit:active { transform: scale(0.98); }
-
-        /* 필터 버튼 */
-        .filter-container { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .filter-btn { 
-            padding: 8px 16px; border-radius: 50px; 
-            border: 1px solid var(--input-border); 
-            background: var(--card-bg); 
-            color: var(--text-sub); 
-            cursor: pointer; font-weight: 600; white-space: nowrap; transition: 0.2s;
-        }
-        .filter-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
-        
-        /* PC 테이블 (지그재그 적용) */
-        .pc-table { width: 100%; border-collapse: separate; border-spacing: 0; display: none; margin-bottom: 30px; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-border); }
-        @media (min-width: 768px) { .pc-table { display: table; } }
-
-        .pc-table th { 
-            background: var(--table-head-bg); color: var(--text-sub); padding: 15px; 
-            font-size: 13px; text-transform: uppercase; border-bottom: 1px solid var(--card-border); 
-        }
-        .pc-table td { 
-            padding: 15px; text-align: center; 
-            border-bottom: 1px solid var(--card-border); 
-            background: var(--card-bg); /* 기본 배경 */
-            color: var(--text-main);
-        }
-        /* [중요] 지그재그 효과 부활 (짝수 행 배경색) */
-        .pc-table tbody tr:nth-child(even) td { background-color: var(--table-row-even-bg); }
-        .pc-table tbody tr:hover td { background-color: var(--table-row-hover); }
-
-        /* 모바일 카드 */
-        .mobile-only-section { display: block; }
-        @media (min-width: 768px) { .mobile-only-section { display: none; } }
-
-        .mobile-card { 
+        select,
+        input {
+            width: 100%;
+            height: 55px;
             background: var(--card-bg);
             border: 1px solid var(--card-border);
-            border-radius: 16px; 
-            padding: 18px; 
-            margin-bottom: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
+            color: var(--text-main);
+            border-radius: 14px;
+            padding: 0 18px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--highlight);
+            box-shadow: 0 0 0 4px var(--highlight-glow);
+            transform: translateY(-2px);
+        }
+
+        .btn-submit {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 800;
+            border-radius: 14px;
+            height: 55px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 15px var(--highlight-glow);
+            letter-spacing: 1px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px var(--highlight-glow);
+        }
+
+        .btn-submit:active {
+            transform: scale(0.97);
+        }
+
+        /* 필터 버튼 */
+        .filter-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-sub);
+            cursor: pointer;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: var(--card-shadow);
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-2px);
+            border-color: var(--highlight);
+            color: var(--highlight);
+        }
+
+        .filter-btn.active {
+            background: var(--highlight);
+            color: white;
+            border-color: var(--highlight);
+            box-shadow: 0 4px 12px var(--highlight-glow);
+        }
+
+        /* PC 테이블 */
+        .pc-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            display: none;
+            margin-bottom: 35px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--card-shadow);
+            position: relative;
+            z-index: 10;
+        }
+
+        @media (min-width: 768px) {
+            .pc-table {
+                display: table;
+            }
+
+            .mobile-only-section {
+                display: none;
+            }
+        }
+
+        .pc-table th {
+            background: var(--highlight-glow);
+            color: var(--text-main);
+            padding: 20px;
+            font-size: 14px;
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .pc-table td {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            transition: background 0.2s;
+        }
+
+        .pc-table tbody tr:hover td {
+            background-color: var(--btn-hover);
+        }
+
+        /* 모바일 카드 */
+        .mobile-card {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 15px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+
+        .mobile-card:hover {
+            transform: translateY(-5px);
         }
 
         /* 수량 컨트롤 */
-        .qty-control { display: inline-flex; align-items: center; background: var(--input-bg); padding: 4px; border-radius: 10px; gap: 8px; border: 1px solid var(--input-border); }
-        .qty-text { font-size: 1.1rem; font-weight: 800; min-width: 40px; text-align: center; color: var(--text-main); }
-        .qty-text.zero { color: #ef4444; }
-        .qty-control button { 
-            width: 32px; height: 32px; border: none; border-radius: 8px; 
-            background: var(--card-bg); color: var(--text-main); font-weight: bold; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        .qty-control {
+            display: inline-flex;
+            align-items: center;
+            background: var(--highlight-glow);
+            padding: 5px;
+            border-radius: 12px;
+            gap: 10px;
+            border: 1px solid var(--card-border);
+        }
+
+        .qty-text {
+            font-size: 1.2rem;
+            font-weight: 900;
+            min-width: 45px;
+            text-align: center;
+            color: var(--text-main);
+        }
+
+        .qty-text.zero {
+            color: #ef4444;
+        }
+
+        .qty-control button {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 10px;
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s;
+        }
+
+        .qty-control button:active {
+            transform: scale(0.9);
         }
 
         /* 뱃지 */
-        .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: white; }
-        .badge-finished { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); }
-        .badge-raw { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.4); }
-        .badge-stock-out { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); margin-left: 5px; }
+        .badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 800;
+            color: white;
+            text-transform: uppercase;
+        }
+
+        .badge-finished {
+            background: #10b981;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .badge-raw {
+            background: #3b82f6;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        .badge-stock-out {
+            background: #ef4444;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+            margin-left: 8px;
+        }
+
+        /* 배경 장식 */
+        .bg-blob {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: var(--highlight-glow);
+            filter: blur(120px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.2;
+            display: none;
+        }
+
+        [data-theme="glass"] .bg-blob {
+            display: block;
+        }
+
+        .blob-1 {
+            top: -200px;
+            left: -200px;
+        }
+
+        .blob-2 {
+            bottom: -200px;
+            right: -200px;
+        }
 
         /* 로딩 */
-        #loading-layer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; opacity: 0.95; }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--input-border); border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
+        #loading-layer {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--loading-bg);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
+
         /* 네비게이션 버튼 */
-        .nav-btn { padding:10px 15px; background:var(--card-bg); color:var(--btn-text); border:1px solid var(--card-border); border-radius:10px; cursor:pointer; font-weight:600; font-size:13px; display: flex; align-items: center; gap: 5px; text-decoration: none; transition: 0.2s; }
-        .nav-btn:hover { background:var(--input-bg); }
-        .nav-btn-primary { background: #3b82f6; color: white; border: none; }
-        .nav-btn-primary:hover { background: #2563eb; }
+        .nav-btn {
+            padding: 12px 20px;
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: var(--card-shadow);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-3px);
+            border-color: var(--highlight);
+            color: var(--highlight);
+        }
+
+        .nav-btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px var(--highlight-glow);
+        }
+
+        .theme-toggle {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border-radius: 50%;
+        }
     </style>
 </head>
-<body>
+
+<body class="animate-fade">
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
     <div id="loading-layer">
-        <div class="spinner"></div>
-        <p style="margin-top: 15px; font-weight: bold; color: var(--text-sub);">데이터 동기화...</p>
+        <div class="flashy-loader"></div>
+        <p
+            style="margin-top: 25px; font-weight: 900; letter-spacing: 2px; color: var(--text-main); text-transform: uppercase; animation: pulse-glow 1.5s infinite;">
+            Syncing Inventory...</p>
     </div>
 
     <div class="header-box">
-        <h1>📦 재고 현황</h1>
-        <div style="display: flex; gap: 8px; align-items: center;">
+        <h1 class="animate-slide">📦 재고 현황</h1>
+        <div style="display: flex; gap: 12px; align-items: center;" class="animate-slide">
+            <button onclick="toggleTheme()" class="nav-btn theme-toggle" id="theme-btn">🌙</button>
             <button onclick="location.href='/main.html'" class="nav-btn">🏠 홈</button>
             <button onclick="location.href='/calendar.html'" class="nav-btn nav-btn-primary">📅 달력</button>
         </div>
@@ -186,35 +400,60 @@
             <button class="btn-submit" onclick="addItem()">등록</button>
         </div>
     </div>
+    <div id="toast-container"></div>
 
     <div class="filter-container">
         <button class="filter-btn active" onclick="filterItems('전체', this)">전체</button>
         <button class="filter-btn" onclick="filterItems('완제품', this)">완제품</button>
         <button class="filter-btn" onclick="filterItems('원자재', this)">원자재</button>
         <button class="filter-btn" onclick="filterItems('품절', this)" style="color:#ef4444;">🚨 품절</button>
-        <input type="text" id="search-input" placeholder="검색..." onkeyup="searchItems()" style="height:34px; width:120px; background:var(--card-bg); border:1px solid var(--input-border);">
+        <input type="text" id="search-input" placeholder="검색..." onkeyup="searchItems()"
+            style="height:34px; width:120px; background:var(--card-bg); border:1px solid var(--input-border);">
     </div>
 
     <div id="inventory-content">
         <div id="finished-section">
-            <h2 style="color:#10b981; font-size: 1.1rem; border-bottom:1px solid var(--card-border); padding-bottom:10px;">🟢 완제품 <span id="count-finished" style="font-size:0.8rem; color:var(--text-sub);"></span></h2>
+            <h2
+                style="color:#10b981; font-size: 1.1rem; border-bottom:1px solid var(--card-border); padding-bottom:10px;">
+                🟢 완제품 <span id="count-finished" style="font-size:0.8rem; color:var(--text-sub);"></span></h2>
             <table class="pc-table">
-                <thead><tr><th>상태</th><th>품목 정보</th><th>사이즈</th><th>길이</th><th>수량 제어</th><th>관리</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>상태</th>
+                        <th>품목 정보</th>
+                        <th>사이즈</th>
+                        <th>길이</th>
+                        <th>수량 제어</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
                 <tbody id="pc-list-finished"></tbody>
             </table>
             <div class="mobile-only-section" id="mobile-list-finished"></div>
         </div>
-        
+
         <div id="raw-section" style="margin-top:40px;">
-            <h2 style="color:#3b82f6; font-size: 1.1rem; border-bottom:1px solid var(--card-border); padding-bottom:10px;">🔵 원자재 <span id="count-raw" style="font-size:0.8rem; color:var(--text-sub);"></span></h2>
+            <h2
+                style="color:#3b82f6; font-size: 1.1rem; border-bottom:1px solid var(--card-border); padding-bottom:10px;">
+                🔵 원자재 <span id="count-raw" style="font-size:0.8rem; color:var(--text-sub);"></span></h2>
             <table class="pc-table">
-                <thead><tr><th>상태</th><th>품목 정보</th><th>사이즈</th><th>길이</th><th>수량 제어</th><th>관리</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>상태</th>
+                        <th>품목 정보</th>
+                        <th>사이즈</th>
+                        <th>길이</th>
+                        <th>수량 제어</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
                 <tbody id="pc-list-raw"></tbody>
             </table>
             <div class="mobile-only-section" id="mobile-list-raw"></div>
         </div>
     </div>
 
+    <script src="js/nav.js"></script>
     <script>
         const API_URL = '/api/inventory';
         const API_OPT = '/api/options';
@@ -222,9 +461,33 @@
         const currentNick = localStorage.getItem('nickname');
         let allItemsData = [];
 
+        const themes = ['light', 'dark', 'glass', 'street'];
+        const themeIcons = {
+            'light': '☀️', 'dark': '🌙', 'glass': '💎', 'street': '🎤'
+        };
+
         function initTheme() {
             const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.body.setAttribute('data-theme', savedTheme);
+            applyTheme(savedTheme);
+        }
+
+        function toggleTheme() {
+            const current = document.body.getAttribute('data-theme') || 'dark';
+            let index = themes.indexOf(current);
+            index = (index + 1) % themes.length;
+            const next = themes[index];
+            applyTheme(next);
+            localStorage.setItem('theme', next);
+        }
+
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            const btn = document.getElementById('theme-btn');
+            if (btn) btn.innerHTML = themeIcons[theme] || '🌙';
+
+            document.body.classList.remove('animate-fade');
+            void document.body.offsetWidth;
+            document.body.classList.add('animate-fade');
         }
 
         async function prefetchHolidays() {
@@ -305,15 +568,24 @@
                 const qtyClass = item.quantity <= 0 ? 'zero' : '';
                 const badgeClass = isRaw ? 'badge-raw' : 'badge-finished';
                 const stockOut = item.quantity <= 0 ? '<span class="badge badge-stock-out">품절</span>' : '';
+                const isLowStock = item.alertEnabled !== false && item.quantity < (item.alertThreshold || 10) && item.quantity > 0;
+                const lowStockClass = isLowStock ? 'style="animation: pulse-red 2s infinite; border-radius: 8px;"' : '';
+                const progressWidth = Math.min((item.quantity / 50) * 100, 100); // 50개를 100% 기준으로 설정
+                const lowStockBadge = isLowStock ? '<span class="badge" style="background:#f59e0b; margin-left:5px;">⚠️ 부족</span>' : '';
 
                 const row = `
                     <tr>
-                        <td><span class="badge ${badgeClass}">${item.category}</span>${stockOut}</td>
-                        <td style="text-align:left; font-weight:600; color:var(--text-main); padding-left:20px;">${item.name}</td>
+                        <td><span class="badge ${badgeClass}">${item.category}</span>${stockOut}${lowStockBadge}</td>
+                        <td style="text-align:left; font-weight:600; color:var(--text-main); padding-left:20px;">
+                            ${item.name}
+                            <div class="progress-container" style="width: 150px; margin-top: 5px;">
+                                <div class="progress-bar" style="width: ${progressWidth}%"></div>
+                            </div>
+                        </td>
                         <td><span style="color:var(--text-sub);">${item.size}</span></td>
                         <td><span style="color:var(--text-sub);">${item.length}</span></td>
                         <td>
-                            <div class="qty-control">
+                            <div class="qty-control" ${lowStockClass}>
                                 <button onclick="updateStock('${item._id}', ${item.quantity - 1})">－</button>
                                 <span class="qty-text ${qtyClass}">${item.quantity}</span>
                                 <button onclick="updateStock('${item._id}', ${item.quantity + 1})">＋</button>
@@ -321,17 +593,19 @@
                         </td>
                         <td><button onclick="deleteItem('${item._id}')" style="color:var(--text-sub); background:none; border:none; cursor:pointer; font-size:12px;">삭제</button></td>
                     </tr>`;
-                
+
                 const card = `
                     <div class="mobile-card">
                         <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <span class="badge ${badgeClass}">${item.category}</span>
-                            ${stockOut}
+                            <div><span class="badge ${badgeClass}">${item.category}</span>${stockOut}${lowStockBadge}</div>
                         </div>
                         <div style="font-weight:700; font-size:1.1rem; margin-bottom:5px; color:var(--text-main);">${item.name}</div>
-                        <div style="color:var(--text-sub); font-size:0.9rem; margin-bottom:15px;">규격: ${item.size} / ${item.length}</div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div class="qty-control">
+                        <div style="color:var(--text-sub); font-size:0.9rem; margin-bottom:8px;">규격: ${item.size} / ${item.length}</div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: ${progressWidth}%"></div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px;">
+                            <div class="qty-control" ${lowStockClass}>
                                 <button onclick="updateStock('${item._id}', ${item.quantity - 1})">－</button>
                                 <span class="qty-text ${qtyClass}">${item.quantity}</span>
                                 <button onclick="updateStock('${item._id}', ${item.quantity + 1})">＋</button>
@@ -340,7 +614,7 @@
                         </div>
                     </div>`;
 
-                if(isRaw) {
+                if (isRaw) {
                     pcR.innerHTML += row;
                     mobR.innerHTML += card;
                 } else {
@@ -354,13 +628,16 @@
         }
 
         async function updateStock(id, newQty) {
-            if(newQty < 0) return;
-            await fetch(`${API_URL}/${id}`, {
+            if (newQty < 0) return;
+            const res = await fetch(`${API_URL}/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ quantity: newQty, username: currentNick || currentUser })
             });
-            loadItems();
+            if (res.ok) {
+                showToast("✅ 수량이 변경되었습니다.", "success");
+                loadItems();
+            }
         }
 
         async function addItem() {
@@ -372,27 +649,48 @@
                 category: document.getElementById('new-category').value,
                 username: currentNick || currentUser
             };
-            if(!data.name) return alert("품목을 선택하세요.");
+            if (!data.name) return showToast("❌ 품목을 선택하세요.", "warning");
             showLoading(true);
-            await fetch(API_URL, {
+            const res = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            loadItems();
+            if (res.ok) {
+                showToast("✨ 새로운 품목이 등록되었습니다.", "success");
+                loadItems();
+            } else {
+                showToast("❌ 등록 실패", "error");
+            }
+            showLoading(false);
         }
 
         async function deleteItem(id) {
-            if(!confirm("삭제하시겠습니까?")) return;
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            loadItems();
+            if (!confirm("삭제하시겠습니까?")) return;
+            const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                showToast("🗑 품목이 삭제되었습니다.", "success");
+                loadItems();
+            }
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.5s forwards';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
         }
 
         function filterItems(type, btn) {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            if(type === '전체') renderItems(allItemsData);
-            else if(type === '품절') renderItems(allItemsData.filter(i => i.quantity <= 0));
+            if (type === '전체') renderItems(allItemsData);
+            else if (type === '품절') renderItems(allItemsData.filter(i => i.quantity <= 0));
             else renderItems(allItemsData.filter(i => i.category === type));
         }
 
@@ -404,4 +702,5 @@
         function showLoading(show) { document.getElementById('loading-layer').style.display = show ? 'flex' : 'none'; }
     </script>
 </body>
+
 </html>

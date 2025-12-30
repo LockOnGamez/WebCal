@@ -7,6 +7,8 @@ const itemSchema = new mongoose.Schema({
   quantity: { type: Number, default: 0 },
   category: { type: String, default: "기타" },
   lastUpdatedBy: { type: String },
+  alertEnabled: { type: Boolean, default: true },
+  alertThreshold: { type: Number, default: 10 },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

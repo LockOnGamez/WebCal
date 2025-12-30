@@ -1,126 +1,444 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>📅 작업 달력</title>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <link rel="stylesheet" href="css/themes.css">
     <style>
-        /* [테마 변수] */
-        :root {
-            /* ☀️ 라이트 */
-            --bg-color: #f3f4f6;
-            --text-main: #1f2937;
-            --card-bg: #fff;
-            --border-color: #ddd;
-            --modal-bg: #fff;
-            --btn-hover: #eee;
-        }
-        [data-theme="dark"] {
-            /* 🌙 다크 */
-            --bg-color: #0f172a;
-            --text-main: #f1f5f9;
-            --card-bg: rgba(30, 41, 59, 0.5);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --modal-bg: #1e293b;
-            --btn-hover: #334155;
+        body {
+            padding: 20px;
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
+            min-height: 100vh;
         }
 
-        body { padding: 15px; font-family: 'Pretendard', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; transition: 0.3s; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .header h1 { margin: 0; font-size: 1.6rem; background: linear-gradient(to right, #3b82f6, #06b6d4); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1.5px;
+            filter: drop-shadow(0 0 10px var(--highlight-glow));
+        }
 
         /* 달력 컨테이너 */
-        #calendar { 
-            background: var(--card-bg); 
-            padding: 15px; 
-            border-radius: 20px; 
-            border: 1px solid var(--border-color);
-            transition: 0.3s;
+        #calendar {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            padding: 20px;
+            border-radius: 28px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
         }
 
-        /* [Dark Mode Only] FullCalendar 오버라이드 */
-        [data-theme="dark"] .fc-theme-standard th { background-color: #1e293b !important; border-color: #334155 !important; }
-        [data-theme="dark"] .fc-col-header-cell-cushion { color: #f1f5f9 !important; text-decoration: none !important; }
-        [data-theme="dark"] .fc-list-day-cushion { background-color: #1e293b !important; }
-        [data-theme="dark"] .fc-list-day-text, [data-theme="dark"] .fc-list-day-side-text { color: #f1f5f9 !important; text-decoration: none !important; }
-        [data-theme="dark"] .fc-theme-standard td, [data-theme="dark"] .fc-theme-standard th { border-color: #334155 !important; }
-        [data-theme="dark"] .fc-daygrid-day-number { color: #cbd5e1 !important; text-decoration: none !important; }
-        [data-theme="dark"] .fc .fc-button-primary { background-color: #334155; border-color: #334155; }
-        [data-theme="dark"] .fc-day-today { background-color: rgba(59, 130, 246, 0.1) !important; }
-        
+        /* FullCalendar 테마 대응 */
+        .fc {
+            color: var(--text-main) !important;
+        }
+
+        .fc-theme-standard td,
+        .fc-theme-standard th,
+        .fc-theme-standard .fc-col-header-cell {
+            border-color: var(--card-border) !important;
+            background-color: var(--card-bg) !important;
+        }
+
+        .fc-col-header-cell-cushion {
+            color: var(--text-main) !important;
+            font-weight: 700;
+        }
+
+        .fc-daygrid-day-number {
+            color: var(--text-sub) !important;
+            font-weight: 600;
+            padding: 10px !important;
+        }
+
+        .fc-button-primary {
+            background: var(--accent-gradient) !important;
+            border: none !important;
+            border-radius: 12px !important;
+            font-weight: 700 !important;
+            box-shadow: 0 4px 10px var(--highlight-glow) !important;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        }
+
+        .fc-button-primary:hover {
+            transform: translateY(-2px) !important;
+        }
+
+        .fc-button-active {
+            background: var(--highlight) !important;
+        }
+
+        .fc-day-today {
+            background-color: var(--highlight-glow) !important;
+        }
+
+        .fc-list-event:hover td {
+            background-color: var(--btn-hover) !important;
+        }
+
+        .fc-list-day-cushion {
+            background-color: var(--highlight-glow) !important;
+            color: var(--text-main) !important;
+        }
+
+        .fc-list-day-text,
+        .fc-list-day-side-text {
+            color: var(--text-main) !important;
+            font-weight: 900 !important;
+            text-transform: uppercase;
+        }
+
+        /* 테마별 리스트 헤더 보정 */
+        [data-theme="dark"] .fc-list-day-cushion {
+            background: var(--highlight) !important;
+        }
+
+        [data-theme="dark"] .fc-list-day-text,
+        [data-theme="dark"] .fc-list-day-side-text {
+            color: #ffffff !important;
+        }
+
+        /* 다크 테마 요일 헤더 보정 */
+        [data-theme="dark"] .fc-col-header-cell-cushion {
+            color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .fc-day-sun .fc-col-header-cell-cushion {
+            color: #ff5555 !important;
+        }
+
+        [data-theme="dark"] .fc-day-sat .fc-col-header-cell-cushion {
+            color: #55aaff !important;
+        }
+
+        [data-theme="street"] .fc-list-day-cushion {
+            background: var(--accent-gradient) !important;
+        }
+
+        [data-theme="street"] .fc-list-day-text,
+        [data-theme="street"] .fc-list-day-side-text {
+            color: #000000 !important;
+        }
+
         /* 공통 캘린더 스타일 */
-        .fc-day-sun .fc-daygrid-day-number { color: #f87171 !important; }
-        .fc-day-sat .fc-daygrid-day-number { color: #60a5fa !important; }
-        .holiday-name { font-size: 0.7rem; color: #f87171; margin-top: -2px; display: block; }
-        .fc-event-time { display: none; }
+        .fc-day-sun .fc-daygrid-day-number {
+            color: #f87171 !important;
+        }
+
+        .fc-day-sat .fc-daygrid-day-number {
+            color: #60a5fa !important;
+        }
+
+        .holiday-name {
+            font-size: 0.75rem;
+            color: #f87171;
+            margin-top: -5px;
+            font-weight: 800;
+        }
 
         /* 모드 토글 버튼 */
-        .mode-toggles { background: var(--border-color); padding: 5px; border-radius: 12px; display: flex; gap: 5px; }
-        .mode-btn { border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; background: transparent; color: var(--text-main); }
-        .active-work { background: #3b82f6; color: white; }
-        .active-att { background: #10b981; color: white; }
-        
-        /* 홈/테마 버튼 */
-        .nav-btn { padding:8px 12px; border-radius:10px; border:1px solid var(--border-color); background: var(--card-bg); color:var(--text-main); font-weight:bold; cursor: pointer; }
-        
+        .mode-toggles {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 6px;
+            border-radius: 16px;
+            display: flex;
+            gap: 8px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .mode-btn {
+            border: none;
+            padding: 10px 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 15px;
+            background: transparent;
+            color: var(--text-sub);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .active-work {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .active-att {
+            background: #10b981;
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        /* 네비 버튼 */
+        .nav-btn {
+            padding: 10px 18px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-3px);
+            border-color: var(--highlight);
+            color: var(--highlight);
+        }
+
+        /* 테마 토글 버튼 전용 */
+        .theme-toggle {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border-radius: 50%;
+        }
+
         /* 플로팅 버튼 */
         .floating-btn {
-            position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
-            border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white; font-size: 30px; border: none;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-            cursor: pointer; z-index: 900; display: flex; justify-content: center; align-items: center;
+            position: fixed;
+            bottom: 35px;
+            right: 35px;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            color: white;
+            font-size: 35px;
+            border: none;
+            box-shadow: 0 8px 20px var(--highlight-glow);
+            cursor: pointer;
+            z-index: 900;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .floating-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 12px 30px var(--highlight-glow);
+        }
+
+        @media (max-width: 768px) {
+            .floating-btn {
+                bottom: 90px;
+                right: 20px;
+                width: 55px;
+                height: 55px;
+                font-size: 28px;
+            }
         }
 
         /* 모달 스타일 */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; backdrop-filter: blur(3px); }
-        .modal-content { 
-            background: var(--modal-bg); color: var(--text-main);
-            width: 95%; max-width: 600px; padding: 25px; margin: 40px auto; 
-            border-radius: 20px; border: 1px solid var(--border-color);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            overflow-y: auto;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
-        
-        .form-group input, .form-group select { 
-            width: 100%; height: 45px; padding: 0 10px; 
-            border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main); 
-            border-radius: 10px; box-sizing: border-box; 
+
+        .modal-content {
+            background: var(--card-bg);
+            color: var(--text-main);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            width: 95%;
+            max-width: 620px;
+            padding: 35px;
+            margin: 40px auto;
+            border-radius: 32px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--card-shadow);
+            animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 800;
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            height: 50px;
+            padding: 0 15px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            border-radius: 14px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--highlight);
+            box-shadow: 0 0 0 4px var(--highlight-glow);
         }
 
         /* 버튼 */
-        .btn-blue { background: #3b82f6; color: white; }
-        .btn-green { background: #10b981; color: white; }
-        .btn-red { background: #ef4444; color: white; }
-        .btn-gray { background: var(--border-color); color: var(--text-main); }
-        button[class^="btn-"] { padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-blue {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
 
-        /* 로딩 */
-        #loading-layer { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); opacity: 0.9; z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--border-color); border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+        .btn-green {
+            background: #10b981;
+            color: white;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-red {
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-gray {
+            background: var(--btn-hover);
+            color: var(--text-sub);
+            border: 1px solid var(--card-border);
+        }
+
+        button[class^="btn-"] {
+            padding: 14px;
+            border: none;
+            border-radius: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        button[class^="btn-"]:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        /* 배경 장식 */
+        .bg-blob {
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            background: var(--highlight-glow);
+            filter: blur(100px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.25;
+            display: none;
+        }
+
+        [data-theme="glass"] .bg-blob {
+            display: block;
+        }
+
+        .blob-1 {
+            top: -150px;
+            left: -150px;
+        }
+
+        .blob-2 {
+            bottom: -150px;
+            right: -150px;
+        }
+
+        /* 로딩 레이어 */
+        #loading-layer {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--loading-bg);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
     </style>
 </head>
-<body>
-    <div id="loading-layer"><div class="spinner"></div></div>
+
+<body class="animate-fade">
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div id="loading-layer">
+        <div class="flashy-loader"></div>
+        <p
+            style="margin-top:25px; font-weight:900; letter-spacing:1.5px; color:var(--text-main); text-transform:uppercase; animation: pulse-glow 1.5s infinite;">
+            Calendar Syncing...</p>
+    </div>
 
     <div class="header">
-        <h1 id="cal-title">📅 작업 달력</h1>
-        <div class="nav-btns" style="display:flex; gap:10px;">
+        <h1 id="cal-title" class="animate-slide">📅 작업 달력</h1>
+        <div class="nav-btns animate-slide" style="display:flex; gap:12px; align-items:center;">
             <div class="mode-toggles">
-                <button id="m-work" class="mode-btn active-work" onclick="setMode('work')">📦</button>
-                <button id="m-att" class="mode-btn" onclick="setMode('att')">🕒</button>
+                <button id="m-work" class="mode-btn active-work" onclick="setMode('work')">📦 작업</button>
+                <button id="m-att" class="mode-btn" onclick="setMode('att')">🕒 근무</button>
             </div>
-            <button onclick="toggleTheme()" class="nav-btn" id="theme-btn">🌙</button>
+            <button onclick="toggleTheme()" class="nav-btn theme-toggle" id="theme-btn">🌙</button>
             <button onclick="location.href='/main.html'" class="nav-btn">🏠 홈</button>
         </div>
     </div>
 
     <div class="search-bar" id="att-search-bar" style="display:none; margin-bottom:15px; gap:10px;">
-        <input type="text" id="search-nickname" placeholder="검색..." style="padding:10px; border-radius:10px; border:1px solid var(--border-color); flex:1; background:var(--bg-color); color:var(--text-main);">
+        <input type="text" id="search-nickname" placeholder="검색..."
+            style="padding:10px; border-radius:10px; border:1px solid var(--border-color); flex:1; background:var(--bg-color); color:var(--text-main);">
         <button onclick="searchAttendance()" class="btn-blue">검색</button>
     </div>
-    <div id="att-summary" style="display:none; padding:15px; background:rgba(59,130,246,0.1); border-radius:10px; margin-bottom:15px; color:#3b82f6; font-weight:bold;"></div>
+    <div id="att-summary"
+        style="display:none; padding:15px; background:rgba(59,130,246,0.1); border-radius:10px; margin-bottom:15px; color:#3b82f6; font-weight:bold;">
+    </div>
 
     <div id="calendar"></div>
 
@@ -128,9 +446,11 @@
 
     <div id="eventModal" class="modal">
         <div class="modal-content">
-            <h3 id="modal-title" style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:10px;">📝 작업 관리</h3>
+            <h3 id="modal-title"
+                style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:10px;">📝 작업 관리</h3>
             <input type="hidden" id="edit-event-id">
-            <div class="form-group" style="margin-bottom:10px;"><label>날짜</label><br><input type="date" id="modal-date"></div>
+            <div class="form-group" style="margin-bottom:10px;"><label>날짜</label><br><input type="date" id="modal-date">
+            </div>
             <div class="form-group" style="margin-bottom:10px;">
                 <label>작업 구분</label><br>
                 <select id="modal-type" onchange="toggleProductionMode()">
@@ -141,17 +461,20 @@
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
                 <label style="font-weight:bold;">📦 품목 리스트</label>
-                <button class="btn-green" onclick="addRow('product-tbody')" style="padding:6px 12px; font-size:12px;">+ 추가</button>
+                <button class="btn-green" onclick="addRow('product-tbody')" style="padding:6px 12px; font-size:12px;">+
+                    추가</button>
             </div>
             <div style="overflow-x:auto;">
                 <table style="width:100%; border-collapse:collapse; margin-top:5px;">
                     <tbody id="product-tbody"></tbody>
                 </table>
             </div>
-            <div id="material-section" style="display:none; margin-top:20px; border-top:1px dashed var(--border-color); padding-top:10px;">
+            <div id="material-section"
+                style="display:none; margin-top:20px; border-top:1px dashed var(--border-color); padding-top:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <label style="font-weight:bold; color:#ef4444;">🔨 소모 원자재</label>
-                    <button class="btn-red" onclick="addRow('material-tbody')" style="padding:6px 12px; font-size:12px;">+ 추가</button>
+                    <button class="btn-red" onclick="addRow('material-tbody')"
+                        style="padding:6px 12px; font-size:12px;">+ 추가</button>
                 </div>
                 <div style="overflow-x:auto;">
                     <table style="width:100%; border-collapse:collapse; margin-top:5px;">
@@ -173,9 +496,12 @@
         <div class="modal-content">
             <h3>🕒 근무 수정</h3>
             <input type="hidden" id="att-id">
-            <div class="form-group" style="margin-bottom:10px;"><label>이름</label><br><input type="text" id="att-name"></div>
-            <div class="form-group" style="margin-bottom:10px;"><label>출근</label><br><input type="datetime-local" id="att-in"></div>
-            <div class="form-group" style="margin-bottom:10px;"><label>퇴근</label><br><input type="datetime-local" id="att-out"></div>
+            <div class="form-group" style="margin-bottom:10px;"><label>이름</label><br><input type="text" id="att-name">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;"><label>출근</label><br><input type="datetime-local"
+                    id="att-in"></div>
+            <div class="form-group" style="margin-bottom:10px;"><label>퇴근</label><br><input type="datetime-local"
+                    id="att-out"></div>
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button class="btn-blue" onclick="saveAttendanceEdit()" style="flex:2;">💾 저장</button>
                 <button class="btn-gray" onclick="closeAttModal()" style="flex:1;">취소</button>
@@ -183,19 +509,39 @@
         </div>
     </div>
 
+    <script src="js/nav.js"></script>
     <script>
-        // [테마]
+        const themes = ['light', 'dark', 'glass', 'street'];
+        const themeIcons = {
+            'light': '☀️',
+            'dark': '🌙',
+            'glass': '💎',
+            'street': '🎤'
+        };
+
+        // [테마 관리 로직]
         function initTheme() {
-            const saved = localStorage.getItem('theme') || 'dark';
-            document.body.setAttribute('data-theme', saved);
-            document.getElementById('theme-btn').innerText = saved === 'dark' ? '🌙' : '☀️';
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
         }
+
         function toggleTheme() {
-            const cur = document.body.getAttribute('data-theme');
-            const nxt = cur === 'dark' ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', nxt);
-            localStorage.setItem('theme', nxt);
-            document.getElementById('theme-btn').innerText = nxt === 'dark' ? '🌙' : '☀️';
+            const current = document.body.getAttribute('data-theme') || 'dark';
+            let index = themes.indexOf(current);
+            index = (index + 1) % themes.length;
+            const next = themes[index];
+            applyTheme(next);
+            localStorage.setItem('theme', next);
+        }
+
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            const btn = document.getElementById('theme-btn');
+            if (btn) btn.innerHTML = themeIcons[theme] || '🌙';
+
+            document.body.classList.remove('animate-fade');
+            void document.body.offsetWidth;
+            document.body.classList.add('animate-fade');
         }
         initTheme();
 
@@ -209,9 +555,9 @@
 
         function toggleLoading(show) { document.getElementById('loading-layer').style.display = show ? 'flex' : 'none'; }
 
-        document.addEventListener('DOMContentLoaded', async () => { 
+        document.addEventListener('DOMContentLoaded', async () => {
             await loadDropdownOptions();
-            initCalendar(); 
+            initCalendar();
         });
 
         async function loadDropdownOptions() {
@@ -229,11 +575,11 @@
             toggleLoading(true);
             currentMode = mode;
             document.getElementById('cal-title').innerText = mode === 'work' ? '📅 작업 달력' : '🕒 근무 일지';
-            document.getElementById('m-work').className = `mode-btn ${mode==='work'?'active-work':''}`;
-            document.getElementById('m-att').className = `mode-btn ${mode==='att'?'active-att':''}`;
+            document.getElementById('m-work').className = `mode-btn ${mode === 'work' ? 'active-work' : ''}`;
+            document.getElementById('m-att').className = `mode-btn ${mode === 'att' ? 'active-att' : ''}`;
             document.getElementById('att-search-bar').style.display = mode === 'att' ? 'flex' : 'none';
             document.querySelector('.floating-btn').style.display = mode === 'work' ? 'flex' : 'none';
-            
+
             if (mode === 'work') {
                 document.getElementById('att-summary').style.display = 'none';
                 currentSearchName = '';
@@ -244,7 +590,7 @@
 
         function formatDuration(s) {
             if (!s || s < 0) return "근무 중";
-            const h = Math.floor(s/3600); const m = Math.floor((s%3600)/60);
+            const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60);
             return `${h}시간 ${m}분`;
         }
 
@@ -266,30 +612,30 @@
                 displayEventTime: false,
                 headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
                 buttonText: { today: '오늘', month: '달력', list: '리스트' },
-                events: async function(info, success, failure) {
+                events: async function (info, success, failure) {
                     try {
                         const centerDate = new Date((info.start.getTime() + info.end.getTime()) / 2);
-                        const targetMonth = centerDate.getFullYear() + "-" + 
-                                            String(centerDate.getMonth() + 1).padStart(2, '0');
-                        
+                        const targetMonth = centerDate.getFullYear() + "-" +
+                            String(centerDate.getMonth() + 1).padStart(2, '0');
+
                         let url = '';
                         if (currentMode === 'work') {
                             url = '/api/calendar';
                         } else {
-                            url = !currentSearchName 
-                                ? '/api/attendance/all' 
+                            url = !currentSearchName
+                                ? '/api/attendance/all'
                                 : `/api/attendance/summary?nickname=${encodeURIComponent(currentSearchName)}&month=${targetMonth}`;
                         }
 
                         const res = await fetch(url);
                         const resData = await res.json();
-                        
+
                         let rawData = [];
                         if (currentMode === 'att') {
                             if (resData && resData.records) {
                                 rawData = resData.records;
                                 document.getElementById('att-summary').style.display = 'block';
-                                document.getElementById('att-summary').innerHTML = 
+                                document.getElementById('att-summary').innerHTML =
                                     `📊 <b>${currentSearchName}</b>님 (${targetMonth}): <b>${resData.count}회</b> / 합계 <b>${resData.totalHours}시간</b>`;
                             } else {
                                 rawData = Array.isArray(resData) ? resData : [];
@@ -301,24 +647,24 @@
 
                         const evts = rawData.map(d => {
                             if (currentMode === 'work') {
-                                return { 
+                                return {
                                     id: d._id, title: d.title, start: d.start, display: 'block',
-                                    backgroundColor: d.type==='출고'?'#ef4444':d.type==='생산'?'#3b82f6':'#10b981',
+                                    backgroundColor: d.type === '출고' ? '#ef4444' : d.type === '생산' ? '#3b82f6' : '#10b981',
                                     borderColor: 'transparent',
-                                    extendedProps: { ...d } 
+                                    extendedProps: { ...d }
                                 };
                             } else {
-                                const inT = d.clockIn ? new Date(d.clockIn).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-                                const outT = d.clockOut ? new Date(d.clockOut).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...';
-                                
-                                return { 
-                                    id: d._id, 
-                                    title: `${d.nickname || d.username}: ${inT}~${outT} (${formatDuration(d.duration)})`, 
-                                    start: d.date, 
-                                    backgroundColor: '#10b981', 
+                                const inT = d.clockIn ? new Date(d.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                                const outT = d.clockOut ? new Date(d.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
+
+                                return {
+                                    id: d._id,
+                                    title: `${d.nickname || d.username}: ${inT}~${outT} (${formatDuration(d.duration)})`,
+                                    start: d.date,
+                                    backgroundColor: '#10b981',
                                     borderColor: 'transparent',
-                                    allDay: true, 
-                                    extendedProps: { ...d } 
+                                    allDay: true,
+                                    extendedProps: { ...d }
                                 };
                             }
                         });
@@ -359,7 +705,7 @@
             document.getElementById('modal-date').value = dateStr.split('T')[0];
             document.getElementById('product-tbody').innerHTML = '';
             document.getElementById('material-tbody').innerHTML = '';
-            
+
             if (event) {
                 document.getElementById('edit-event-id').value = event.id;
                 document.getElementById('btn-delete').style.display = 'inline-block';
@@ -381,7 +727,7 @@
         function addRow(tbodyId, data = null) {
             const tbody = document.getElementById(tbodyId);
             const tr = document.createElement('tr');
-            const createOpts = (list, selVal) => `<option value="">선택</option>` + list.map(v => `<option value="${v}" ${String(v)===String(selVal)?'selected':''}>${v}</option>`).join('');
+            const createOpts = (list, selVal) => `<option value="">선택</option>` + list.map(v => `<option value="${v}" ${String(v) === String(selVal) ? 'selected' : ''}>${v}</option>`).join('');
             tr.innerHTML = `
                 <td><select class="input-name" style="width:100%; height:35px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-main);">${createOpts(dropdownOptions.items, data?.name)}</select></td>
                 <td><select class="input-size" style="width:100%; height:35px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-main);">${createOpts(dropdownOptions.sizes, data?.size)}</select></td>
@@ -405,12 +751,12 @@
             toggleLoading(true);
             try {
                 const res = await fetch(url, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ start: document.getElementById('modal-date').value, type, products, materials, username: localStorage.getItem('nickname') || localStorage.getItem('username') }) });
-                if (res.ok) { closeModal(); calendarInstance.refetchEvents(); } 
+                if (res.ok) { closeModal(); calendarInstance.refetchEvents(); }
                 else { alert("저장 실패"); toggleLoading(false); }
-            } catch(e) { console.error(e); toggleLoading(false); }
+            } catch (e) { console.error(e); toggleLoading(false); }
         }
         async function deleteEvent() {
-            if(!confirm("삭제하시겠습니까?")) return;
+            if (!confirm("삭제하시겠습니까?")) return;
             toggleLoading(true);
             await fetch(`${API_URL}/${document.getElementById('edit-event-id').value}`, { method: 'DELETE' });
             closeModal(); calendarInstance.refetchEvents();
@@ -438,4 +784,5 @@
         }
     </script>
 </body>
+
 </html>

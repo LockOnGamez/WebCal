@@ -311,6 +311,67 @@
             bottom: -150px;
             right: -150px;
         }
+
+        /* [모바일 대응] 미디어 쿼리 추가 */
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+
+            .header-wrapper {
+                max-width: none;
+                margin: 20px 0;
+            }
+
+            .header-content h1 {
+                font-size: 1.8rem;
+            }
+
+            .dashboard-summary {
+                max-width: none !important;
+                gap: 10px !important;
+            }
+
+            .summary-item {
+                padding: 12px 5px !important;
+            }
+
+            .summary-item div:first-child {
+                font-size: 1.2rem !important;
+            }
+
+            .menu-grid {
+                max-width: none;
+                gap: 12px;
+            }
+
+            .menu-card {
+                padding: 18px;
+                min-height: 130px;
+                border-radius: 22px;
+            }
+
+            .menu-card .icon {
+                font-size: 2.5rem;
+            }
+
+            .menu-card span {
+                font-size: 1rem;
+            }
+
+            .card-prod {
+                min-height: 90px;
+            }
+
+            .card-prod .icon {
+                font-size: 2.8rem;
+            }
+
+            .logout-btn {
+                width: 100%;
+                margin-top: 30px;
+            }
+        }
     </style>
 </head>
 

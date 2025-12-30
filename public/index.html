@@ -181,6 +181,44 @@
             bottom: -100px;
             right: -100px;
         }
+
+        /* [모바일 대응] 미디어 쿼리 추가 */
+        @media (max-width: 480px) {
+            .container {
+                width: 95%;
+                padding: 40px 20px;
+                border-radius: 24px;
+            }
+
+            h1 {
+                font-size: 2.8rem;
+                /* 모바일에서 더 강조 */
+                margin-bottom: 30px;
+            }
+
+            h3 {
+                font-size: 1.3rem;
+                margin-bottom: 20px;
+            }
+
+            input {
+                padding: 18px;
+                /* 터치 영역 확대 */
+                font-size: 16px;
+            }
+
+            button.action-btn {
+                padding: 20px;
+                font-size: 18px;
+            }
+
+            .theme-toggle {
+                top: 15px;
+                right: 15px;
+                width: 40px;
+                height: 40px;
+            }
+        }
     </style>
 </head>
 

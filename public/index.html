@@ -182,41 +182,40 @@
             right: -100px;
         }
 
-        /* [모바일 대응] 미디어 쿼리 추가 */
-        @media (max-width: 480px) {
+        /* [모바일 대응] 미디어 쿼리 조정 및 강제 적용 */
+        @media (max-width: 768px) {
             .container {
-                width: 95%;
-                padding: 40px 20px;
-                border-radius: 24px;
+                width: 95% !important;
+                max-width: none !important;
+                padding: 40px 20px !important;
+                border-radius: 24px !important;
             }
 
             h1 {
-                font-size: 2.8rem;
-                /* 모바일에서 더 강조 */
-                margin-bottom: 30px;
+                font-size: 2.8rem !important;
+                margin-bottom: 30px !important;
             }
 
             h3 {
-                font-size: 1.3rem;
-                margin-bottom: 20px;
+                font-size: 1.3rem !important;
+                margin-bottom: 20px !important;
             }
 
             input {
-                padding: 18px;
-                /* 터치 영역 확대 */
-                font-size: 16px;
+                padding: 18px !important;
+                font-size: 16px !important;
             }
 
             button.action-btn {
-                padding: 20px;
-                font-size: 18px;
+                padding: 20px !important;
+                font-size: 18px !important;
             }
 
             .theme-toggle {
-                top: 15px;
-                right: 15px;
-                width: 40px;
-                height: 40px;
+                top: 15px !important;
+                right: 15px !important;
+                width: 45px !important;
+                height: 45px !important;
             }
         }
     </style>

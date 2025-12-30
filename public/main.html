@@ -312,23 +312,25 @@
             right: -150px;
         }
 
-        /* [모바일 대응] 미디어 쿼리 추가 */
-        @media (max-width: 480px) {
+        /* [모바일 대응] 미디어 쿼리 조정 및 강제 적용 */
+        @media (max-width: 768px) {
             body {
-                padding: 15px;
+                padding: 15px !important;
             }
 
             .header-wrapper {
-                max-width: none;
-                margin: 20px 0;
+                max-width: none !important;
+                width: 100% !important;
+                margin: 20px 0 !important;
             }
 
             .header-content h1 {
-                font-size: 1.8rem;
+                font-size: 1.8rem !important;
             }
 
             .dashboard-summary {
                 max-width: none !important;
+                width: 100% !important;
                 gap: 10px !important;
             }
 
@@ -336,40 +338,29 @@
                 padding: 12px 5px !important;
             }
 
-            .summary-item div:first-child {
-                font-size: 1.2rem !important;
-            }
-
             .menu-grid {
-                max-width: none;
-                gap: 12px;
+                max-width: none !important;
+                width: 100% !important;
+                gap: 12px !important;
             }
 
             .menu-card {
-                padding: 18px;
-                min-height: 130px;
-                border-radius: 22px;
+                padding: 18px !important;
+                min-height: 130px !important;
+                border-radius: 22px !important;
             }
 
             .menu-card .icon {
-                font-size: 2.5rem;
-            }
-
-            .menu-card span {
-                font-size: 1rem;
+                font-size: 2.5rem !important;
             }
 
             .card-prod {
-                min-height: 90px;
-            }
-
-            .card-prod .icon {
-                font-size: 2.8rem;
+                min-height: 90px !important;
             }
 
             .logout-btn {
-                width: 100%;
-                margin-top: 30px;
+                width: 100% !important;
+                margin-top: 30px !important;
             }
         }
     </style>

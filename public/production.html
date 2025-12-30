@@ -327,69 +327,56 @@
             padding: 0;
         }
 
-        /* [모바일 대응] 미디어 쿼리 추가 */
-        @media (max-width: 480px) {
+        /* [모바일 대응] 미디어 쿼리 조정 및 강제 적용 */
+        @media (max-width: 768px) {
             body {
-                padding: 15px;
+                padding: 15px !important;
             }
 
             .prod-container {
-                width: 95%;
-                padding: 30px 20px;
-                border-radius: 24px;
+                width: 95% !important;
+                max-width: none !important;
+                padding: 30px 20px !important;
+                border-radius: 24px !important;
             }
 
             h1 {
-                font-size: 1.5rem;
-                margin-bottom: 20px;
+                font-size: 1.6rem !important;
+                margin-bottom: 20px !important;
             }
 
             #last-update-info {
-                font-size: 0.85rem;
-                padding: 12px;
-                margin-bottom: 20px;
+                font-size: 0.85rem !important;
+                padding: 12px !important;
             }
 
             select,
             input[type="number"],
             input[type="text"] {
-                height: 55px;
-                font-size: 16px;
-                padding: 0 15px;
+                height: 55px !important;
+                font-size: 16px !important;
             }
 
             .tube-selection label {
-                padding: 12px;
-                font-size: 0.9rem;
+                padding: 12px !important;
+                font-size: 0.9rem !important;
             }
 
             .submit-btn {
-                height: 60px;
-                font-size: 1.1rem;
+                height: 60px !important;
+                font-size: 1.1rem !important;
             }
 
             .modal-box {
-                padding: 30px 20px;
-                border-radius: 24px;
-            }
-
-            .modal-info {
-                padding: 15px;
-                margin-bottom: 20px;
-            }
-
-            .modal-info p {
-                font-size: 0.95rem;
-            }
-
-            .modal-btn {
-                padding: 15px;
-                font-size: 1rem;
+                width: 95% !important;
+                max-width: none !important;
+                padding: 30px 20px !important;
+                border-radius: 24px !important;
             }
 
             .nav-link {
-                padding: 10px 20px;
-                font-size: 0.9rem;
+                padding: 10px 15px !important;
+                font-size: 0.9rem !important;
             }
         }
     </style>

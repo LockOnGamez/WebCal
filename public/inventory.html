@@ -509,6 +509,14 @@
         window.onload = () => {
             initTheme();
             if (!currentUser) { location.href = '/'; return; }
+
+            // 관리자 전용 UI 처리
+            const role = localStorage.getItem('role');
+            if (role !== 'admin') {
+                const addCard = document.querySelector('.card');
+                if (addCard) addCard.style.display = 'none';
+            }
+
             initPage();
             prefetchHolidays();
         };
@@ -623,6 +631,14 @@
                     mobF.innerHTML += card;
                 }
             });
+
+            // 관리자가 아닌 경우 수정/삭제 버튼 숨기기
+            const role = localStorage.getItem('role');
+            if (role !== 'admin') {
+                document.querySelectorAll('.qty-control button').forEach(b => b.style.display = 'none');
+                document.querySelectorAll('td button[onclick^="deleteItem"]').forEach(b => b.style.display = 'none');
+                document.querySelectorAll('.mobile-card button[onclick^="deleteItem"]').forEach(b => b.style.display = 'none');
+            }
 
             document.getElementById('count-finished').innerText = `(${pcF.children.length}건)`;
             document.getElementById('count-raw').innerText = `(${pcR.children.length}건)`;

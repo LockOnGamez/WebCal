@@ -184,4 +184,83 @@ router.post("/logout", (req, res) => {
     });
 });
 
+// [추가] 내 정보 조회
+router.get("/me", async (req, res) => {
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ message: "로그인이 필요합니다." });
+    }
+    try {
+        const user = await User.findById(req.session.user.id).select("-password");
+        if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// [추가] 프로필(닉네임) 수정
+router.put("/update-profile", async (req, res) => {
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ message: "로그인이 필요합니다." });
+    }
+    try {
+        const { nickname } = req.body;
+        if (!nickname) return res.status(400).json({ message: "닉네임을 입력해주세요." });
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.session.user.id,
+            { nickname },
+            { new: true }
+        );
+
+        // 세션 정보 업데이트
+        req.session.user.nickname = updatedUser.nickname;
+        req.session.save();
+
+        // [로그 기록] 프로필 수정
+        const log = new Log({
+            user: updatedUser.nickname,
+            action: "프로필 수정",
+            category: "Auth",
+            details: `이름 변경: ${updatedUser.nickname}`
+        });
+        await log.save();
+
+        res.json({ message: "프로필이 수정되었습니다.", nickname: updatedUser.nickname });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// [추가] 비밀번호 변경
+router.put("/change-password", async (req, res) => {
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({ message: "로그인이 필요합니다." });
+    }
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.session.user.id);
+
+        if (user.password !== currentPassword) {
+            return res.status(400).json({ message: "현재 비밀번호가 일치하지 않습니다." });
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        // [로그 기록] 비밀번호 변경
+        const log = new Log({
+            user: user.nickname || user.username,
+            action: "비밀번호 변경",
+            category: "Auth",
+            details: "사용자 본인이 비밀번호 변경"
+        });
+        await log.save();
+
+        res.json({ message: "비밀번호가 변경되었습니다." });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

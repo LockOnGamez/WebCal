@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⚙️ 사용자 설정</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        body {
+            padding: 20px;
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header-box {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-box h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1.5px;
+            filter: drop-shadow(0 0 10px var(--highlight-glow));
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border);
+            padding: 30px;
+            border-radius: 28px;
+            margin-bottom: 25px;
+            box-shadow: var(--card-shadow);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: var(--highlight);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--text-sub);
+            font-size: 0.9rem;
+        }
+
+        input {
+            width: 100%;
+            height: 55px;
+            background: var(--bg-color);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            border-radius: 14px;
+            padding: 0 18px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--highlight);
+            box-shadow: 0 0 0 4px var(--highlight-glow);
+            transform: translateY(-2px);
+        }
+
+        input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-action {
+            width: 100%;
+            height: 55px;
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 800;
+            border-radius: 14px;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 15px var(--highlight-glow);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px var(--highlight-glow);
+        }
+
+        .btn-action:active {
+            transform: scale(0.97);
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            box-shadow: var(--card-shadow);
+        }
+
+        .theme-toggle {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body class="animate-fade">
+    <div id="loading-layer" style="display:none;">
+        <div class="flashy-loader"></div>
+    </div>
+
+    <div class="header-box">
+        <h1>🛠️ 사용자 설정</h1>
+        <button onclick="toggleTheme()" class="theme-toggle" id="theme-btn">🌙</button>
+    </div>
+
+    <!-- 프로필 섹션 -->
+    <div class="card animate-slide">
+        <div class="section-title">👤 프로필 정보</div>
+        <div class="input-group">
+            <label>아이디 (수정 불가)</label>
+            <input type="text" id="user-id" disabled>
+        </div>
+        <div class="input-group">
+            <label>이름 (닉네임)</label>
+            <input type="text" id="user-nickname" placeholder="이름을 입력하세요">
+        </div>
+        <button class="btn-action" onclick="updateProfile()">프로필 저장</button>
+    </div>
+
+    <!-- 비밀번호 변경 섹션 -->
+    <div class="card animate-slide" style="animation-delay: 0.1s;">
+        <div class="section-title">🔐 비밀번호 변경</div>
+        <div class="input-group">
+            <label>현재 비밀번호</label>
+            <input type="password" id="current-password" placeholder="현재 비밀번호">
+        </div>
+        <div class="input-group">
+            <label>새 비밀번호</label>
+            <input type="password" id="new-password" placeholder="새 비밀번호">
+        </div>
+        <div class="input-group">
+            <label>새 비밀번호 확인</label>
+            <input type="password" id="confirm-password" placeholder="새 비밀번호 확인">
+        </div>
+        <button class="btn-action btn-secondary" onclick="changePassword()">비밀번호 변경</button>
+    </div>
+
+    <script src="js/ui.js"></script>
+    <script src="js/nav.js"></script>
+    <script>
+        const themes = ['light', 'dark', 'glass', 'street'];
+        const themeIcons = { 'light': '☀️', 'dark': '🌙', 'glass': '💎', 'street': '🎤' };
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
+        }
+
+        function toggleTheme() {
+            const current = document.body.getAttribute('data-theme') || 'dark';
+            let index = themes.indexOf(current);
+            index = (index + 1) % themes.length;
+            const next = themes[index];
+            applyTheme(next);
+            localStorage.setItem('theme', next);
+        }
+
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            const btn = document.getElementById('theme-btn');
+            if (btn) btn.innerHTML = themeIcons[theme] || '🌙';
+        }
+
+        window.onload = async () => {
+            initTheme();
+            const role = localStorage.getItem('role');
+            if (role === 'admin') {
+                UI.alert("접근 제한", "관리자는 설정 페이지에 접근할 수 없습니다.", "warning");
+                location.href = '/main.html';
+                return;
+            }
+            loadUserInfo();
+        };
+
+        async function loadUserInfo() {
+            try {
+                const res = await fetch('/api/me');
+                if (res.ok) {
+                    const user = await res.json();
+                    document.getElementById('user-id').value = user.username;
+                    document.getElementById('user-nickname').value = user.nickname || '';
+                } else {
+                    location.href = '/';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function updateProfile() {
+            const nickname = document.getElementById('user-nickname').value.trim();
+            if (!nickname) return UI.showToast("이름을 입력해주세요.", "warning");
+
+            try {
+                const res = await fetch('/api/update-profile', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nickname })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    UI.showToast("✅ 프로필이 저장되었습니다.", "success");
+                    localStorage.setItem('nickname', data.nickname);
+                } else {
+                    UI.alert("오류", data.message, "error");
+                }
+            } catch (err) {
+                UI.showToast("통신 오류", "error");
+            }
+        }
+
+        async function changePassword() {
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                return UI.showToast("모든 비밀번호 필드를 입력해주세요.", "warning");
+            }
+
+            if (newPassword !== confirmPassword) {
+                return UI.showToast("새 비밀번호가 일치하지 않습니다.", "warning");
+            }
+
+            try {
+                const res = await fetch('/api/change-password', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    UI.alert("성공", "비밀번호가 변경되었습니다. 다시 로그인해주세요.", "success")
+                        .then(() => {
+                            fetch('/api/logout', { method: 'POST' }).then(() => location.href = '/');
+                        });
+                } else {
+                    UI.alert("오류", data.message, "error");
+                }
+            } catch (err) {
+                UI.showToast("통신 오류", "error");
+            }
+        }
+    </script>
+</body>
+
+</html>

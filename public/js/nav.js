@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (role === 'admin') {
         menuItems.push({ name: '관리', icon: '⚙️', url: 'admin.html' });
+    } else {
+        menuItems.push({ name: '설정', icon: '🛠️', url: 'settings.html' });
     }
 
     // Improve page detection for active state

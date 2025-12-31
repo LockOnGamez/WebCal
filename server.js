@@ -8,7 +8,6 @@ const inventoryRoutes = require("./routes/inventory");
 const calendarRoutes = require("./routes/caleandar");
 const optionRoutes = require("./routes/options");
 const backupRoutes = require("./routes/backup");
-const botRoutes = require("./routes/bot");
 
 const session = require("express-session");
 const { RedisStore } = require("connect-redis");
@@ -87,7 +86,6 @@ app.get("/ping", (req, res) => {
 
 // 5. 라우터 연결
 app.use("/api", authRoutes); 
-app.use("/api/bot", botRoutes); 
 
 // 재고 관리: 조회는 누구나, 수정/삭제는 관리자만 (세부 제어는 라우터 내부에서 하거나 여기서 분리)
 app.use("/api/inventory", checkLogin, (req, res, next) => {

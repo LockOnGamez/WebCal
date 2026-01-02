@@ -166,16 +166,32 @@ router.put("/edit/:id", async (req, res) => {
       return res.status(404).json({ message: "기록을 찾을 수 없습니다." });
 
     record.nickname = nickname;
-    record.clockIn = new Date(clockIn);
+    
+    if (clockIn) {
+      const newIn = new Date(clockIn);
+      record.clockIn = newIn;
+      
+      // clockIn이 변경되면 date(YYYY-MM-DD) 필드도 KST 기준으로 업데이트
+      record.date = getKSTDateString(newIn);
+    }
+
     if (clockOut) {
       record.clockOut = new Date(clockOut);
-      // 근무 시간 재계산 (초 단위)
+    } else {
+      record.clockOut = null; // 퇴근 시간 비우기 대응
+    }
+
+    // 근무 시간 재계산 (초 단위)
+    if (record.clockIn && record.clockOut) {
       record.duration = Math.floor((record.clockOut - record.clockIn) / 1000);
+    } else {
+      record.duration = 0;
     }
 
     await record.save();
     res.json({ message: "수정 완료" });
   } catch (err) {
+    console.error("수정 에러:", err);
     res.status(500).json({ message: err.message });
   }
 });

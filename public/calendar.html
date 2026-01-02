@@ -774,9 +774,18 @@
         async function saveAttendanceEdit() {
             toggleLoading(true);
             try {
+                const clockInVal = document.getElementById('att-in').value;
+                const clockOutVal = document.getElementById('att-out').value;
+                
+                // datetime-local 값(YYYY-MM-DDTHH:mm)을 Date 객체로 변환하여 ISO 스트링으로 발송
+                // 이렇게 하면 서버에서 new Date()로 받을 때 브라우저의 타임존이 반영된 절대 시간이 전달됨
                 const res = await fetch(`/api/attendance/edit/${document.getElementById('att-id').value}`, {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nickname: document.getElementById('att-name').value, clockIn: document.getElementById('att-in').value, clockOut: document.getElementById('att-out').value })
+                    body: JSON.stringify({ 
+                        nickname: document.getElementById('att-name').value, 
+                        clockIn: clockInVal ? new Date(clockInVal).toISOString() : null, 
+                        clockOut: clockOutVal ? new Date(clockOutVal).toISOString() : null 
+                    })
                 });
                 if (res.ok) { alert("수정되었습니다."); closeAttModal(); calendarInstance.refetchEvents(); }
                 else { alert("수정 실패"); toggleLoading(false); }

@@ -90,8 +90,8 @@ app.use("/api", authRoutes);
 // 재고 관리: 조회는 누구나, 수정/삭제는 관리자만 (세부 제어는 라우터 내부에서 하거나 여기서 분리)
 app.use("/api/inventory", checkLogin, (req, res, next) => {
     if (req.method === "GET") return next();
-    // 생산 기록 등록은 모든 사용자에게 허용
-    if (req.method === "POST" && req.path === "/produce") return next();
+    // 생산 및 입출고 기록 등록은 모든 사용자에게 허용
+    if (req.method === "POST" && (req.path === "/produce" || req.path === "/stock-move")) return next();
     checkAdmin(req, res, next);
 }, inventoryRoutes);
 

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title id="page-title">📦 재고 등록</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
+            align-items: center;
+        }
+
+        .stock-container {
+            width: 100%;
+            max-width: 520px;
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border);
+            padding: 40px;
+            border-radius: 32px;
+            box-shadow: var(--card-shadow);
+            box-sizing: border-box;
+            height: fit-content;
+            position: relative;
+            z-index: 10;
+            animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            text-align: center;
+            margin: 0 0 30px 0;
+            font-weight: 900;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            filter: drop-shadow(0 0 10px var(--highlight-glow));
+        }
+
+        .status-box {
+            text-align: center;
+            background: var(--highlight-glow);
+            padding: 15px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 800;
+            color: var(--text-sub);
+            font-size: 0.95rem;
+        }
+
+        select,
+        input[type="number"] {
+            width: 100%;
+            height: 55px;
+            padding: 0 20px;
+            font-size: 16px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--highlight);
+            box-shadow: 0 0 0 4px var(--highlight-glow);
+            transform: translateY(-2px);
+        }
+
+        .submit-btn {
+            width: 100%;
+            height: 65px;
+            font-size: 1.2rem;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 900;
+            margin-top: 20px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            letter-spacing: 1.5px;
+        }
+
+        .btn-in {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-out {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-4px);
+            filter: brightness(1.1);
+        }
+
+        .submit-btn:active {
+            transform: scale(0.96);
+        }
+
+        .nav-actions {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-sub);
+            font-weight: 800;
+            padding: 12px 20px;
+            border-radius: 14px;
+            cursor: pointer;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover {
+            transform: translateY(-3px);
+            border-color: var(--highlight);
+            color: var(--highlight);
+        }
+
+        /* 로딩 */
+        #loading-layer {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--loading-bg);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
+
+        /* 배경 장식 */
+        .bg-blob {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: var(--highlight-glow);
+            filter: blur(100px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.2;
+            display: none;
+        }
+
+        [data-theme="glass"] .bg-blob {
+            display: block;
+        }
+
+        .blob-1 {
+            top: -150px;
+            left: -150px;
+        }
+
+        .blob-2 {
+            bottom: -150px;
+            right: -150px;
+        }
+    </style>
+</head>
+
+<body class="animate-fade">
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div id="loading-layer">
+        <div class="flashy-loader"></div>
+        <p style="margin-top: 25px; font-weight: 900; color: var(--text-main);">Syncing Inventory...</p>
+    </div>
+
+    <div class="stock-container">
+        <h1 id="header-title">📦 입고 등록</h1>
+
+        <div class="status-box">
+            현재 재고: <span id="current-qty" style="color: var(--highlight);">0</span>
+        </div>
+
+        <div class="input-group">
+            <label>품목 이름</label>
+            <select id="select-name" onchange="fetchCurrentStock()">
+                <option value="">품목 선택</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>폭 (Width)</label>
+            <select id="select-width" onchange="fetchCurrentStock()">
+                <option value="">폭 선택</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>길이 (Length)</label>
+            <select id="select-length" onchange="fetchCurrentStock()">
+                <option value="">길이 선택</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label id="label-qty">입고 수량 (개)</label>
+            <input type="number" id="quantity" placeholder="수량 입력" inputmode="numeric">
+        </div>
+
+        <button id="submit-btn" class="submit-btn btn-in" onclick="submitMove()">기록 저장</button>
+
+        <div class="nav-actions">
+            <a href="main.html" class="nav-link">🏠 홈으로</a>
+        </div>
+    </div>
+
+    <script src="js/ui.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode') || 'in';
+        let inventoryData = [];
+
+        async function init() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
+
+            if (mode === 'out') {
+                document.getElementById('page-title').innerText = '🚚 출고 등록';
+                document.getElementById('header-title').innerText = '🚚 출고 등록';
+                document.getElementById('label-qty').innerText = '출고 수량 (개)';
+                document.getElementById('submit-btn').innerText = '출고 하기';
+                document.getElementById('submit-btn').className = 'submit-btn btn-out';
+            }
+
+            try {
+                const [invRes, optRes] = await Promise.all([
+                    fetch('/api/inventory'),
+                    fetch('/api/options')
+                ]);
+                inventoryData = await invRes.json();
+                const options = await optRes.json();
+
+                // 1. 고유 품목명 추출
+                const nameSelect = document.getElementById('select-name');
+                const uniqueNames = [...new Set(inventoryData.map(i => i.name))].sort();
+                uniqueNames.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    nameSelect.appendChild(opt);
+                });
+
+                // 2. 옵션 셋업 (폭, 길이)
+                const widthSelect = document.getElementById('select-width');
+                const lengthSelect = document.getElementById('select-length');
+
+                options.forEach(opt => {
+                    const el = document.createElement('option');
+                    el.value = opt.value;
+                    el.textContent = opt.value + (opt.type === 'length' ? 'm' : '');
+                    if (opt.type === 'size') widthSelect.appendChild(el);
+                    else if (opt.type === 'length') lengthSelect.appendChild(el);
+                });
+
+            } catch (err) {
+                console.error(err);
+                UI.showToast("데이터 로드 실패", "error");
+            } finally {
+                document.getElementById('loading-layer').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading-layer').style.display = 'none', 500);
+            }
+        }
+
+        function fetchCurrentStock() {
+            const name = document.getElementById('select-name').value;
+            const width = document.getElementById('select-width').value;
+            const length = document.getElementById('select-length').value;
+            const qtySpan = document.getElementById('current-qty');
+
+            if (!name || !width || !length) {
+                qtySpan.innerText = '0';
+                return;
+            }
+
+            const item = inventoryData.find(i =>
+                i.name === name &&
+                i.size === width &&
+                i.length === length.replace('m', '')
+            );
+
+            qtySpan.innerText = item ? item.quantity : '0';
+        }
+
+        async function submitMove() {
+            const name = document.getElementById('select-name').value;
+            const width = document.getElementById('select-width').value;
+            const length = document.getElementById('select-length').value.replace('m', '');
+            const quantity = parseFloat(document.getElementById('quantity').value);
+
+            if (!name || !width || !length) return UI.showToast("모든 항목을 선택하세요.", "warning");
+            if (!quantity || quantity <= 0) return UI.showToast("유효한 수량을 입력하세요.", "warning");
+
+            if (!confirm(`${mode === 'in' ? '입고' : '출고'} 처리를 진행하시겠습니까?`)) return;
+
+            document.getElementById('loading-layer').style.display = 'flex';
+            document.getElementById('loading-layer').style.opacity = '1';
+
+            try {
+                const res = await fetch('/api/inventory/stock-move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name, size: width, length,
+                        quantity, mode,
+                        nickname: localStorage.getItem('nickname') || localStorage.getItem('username')
+                    })
+                });
+
+                if (res.ok) {
+                    UI.showToast("기록 완료!", "success");
+                    setTimeout(() => location.href = 'main.html', 1500);
+                } else {
+                    const err = await res.json();
+                    UI.alert("실패", err.message || "오류가 발생했습니다.", "error");
+                    document.getElementById('loading-layer').style.opacity = '0';
+                    setTimeout(() => document.getElementById('loading-layer').style.display = 'none', 500);
+                }
+            } catch (err) {
+                UI.alert("연결 오류", "서버와 통신할 수 없습니다.", "error");
+                document.getElementById('loading-layer').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading-layer').style.display = 'none', 500);
+            }
+        }
+
+        // 테마 관리
+        const themeIcons = { 'light': '☀️', 'dark': '🌙', 'glass': '💎', 'street': '🎤' };
+        function toggleTheme() {
+            // Removed per user request
+        }
+        function applyTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            const btn = document.getElementById('theme-btn');
+            if (btn) btn.innerHTML = themeIcons[theme] || '🌙';
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

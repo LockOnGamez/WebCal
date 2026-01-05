@@ -456,7 +456,6 @@
         <button class="submit-btn" onclick="openConfirmation()">기록 저장</button>
 
         <div class="nav-actions">
-            <button class="nav-link" onclick="toggleTheme()" id="theme-btn">🌙</button>
             <a href="main.html" class="nav-link">🏠 홈으로</a>
         </div>
     </div>
@@ -475,12 +474,7 @@
         }
 
         function toggleTheme() {
-            const current = document.body.getAttribute('data-theme') || 'dark';
-            let index = themes.indexOf(current);
-            index = (index + 1) % themes.length;
-            const next = themes[index];
-            applyTheme(next);
-            localStorage.setItem('theme', next);
+            // Removed per user request
         }
 
         function applyTheme(theme) {

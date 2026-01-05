@@ -306,4 +306,80 @@ router.post("/produce", async (req, res) => {
   }
 });
 
+// 6. 입고/출고 직접 등록 (개선 버전: 이름/사이즈/길이 기반)
+router.post("/stock-move", async (req, res) => {
+  try {
+    const { name, size, length, quantity, mode, nickname } = req.body; 
+    const today = new Date().toISOString().split("T")[0];
+
+    // 1. 수량 검증
+    const moveQty = parseFloat(quantity);
+    if (isNaN(moveQty) || moveQty <= 0) return res.status(400).json({ message: "유효한 수량을 입력하세요." });
+
+    // 2. 아이템 조회 및 업데이트 (입고는 upsert, 출고는 존재 확인)
+    let item;
+    if (mode === "in") {
+      item = await Item.findOneAndUpdate(
+        { name, size, length },
+        { 
+          $inc: { quantity: moveQty },
+          $set: { lastUpdatedBy: nickname, updatedAt: Date.now() },
+          $setOnInsert: { category: "완제품" } // 신규 생성 시 기본 카테고리
+        },
+        { upsert: true, new: true }
+      );
+    } else {
+      item = await Item.findOne({ name, size, length });
+      if (!item) return res.status(404).json({ message: "해당 품목이 재고에 존재하지 않습니다." });
+      
+      if (item.quantity < moveQty) {
+          return res.status(400).json({ message: `재고가 부족합니다. (현재: ${item.quantity}개)` });
+      }
+
+      item.quantity -= moveQty;
+      item.lastUpdatedBy = nickname;
+      item.updatedAt = Date.now();
+      await item.save();
+    }
+
+    // 3. 일정(Event) 생성/통합 (생산과 유사한 로직)
+    const eventType = mode === "in" ? "입고" : "출고";
+    
+    const newEvent = new Event({
+      title: `[${eventType}] ${item.name} (${item.size}/${item.length}) - ${moveQty}개`,
+      start: new Date(today),
+      type: eventType,
+      items: [
+        {
+          name: item.name,
+          size: item.size,
+          length: item.length,
+          quantity: moveQty,
+          role: "product",
+        },
+      ],
+      createdBy: nickname,
+    });
+    await newEvent.save();
+
+    // 4. 로그 기록
+    const log = new Log({
+      user: nickname,
+      action: `${eventType} 등록`,
+      category: "Inventory",
+      targetId: item._id,
+      details: `${item.name} (${item.size}/${item.length}) ${moveQty}개 ${eventType} 완료 (잔여: ${item.quantity})`,
+    });
+    await log.save();
+
+    // 5. 캐시 삭제
+    await redisClient.del(CACHE_KEY);
+
+    res.json({ success: true, currentQuantity: item.quantity });
+  } catch (err) {
+    console.error("❌ Stock Move Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

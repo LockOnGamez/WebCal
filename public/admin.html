@@ -382,6 +382,10 @@
                         <th>ID</th>
                         <th>닉네임</th>
                         <th>권한</th>
+                        <th>재고</th>
+                        <th>달력</th>
+                        <th>근태</th>
+                        <th>로그</th>
                         <th>관리</th>
                     </tr>
                 </thead>
@@ -616,9 +620,68 @@
                 list.innerHTML = '';
                 if (!users || users.length === 0) { list.innerHTML = '<tr><td colspan="4">회원 없음</td></tr>'; return; }
                 users.forEach(user => {
-                    list.innerHTML += `<tr><td>${user.username}</td><td>${user.nickname}</td><td>${user.role === 'admin' ? '<b style="color:#f59e0b">관리자</b>' : '일반'}</td><td><button onclick="resetPassword('${user._id}')" style="background:#f59e0b;">PW초기화</button><button class="btn-ban" onclick="banUser('${user._id}')">강퇴</button></td></tr>`;
+                    const p = user.permissions || { inventory: false, calendar: false, attendance: false };
+                    const isAdmin = user.role === 'admin';
+                    const disabledAttr = isAdmin ? 'disabled' : '';
+
+                    list.innerHTML += `
+                        <tr>
+                            <td>${user.username}</td>
+                            <td>${user.nickname}</td>
+                            <td>${isAdmin ? '<b style="color:#f59e0b">관리자</b>' : '일반'}</td>
+                            <td>
+                                <input type="checkbox" ${p.inventory ? 'checked' : ''} ${disabledAttr} 
+                                    onchange="toggleUserPermission('${user._id}', 'inventory', this.checked)">
+                            </td>
+                            <td>
+                                <input type="checkbox" ${p.calendar ? 'checked' : ''} ${disabledAttr} 
+                                    onchange="toggleUserPermission('${user._id}', 'calendar', this.checked)">
+                            </td>
+                            <td>
+                                <input type="checkbox" ${p.attendance ? 'checked' : ''} ${disabledAttr} 
+                                    onchange="toggleUserPermission('${user._id}', 'attendance', this.checked)">
+                            </td>
+                            <td>
+                                <input type="checkbox" ${p.logs ? 'checked' : ''} ${disabledAttr} 
+                                    onchange="toggleUserPermission('${user._id}', 'logs', this.checked)">
+                            </td>
+                            <td>
+                                <button onclick="resetPassword('${user._id}')" style="background:#f59e0b;">PW초기화</button>
+                                <button class="btn-ban" onclick="banUser('${user._id}')">강퇴</button>
+                            </td>
+                        </tr>`;
                 });
             } catch (err) { console.error(err); }
+        }
+
+        async function toggleUserPermission(userId, feature, isChecked) {
+            try {
+                const tr = event.target.closest('tr');
+                const permissions = {
+                    inventory: tr.querySelector('input[onchange*="inventory"]').checked,
+                    calendar: tr.querySelector('input[onchange*="calendar"]').checked,
+                    attendance: tr.querySelector('input[onchange*="attendance"]').checked,
+                    logs: tr.querySelector('input[onchange*="logs"]').checked
+                };
+
+                const res = await fetch('/api/admin/update-permissions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, permissions })
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    alert(data.message || "권한 변경 실패");
+                    loadFullUsers();
+                } else {
+                    UI.showToast("✅ 권한이 업데이트되었습니다.", "success");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("통신 오류");
+                loadFullUsers();
+            }
         }
 
         async function resetPassword(id) {

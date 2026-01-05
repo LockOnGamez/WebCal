@@ -49,7 +49,7 @@ router.post("/", async (req, res) => {
     
     // [로그 기록] 재고 등록
     const log = new Log({
-        user: username || "System",
+        user: req.session.user.nickname || "System",
         action: "재고 등록",
         category: "Inventory",
         targetId: newItem._id,
@@ -89,7 +89,7 @@ router.put("/:id", async (req, res) => {
 
     // [로그 기록] 재고 수정
     const log = new Log({
-        user: username || "System",
+        user: req.session.user.nickname || "System",
         action: "재고 수정",
         category: "Inventory",
         targetId: updatedItem._id,
@@ -111,7 +111,7 @@ router.delete("/:id", async (req, res) => {
     
     // [로그 기록] 재고 삭제
     const log = new Log({
-        user: "Admin",
+        user: req.session.user.nickname || "Admin",
         action: "재고 삭제",
         category: "Inventory",
         targetId: req.params.id,
@@ -309,7 +309,9 @@ router.post("/produce", async (req, res) => {
 // 6. 입고/출고 직접 등록 (개선 버전: 이름/사이즈/길이 기반)
 router.post("/stock-move", async (req, res) => {
   try {
-    const { name, size, length, quantity, mode, nickname } = req.body; 
+    let { name, size, length, quantity, mode, nickname } = req.body; 
+    size = size || "-";
+    length = length || "-";
     const today = new Date().toISOString().split("T")[0];
 
     // 1. 수량 검증
@@ -345,22 +347,66 @@ router.post("/stock-move", async (req, res) => {
     // 3. 일정(Event) 생성/통합 (생산과 유사한 로직)
     const eventType = mode === "in" ? "입고" : "출고";
     
-    const newEvent = new Event({
-      title: `[${eventType}] ${item.name} (${item.size}/${item.length}) - ${moveQty}개`,
-      start: new Date(today),
+    let existingEvent = await Event.findOne({
+      start: {
+          $gte: new Date(today),
+          $lt: new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000),
+      },
       type: eventType,
-      items: [
-        {
+    });
+
+    if (existingEvent) {
+      // --- 통합 합산 로직 ---
+      let hasItem = false;
+      existingEvent.items.forEach((ei) => {
+        if (
+          ei.name === item.name &&
+          ei.size === item.size &&
+          ei.length === item.length &&
+          ei.role === "product"
+        ) {
+          ei.quantity += moveQty;
+          hasItem = true;
+        }
+      });
+
+      if (!hasItem) {
+        existingEvent.items.push({
           name: item.name,
           size: item.size,
           length: item.length,
           quantity: moveQty,
           role: "product",
-        },
-      ],
-      createdBy: nickname,
-    });
-    await newEvent.save();
+        });
+      }
+
+      // 제목 업데이트
+      const prodItems = existingEvent.items.filter((i) => i.role === "product");
+      existingEvent.title = `[${eventType}] ${prodItems[0].name}${
+        prodItems.length > 1 ? " 외 " + (prodItems.length - 1) + "건" : ""
+      }`;
+
+      existingEvent.markModified("items");
+      await existingEvent.save();
+    } else {
+      // --- 새로운 일정 생성 ---
+      const newEvent = new Event({
+        title: `[${eventType}] ${item.name} (${item.size}/${item.length}) - ${moveQty}개`,
+        start: new Date(today),
+        type: eventType,
+        items: [
+          {
+            name: item.name,
+            size: item.size,
+            length: item.length,
+            quantity: moveQty,
+            role: "product",
+          },
+        ],
+        createdBy: nickname,
+      });
+      await newEvent.save();
+    }
 
     // 4. 로그 기록
     const log = new Log({

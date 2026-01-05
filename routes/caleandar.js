@@ -3,6 +3,7 @@ const router = express.Router();
 const Event = require("../models/Event");
 const Item = require("../models/Item");
 const redisClient = require("../config/redis");
+const Log = require("../models/Log");
 
 // 1. 일정 조회 (달력 로딩용)
 router.get("/", async (req, res) => {
@@ -55,16 +56,70 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const newEvent = new Event({
-      title: generatedTitle,
-      start,
-      type,
-      items: combinedItems,
-      createdBy: username,
-    });
-    await newEvent.save();
+    // [통합 로직 추가] 동일 날짜, 동일 타입의 일정이 있는지 확인
+    const todayDate = new Date(start);
+    todayDate.setHours(0, 0, 0, 0);
+    const tomorrowDate = new Date(todayDate);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
 
-    // 재고 연동 로직
+    let existingEvent = await Event.findOne({
+      start: { $gte: todayDate, $lt: tomorrowDate },
+      type: type,
+    });
+
+    let eventToReturn;
+    if (existingEvent) {
+      // --- 통합 합산 로직 ---
+      combinedItems.forEach((newItem) => {
+        let matched = false;
+        existingEvent.items.forEach((oldItem) => {
+          if (
+            oldItem.name === newItem.name &&
+            oldItem.size === newItem.size &&
+            oldItem.length === newItem.length &&
+            oldItem.role === newItem.role
+          ) {
+            oldItem.quantity = parseFloat((oldItem.quantity + newItem.quantity).toFixed(1));
+            matched = true;
+          }
+        });
+        if (!matched) {
+          existingEvent.items.push(newItem);
+        }
+      });
+
+      // 제목 업데이트
+      const mainProd = existingEvent.items.filter(i => i.role === "product");
+      const extraCount = mainProd.length > 1 ? ` 외 ${mainProd.length - 1}건` : "";
+      existingEvent.title = `[${type}] ${mainProd[0].name}${extraCount}`;
+
+      existingEvent.markModified("items");
+      await existingEvent.save();
+      eventToReturn = existingEvent;
+    } else {
+      // --- 신규 생성 ---
+      const newEvent = new Event({
+        title: generatedTitle,
+        start,
+        type,
+        items: combinedItems,
+        createdBy: username,
+      });
+      await newEvent.save();
+      eventToReturn = newEvent;
+
+      // [로그 기록] 일정 추가
+      const log = new Log({
+        user: req.session.user.nickname || req.session.user.username,
+        action: "일정 추가",
+        category: "System",
+        targetId: newEvent._id,
+        details: `${generatedTitle} (${start}) 추가됨`
+      });
+      await log.save();
+    }
+
+    // --- 재고 수량 반영 (공통) ---
     for (const item of combinedItems) {
       if (item.quantity === 0) continue;
 
@@ -76,7 +131,6 @@ router.post("/", async (req, res) => {
         amount = -item.quantity;
       }
 
-      // [수정] 부동 소수점 오차 방지를 위해 기존 수량을 가져와서 계산 후 저장
       const targetItem = await Item.findOne({
         name: item.name,
         size: item.size,
@@ -102,7 +156,7 @@ router.post("/", async (req, res) => {
     }
 
     await redisClient.del("cache:inventory");
-    res.status(201).json(newEvent);
+    res.status(201).json(eventToReturn);
   } catch (err) {
     console.error("저장 에러:", err);
     res.status(500).json({ message: "서버 저장 오류: " + err.message });
@@ -206,6 +260,16 @@ router.put("/:id", async (req, res) => {
       }
     }
 
+    // [로그 기록] 일정 수정
+    const log = new Log({
+        user: req.session.user.nickname || req.session.user.username,
+        action: "일정 수정",
+        category: "System",
+        targetId: updatedEvent._id,
+        details: `${generatedTitle} (${start}) 수정됨`
+    });
+    await log.save();
+
     await redisClient.del("cache:inventory");
     res.json(updatedEvent);
   } catch (err) {
@@ -243,6 +307,17 @@ router.delete("/:id", async (req, res) => {
     }
 
     await Event.findByIdAndDelete(req.params.id);
+
+    // [로그 기록] 일정 삭제
+    const log = new Log({
+        user: req.session.user.nickname || req.session.user.username,
+        action: "일정 삭제",
+        category: "System",
+        targetId: req.params.id,
+        details: `[${event.type}] ${event.title} 삭제됨`
+    });
+    await log.save();
+
     await redisClient.del("cache:inventory");
 
     res.json({ message: "삭제 및 재고 복구 완료" });

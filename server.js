@@ -18,7 +18,7 @@ const holidayRoutes = require(`./routes/holidays`);
 const attendanceRoutes = require(`./routes/attendance`);
 
 // 미들웨어
-const { checkLogin, checkAdmin } = require("./middleware/auth");
+const { checkLogin, checkAdmin, checkPermission } = require("./middleware/auth");
 
 dotenv.config();
 
@@ -90,20 +90,31 @@ app.use("/api", authRoutes);
 // 재고 관리: 조회는 누구나, 수정/삭제는 관리자만 (세부 제어는 라우터 내부에서 하거나 여기서 분리)
 app.use("/api/inventory", checkLogin, (req, res, next) => {
     if (req.method === "GET") return next();
-    // 생산 및 입출고 기록 등록은 모든 사용자에게 허용
+    // 생산 및 입출고 등록은 모든 사용자에게 허용 (단, 세션 필수)
     if (req.method === "POST" && (req.path === "/produce" || req.path === "/stock-move")) return next();
-    checkAdmin(req, res, next);
+    // 그 외 수정/삭제는 'inventory' 권한 필요
+    checkPermission('inventory')(req, res, next);
 }, inventoryRoutes);
 
-app.use("/api/calendar", checkLogin, calendarRoutes); 
+app.use("/api/calendar", checkLogin, (req, res, next) => {
+    if (req.method === "GET") return next();
+    // 일정 추가/수정/삭제는 'calendar' 권한 필요
+    checkPermission('calendar')(req, res, next);
+}, calendarRoutes); 
 app.use("/api/options", checkLogin, (req, res, next) => {
     if (req.method === "GET") return next();
     checkAdmin(req, res, next);
 }, optionRoutes); 
 
 app.use(`/api/holidays`, holidayRoutes);
-app.use("/api/attendance", checkLogin, attendanceRoutes);
-app.use("/api/admin", checkLogin, checkAdmin, backupRoutes);
+app.use("/api/attendance", checkLogin, (req, res, next) => {
+    // 조회(GET)와 본인 체크인/아웃(POST)은 허용
+    if (req.method === "GET") return next();
+    if (req.method === "POST" && (req.path === "/check-in" || req.path === "/check-out")) return next();
+    // 그 외 근태 수동 수정 등은 'attendance' 권한 필요
+    checkPermission('attendance')(req, res, next);
+}, attendanceRoutes);
+app.get("/api/admin/logs", checkLogin, checkPermission('logs'), authRoutes); // This is tricky because authRoutes is a router
 
 const Item = require("./models/Item");
 

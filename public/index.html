@@ -358,6 +358,7 @@
                     localStorage.setItem('username', data.user.username);
                     localStorage.setItem('nickname', data.user.nickname);
                     localStorage.setItem('role', data.user.role);
+                    localStorage.setItem('permissions', JSON.stringify(data.user.permissions || {}));
 
                     UI.showToast(`${data.user.nickname}님, 환영합니다!`, "success");
                     setTimeout(() => {

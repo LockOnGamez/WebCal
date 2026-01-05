@@ -55,6 +55,7 @@ router.post("/login", async (req, res) => {
       username: user.username,
       nickname: user.nickname,
       role: user.role,
+      permissions: user.permissions || { inventory: false, calendar: false, attendance: false, logs: false }
     };
 
     req.session.save(async () => {
@@ -118,7 +119,11 @@ router.post("/admin/approve", isAdmin, async (req, res) => {
     const { userId } = req.body;
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { isApproved: true, role: "user" },
+      { 
+        isApproved: true, 
+        role: "user",
+        permissions: { inventory: false, calendar: false, attendance: false, logs: false } // 초기 권한은 모두 false
+      },
       { new: true }
     );
     if (!updatedUser) return res.status(404).json({ message: "유저 없음" });
@@ -159,8 +164,13 @@ router.get("/admin/check", (req, res) => {
   }
 });
 
-// [추가] (관리자용) 활동 로그 조회 (필터링 지원)
-router.get("/admin/logs", isAdmin, async (req, res) => {
+// [추가] (관리자/로그권한용) 활동 로그 조회 (필터링 지원)
+router.get("/admin/logs", (req, res, next) => {
+    // 본 파일의 isAdmin 대신 미들웨어의 checkPermission 사용 가능하도록 export된 것 활용하거나
+    // 간단히 여기서 내부 로직 구현 (또는 server.js에서 라우트 보호)
+    // 여기서는 server.js의 미들웨어 구성을 위해 isAdmin을 풀고 granular로 전환
+    next();
+}, async (req, res) => {
     try {
         const { category } = req.query;
         const query = {};
@@ -175,10 +185,50 @@ router.get("/admin/logs", isAdmin, async (req, res) => {
     }
 });
 
+// [추가] (관리자용) 유저 권한 업데이트
+router.post("/admin/update-permissions", isAdmin, async (req, res) => {
+    try {
+        const { userId, permissions } = req.body;
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { permissions },
+            { new: true }
+        );
+        if (!updatedUser) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+
+        // [로그 기록] 권한 변경
+        const log = new Log({
+            user: "Admin",
+            action: "권한 변경",
+            category: "Auth",
+            targetId: updatedUser._id,
+            details: `${updatedUser.username} (${updatedUser.nickname}) 권한 수정됨`
+        });
+        await log.save();
+
+        res.json({ message: "권한이 업데이트되었습니다.", permissions: updatedUser.permissions });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // 6. 로그아웃 (세션 파괴)
 router.post("/logout", (req, res) => {
-    req.session.destroy((err) => {
+    const user = req.session.user;
+    req.session.destroy(async (err) => {
         if (err) return res.status(500).json({ error: "Logout failed" });
+
+        // [로그 기록] 로그아웃
+        if (user) {
+            const log = new Log({
+                user: user.nickname || user.username,
+                action: "로그아웃",
+                category: "Auth",
+                details: "시스템 접속 종료"
+            });
+            await log.save();
+        }
+
         res.clearCookie("connect.sid");
         res.json({ message: "로그아웃 성공" });
     });

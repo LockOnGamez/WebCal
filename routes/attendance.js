@@ -63,7 +63,7 @@ router.get("/status/:username", async (req, res) => {
 // 2. 출근 처리
 router.post("/check-in", async (req, res) => {
   try {
-    const { username, nickname } = req.body;
+    const { username, nickname } = req.session.user; // 세션 정보 사용 (보안 강화)
     const today = getKSTDateString(); // KST 기준 날짜
     const user = await User.findOne({ username });
 
@@ -112,7 +112,7 @@ router.post("/check-in", async (req, res) => {
 // 3. 퇴근 처리
 router.post("/check-out", async (req, res) => {
   try {
-    const { username } = req.body;
+    const { username, nickname } = req.session.user; // 세션 정보 사용
     const today = getKSTDateString(); // KST 기준 날짜
     const user = await User.findOne({ username });
 
@@ -132,6 +132,16 @@ router.post("/check-out", async (req, res) => {
         // 근무 시간 계산 (초 단위)
         record.duration = Math.floor((record.clockOut - record.clockIn) / 1000);
         await record.save();
+
+        // [로그 기록] 퇴근
+        const log = new Log({
+            user: nickname || username,
+            action: "퇴근",
+            category: "Attendance",
+            targetId: record._id,
+            details: `${nickname} (${username}) 작업자가 퇴근했습니다.`
+        });
+        await log.save();
 
         // 캐시 삭제
         await redisClient.del(`cache:attendance:${today}`);
@@ -189,6 +199,17 @@ router.put("/edit/:id", async (req, res) => {
     }
 
     await record.save();
+
+    // [로그 기록] 근무 기록 수정
+    const log = new Log({
+        user: req.session.user.nickname || req.session.user.username,
+        action: "출퇴근 수정",
+        category: "Attendance",
+        targetId: record._id,
+        details: `${record.nickname} (${record.date}) 기록 수정됨`
+    });
+    await log.save();
+
     res.json({ message: "수정 완료" });
   } catch (err) {
     console.error("수정 에러:", err);

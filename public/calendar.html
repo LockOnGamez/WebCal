@@ -509,6 +509,7 @@
         </div>
     </div>
 
+    <script src="js/ui.js"></script>
     <script src="js/nav.js"></script>
     <script>
         const themes = ['light', 'dark', 'glass', 'street'];
@@ -558,6 +559,16 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await loadDropdownOptions();
             initCalendar();
+
+            // [권한 제어] 달력 권한이 없는 경우 추가/수정 UI 제한
+            const role = localStorage.getItem('role');
+            const permissions = JSON.parse(localStorage.getItem('permissions') || '{}');
+            const hasCalendarPermission = role === 'admin' || permissions.calendar === true;
+
+            if (!hasCalendarPermission) {
+                const floatingBtn = document.querySelector('.floating-btn');
+                if (floatingBtn) floatingBtn.style.display = 'none';
+            }
         });
 
         async function loadDropdownOptions() {
@@ -708,7 +719,13 @@
 
             if (event) {
                 document.getElementById('edit-event-id').value = event.id;
-                document.getElementById('btn-delete').style.display = 'inline-block';
+
+                // [권한 제어] 달력 권한이 있는 경우만 삭제 버튼 표시
+                const role = localStorage.getItem('role');
+                const permissions = JSON.parse(localStorage.getItem('permissions') || '{}');
+                const hasCalendarPermission = role === 'admin' || permissions.calendar === true;
+
+                document.getElementById('btn-delete').style.display = hasCalendarPermission ? 'inline-block' : 'none';
                 document.getElementById('modal-title').innerText = '📝 작업 수정';
                 const props = event.extendedProps;
                 document.getElementById('modal-type').value = props.type;
@@ -751,15 +768,40 @@
             toggleLoading(true);
             try {
                 const res = await fetch(url, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ start: document.getElementById('modal-date').value, type, products, materials, username: localStorage.getItem('nickname') || localStorage.getItem('username') }) });
-                if (res.ok) { closeModal(); calendarInstance.refetchEvents(); }
-                else { alert("저장 실패"); toggleLoading(false); }
-            } catch (e) { console.error(e); toggleLoading(false); }
+                if (res.ok) {
+                    UI.showToast("✅ 저장되었습니다.", "success");
+                    closeModal();
+                    calendarInstance.refetchEvents();
+                } else {
+                    const err = await res.json();
+                    UI.alert("오류", err.message || "저장 실패", "error");
+                    toggleLoading(false);
+                }
+            } catch (e) {
+                console.error(e);
+                UI.alert("연결 오류", "서버와 통신할 수 없습니다.", "error");
+                toggleLoading(false);
+            }
         }
         async function deleteEvent() {
-            if (!confirm("삭제하시겠습니까?")) return;
+            const confirmed = await UI.confirm("🚨 일정 삭제", "정말 이 일정을 삭제하시겠습니까?", "warning");
+            if (!confirmed) return;
+
             toggleLoading(true);
-            await fetch(`${API_URL}/${document.getElementById('edit-event-id').value}`, { method: 'DELETE' });
-            closeModal(); calendarInstance.refetchEvents();
+            try {
+                const res = await fetch(`${API_URL}/${document.getElementById('edit-event-id').value}`, { method: 'DELETE' });
+                if (res.ok) {
+                    UI.showToast("🗑️ 삭제되었습니다.", "success");
+                    closeModal();
+                    calendarInstance.refetchEvents();
+                } else {
+                    UI.alert("오류", "삭제 실패", "error");
+                    toggleLoading(false);
+                }
+            } catch (e) {
+                UI.alert("연결 오류", "서버와 통신할 수 없습니다.", "error");
+                toggleLoading(false);
+            }
         }
 
         function openAttModal(data) {
@@ -776,20 +818,31 @@
             try {
                 const clockInVal = document.getElementById('att-in').value;
                 const clockOutVal = document.getElementById('att-out').value;
-                
+
                 // datetime-local 값(YYYY-MM-DDTHH:mm)을 Date 객체로 변환하여 ISO 스트링으로 발송
                 // 이렇게 하면 서버에서 new Date()로 받을 때 브라우저의 타임존이 반영된 절대 시간이 전달됨
                 const res = await fetch(`/api/attendance/edit/${document.getElementById('att-id').value}`, {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        nickname: document.getElementById('att-name').value, 
-                        clockIn: clockInVal ? new Date(clockInVal).toISOString() : null, 
-                        clockOut: clockOutVal ? new Date(clockOutVal).toISOString() : null 
+                    body: JSON.stringify({
+                        nickname: document.getElementById('att-name').value,
+                        clockIn: clockInVal ? new Date(clockInVal).toISOString() : null,
+                        clockOut: clockOutVal ? new Date(clockOutVal).toISOString() : null
                     })
                 });
-                if (res.ok) { alert("수정되었습니다."); closeAttModal(); calendarInstance.refetchEvents(); }
-                else { alert("수정 실패"); toggleLoading(false); }
-            } catch (e) { console.error(e); toggleLoading(false); }
+                if (res.ok) {
+                    UI.showToast("🕒 근태 수정 완료!", "success");
+                    closeAttModal();
+                    calendarInstance.refetchEvents();
+                } else {
+                    const err = await res.json();
+                    UI.alert("수정 실패", err.message || "오류 발생", "error");
+                    toggleLoading(false);
+                }
+            } catch (e) {
+                console.error(e);
+                UI.alert("연결 오류", "서버와 통신할 수 없습니다.", "error");
+                toggleLoading(false);
+            }
         }
     </script>
 </body>

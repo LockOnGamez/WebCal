@@ -69,6 +69,48 @@ const UI = {
                 }, 300);
             });
         });
+    },
+
+    // 3. 프리미엄 확인 모달 (confirm 대체)
+    confirm: (title, message, type = 'warning') => {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'alert-overlay';
+
+            const icons = {
+                success: '✨',
+                error: '🚫',
+                warning: '🚨',
+                info: '❓'
+            };
+
+            overlay.innerHTML = `
+                <div class="alert-box">
+                    <div class="alert-icon">${icons[type] || icons.warning}</div>
+                    <div class="alert-title">${title}</div>
+                    <div class="alert-msg">${message}</div>
+                    <div style="display:flex; gap:10px; width:100%; margin-top:20px;">
+                        <button class="alert-btn btn-cancel" style="background:var(--btn-hover); color:var(--text-sub); flex:1;">취소</button>
+                        <button class="alert-btn btn-confirm" style="background:var(--accent-gradient); color:white; flex:2;">확인</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            const remove = (val) => {
+                overlay.style.opacity = '0';
+                overlay.querySelector('.alert-box').style.transform = 'translateY(20px) scale(0.9)';
+                setTimeout(() => {
+                    overlay.remove();
+                    resolve(val);
+                }, 300);
+            };
+
+            overlay.querySelector('.btn-confirm').onclick = () => remove(true);
+            overlay.querySelector('.btn-cancel').onclick = () => remove(false);
+            overlay.onclick = (e) => { if(e.target === overlay) remove(false); };
+        });
     }
 };
 

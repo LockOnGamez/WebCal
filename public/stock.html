@@ -306,11 +306,11 @@
 
         function fetchCurrentStock() {
             const name = document.getElementById('select-name').value;
-            const width = document.getElementById('select-width').value;
-            const length = document.getElementById('select-length').value;
+            const width = document.getElementById('select-width').value || "-";
+            const length = (document.getElementById('select-length').value || "-").replace('m', '');
             const qtySpan = document.getElementById('current-qty');
 
-            if (!name || !width || !length) {
+            if (!name) {
                 qtySpan.innerText = '0';
                 return;
             }
@@ -318,7 +318,7 @@
             const item = inventoryData.find(i =>
                 i.name === name &&
                 i.size === width &&
-                i.length === length.replace('m', '')
+                i.length === length
             );
 
             qtySpan.innerText = item ? item.quantity : '0';
@@ -326,11 +326,11 @@
 
         async function submitMove() {
             const name = document.getElementById('select-name').value;
-            const width = document.getElementById('select-width').value;
-            const length = document.getElementById('select-length').value.replace('m', '');
+            const width = document.getElementById('select-width').value || "-";
+            const length = (document.getElementById('select-length').value || "-").replace('m', '');
             const quantity = parseFloat(document.getElementById('quantity').value);
 
-            if (!name || !width || !length) return UI.showToast("모든 항목을 선택하세요.", "warning");
+            if (!name) return UI.showToast("품목명을 선택하세요.", "warning");
             if (!quantity || quantity <= 0) return UI.showToast("유효한 수량을 입력하세요.", "warning");
 
             if (!confirm(`${mode === 'in' ? '입고' : '출고'} 처리를 진행하시겠습니까?`)) return;

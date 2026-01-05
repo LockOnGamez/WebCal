@@ -13,6 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (role === 'admin') {
         menuItems.push({ name: '관리', icon: '⚙️', url: 'admin.html' });
     } else {
+        const permissions = JSON.parse(localStorage.getItem('permissions') || '{}');
+        if (permissions.logs) {
+            menuItems.push({ name: '로그', icon: '🚨', url: 'logs.html' });
+        }
         menuItems.push({ name: '설정', icon: '🛠️', url: 'settings.html' });
     }
 

@@ -510,9 +510,12 @@
             initTheme();
             if (!currentUser) { location.href = '/'; return; }
 
-            // 관리자 전용 UI 처리
+            // [권한 제어] 수정/관리 UI 표시 여부
             const role = localStorage.getItem('role');
-            if (role !== 'admin') {
+            const permissions = JSON.parse(localStorage.getItem('permissions') || '{}');
+            const hasInventoryPermission = role === 'admin' || permissions.inventory === true;
+
+            if (!hasInventoryPermission) {
                 const addCard = document.querySelector('.card');
                 if (addCard) addCard.style.display = 'none';
             }
@@ -632,9 +635,12 @@
                 }
             });
 
-            // 관리자가 아닌 경우 수정/삭제 버튼 숨기기
+            // [권한 제어] 관리자나 재고 권한이 없는 경우 수정/삭제 버튼 숨기기
             const role = localStorage.getItem('role');
-            if (role !== 'admin') {
+            const permissions = JSON.parse(localStorage.getItem('permissions') || '{}');
+            const hasInventoryPermission = role === 'admin' || permissions.inventory === true;
+
+            if (!hasInventoryPermission) {
                 document.querySelectorAll('.qty-control button').forEach(b => b.style.display = 'none');
                 document.querySelectorAll('td button[onclick^="deleteItem"]').forEach(b => b.style.display = 'none');
                 document.querySelectorAll('.mobile-card button[onclick^="deleteItem"]').forEach(b => b.style.display = 'none');
